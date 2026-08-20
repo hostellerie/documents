@@ -24,11 +24,18 @@ jobs:
           coverage: none
 
       - name: PHP syntax check
+        shell: bash
         run: |
-          find . -type f -name '*.php' \
+          status=0
+          while IFS= read -r -d '' file; do
+            if ! php -l "$file"; then
+              status=1
+            fi
+          done < <(find . -type f -name '*.php' \
             -not -path './.git/*' \
             -not -path './build/*' \
-            -print0 | xargs -0 -n1 php -l
+            -print0)
+          exit "$status"
 
   package:
     needs: lint
