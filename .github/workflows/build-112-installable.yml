@@ -105,6 +105,7 @@ jobs:
             printf 'RESULT: FAILED - ZIP not created.\n' >> test-artifacts/lint-report.txt
             exit 0
           fi
+
           rm -rf build
           mkdir -p build/documents
           rsync -a \
@@ -113,10 +114,32 @@ jobs:
             --exclude='build' \
             --exclude='tools' \
             --exclude='test-artifacts' \
+            --exclude='.gitkeep' \
             ./ build/documents/
+
+          unsafe=0
+          while IFS= read -r -d '' path; do
+            rel="${path#build/documents/}"
+            IFS='/' read -r -a parts <<< "$rel"
+            for part in "${parts[@]}"; do
+              if [[ "$part" == .* ]]; then
+                printf 'Unsafe archive path component: %s\n' "$rel" >> test-artifacts/lint-report.txt
+                unsafe=1
+                break
+              fi
+            done
+          done < <(find build/documents -mindepth 1 -print0)
+
+          if [ "$unsafe" -ne 0 ]; then
+            printf 'RESULT: FAILED - unsafe archive filename detected.\n' >> test-artifacts/lint-report.txt
+            touch /tmp/documents-lint-failed
+            exit 0
+          fi
+
           cd build
           zip -r ../test-artifacts/documents-1.1.2-test.zip documents >/dev/null
           cd ..
+          printf 'Archive filename safety check: PASS\n' >> test-artifacts/lint-report.txt
           printf 'RESULT: PASS - documents-1.1.2-test.zip created.\n' >> test-artifacts/lint-report.txt
 
       - name: Commit diagnostic and package
@@ -128,10 +151,10 @@ jobs:
           if [ -f test-artifacts/documents-1.1.2-test.zip ]; then
             git add -- test-artifacts/documents-1.1.2-test.zip
           fi
-          git commit -m "Documents 1.1.2: publish lint report and test package"
+          git commit -m "Documents 1.1.2: publish safe installable test package"
           git push origin HEAD:modernize-1.1.2
 
-      - name: Fail workflow if lint failed
+      - name: Fail workflow if validation failed
         shell: bash
         run: |
           if [ -f /tmp/documents-lint-failed ]; then
