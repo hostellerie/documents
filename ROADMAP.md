@@ -8,11 +8,37 @@ Documents is being stabilized with the following compatibility target:
 - PHP 5.6 through 8.1
 - Maps plugin: optional integration only
 - MediaGallery plugin: optional integration only
-- Multisite-safe persistent storage: plugin data must live under `$_CONF['path_data'] . 'site-documents/'`, not under the legacy `data/data_documents/` location that may be removed by cache/data cleanup routines in newer Geeklog setups.
+- Multisite-safe persistent storage: the Documents data directory must be derived from the current site's `$_CONF['path_data']`, using a sibling directory named `<basename(path_data)>-documents`.
 
 If Maps or MediaGallery is missing or inactive, Documents must not load their files, query their tables, enqueue their JavaScript, or render related controls/output.
 
-For Geeklog 2.2.2 and multisite deployments, persistent Documents data must be kept outside disposable cache-style locations. Existing installations using `data/data_documents/` must be migrated safely to `data/site-documents/` without losing custom templates or other stored plugin data. The migration must be idempotent and preserve backward compatibility during the transition.
+For Geeklog 2.2.2 and multisite deployments, persistent Documents data must be kept outside disposable cache-style locations. The directory must be unique for every site and must also work unchanged in a normal single-site installation.
+
+The reference logic is:
+
+```php
+function DOCUMENTS_dataDir()
+{
+    global $_CONF;
+
+    $base = isset($_CONF['path_data']) ? rtrim($_CONF['path_data'], "/\\") : '';
+    if ($base === '') {
+        return '';
+    }
+
+    return dirname($base) . DIRECTORY_SEPARATOR
+        . basename($base) . '-documents' . DIRECTORY_SEPARATOR;
+}
+```
+
+Examples:
+
+- `/home/site/data/` -> `/home/site/data-documents/`
+- `/home/site/data-site2/` -> `/home/site/data-site2-documents/`
+
+This mirrors the multisite-safe storage pattern already used by other Geeklog components such as AmazonLinks. A fixed `site-documents/` directory must not be used because it would not guarantee isolation between sites.
+
+Existing installations using the legacy `$_CONF['path_data'] . 'data_documents/'` location must be migrated safely to the new derived directory without losing custom templates or other stored plugin data. The migration must be idempotent and preserve backward compatibility during the transition.
 
 ## 1.1.x — Stabilization work
 
@@ -26,7 +52,8 @@ For Geeklog 2.2.2 and multisite deployments, persistent Documents data must be k
 - Never load Maps or MediaGallery resources unless the integration is both active and required by the current document/form.
 - Audit direct request input used in SQL, paths and HTML.
 - Keep compatibility with PHP 5.6; do not introduce PHP 7+ syntax.
-- Introduce a central Documents persistent-data path targeting `site-documents/`, while retaining a safe legacy lookup path until migration is complete.
+- Introduce a central multisite-safe `DOCUMENTS_dataDir()` helper derived from the current site's `$_CONF['path_data']`; do not hard-code `site-documents`.
+- Retain a safe legacy lookup path until migration is complete.
 
 ### 1.1.2 — PHP and logic fixes
 
@@ -67,11 +94,13 @@ For Geeklog 2.2.2 and multisite deployments, persistent Documents data must be k
 - Rework the upgrade chain into explicit version steps.
 - Test clean install, uninstall/reinstall and upgrade from 1.1.0.
 - Declare the supported Geeklog range accurately.
-- Migrate legacy `$_CONF['path_data'] . 'data_documents/'` content to `$_CONF['path_data'] . 'site-documents/'`.
+- Derive the target directory from `$_CONF['path_data']` as a sibling `<basename(path_data)>-documents/` directory.
+- Migrate legacy `$_CONF['path_data'] . 'data_documents/'` content to that derived site-specific target.
 - Preserve custom templates and any other persistent Documents data during migration.
 - Make the migration idempotent: rerunning an upgrade must not overwrite newer files or duplicate data.
-- Keep a temporary read fallback to the legacy directory only while migration compatibility is needed; new writes must target `site-documents/`.
-- Verify the new directory is not treated as disposable cache data in Geeklog 2.2.2 multisite installations.
+- Keep a temporary read fallback to the legacy directory only while migration compatibility is needed; new writes must target the derived site-specific directory.
+- Verify one multisite instance can never read or overwrite another site's Documents data directory.
+- Verify the new directory is not treated as disposable cache data in Geeklog 2.2.2 cleanup routines.
 
 ### 1.1.8 — Configuration, language and cleanup
 
@@ -86,7 +115,8 @@ Test the complete matrix:
 - Geeklog 2.1.1 through 2.2.2
 - PHP 5.6 through 8.1 where the Geeklog/PHP combination itself is viable
 - single-site and multisite installations
-- fresh `site-documents/` storage and migration from legacy `data_documents/`
+- at least two multisite instances with distinct `$_CONF['path_data']` values
+- fresh site-specific `*-documents/` storage and migration from legacy `data_documents/`
 - Maps active / inactive / not installed
 - MediaGallery active / inactive / not installed
 - installation, upgrade, categories, fields, documents, drafts, submissions, permissions, search, images, comments and deletion
@@ -100,7 +130,9 @@ Test the complete matrix:
 - secured uploads and admin AJAX
 - no normal-use PHP warnings on supported environments
 - reliable upgrade from 1.1.0
-- persistent data stored under `site-documents/` and safe in Geeklog 2.2.2 multisite/cache-cleanup scenarios
+- persistent data stored in a site-specific sibling `<basename(path_data)>-documents/` directory
+- no persistent Documents data removed by Geeklog 2.2.2 cache/data cleanup
+- correct isolation between sites in multisite installations
 - Maps and MediaGallery fully optional
 - complete README and upgrade notes
 
