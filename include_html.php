@@ -1944,13 +1944,18 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 		}
 		
 		//Save action
-		if (isset($_REQUEST['cid']) &&  $_REQUEST['cid']> 0) {
+		$saveCid = DOCUMENTS_requestInt($_REQUEST, 'cid', 0);
+		if ($saveCid > 0) {
 		    
 			// Get category
 			
-			$sql = "SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$_REQUEST['cid']}";
+			$sql = "SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$saveCid}";
 			$res = DB_query($sql);
 			$cat = DB_fetchArray($res);
+			if (!is_array($cat) || empty($cat['cid'])) {
+				echo COM_refresh($_CONF['site_url'] . '/404.php');
+				exit();
+			}
 			if ( $cat['submitable'] == 0 && !SEC_hasRights('documents.admin') ) {
 			   echo COM_refresh($_CONF['site_url'] . '/404.php');
 			   exit();
@@ -1958,7 +1963,7 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 		    
 			// Get fields
 			
-			$sql = "SELECT * FROM {$_TABLES['documents_fields']} WHERE cat_id = {$_REQUEST['cid']} ORDER BY f_order ASC";
+			$sql = "SELECT * FROM {$_TABLES['documents_fields']} WHERE cat_id = {$saveCid} ORDER BY f_order ASC";
 			$fields = DB_query($sql);
 			
 			// Todo check missing fields
@@ -1986,14 +1991,20 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 					}
 					
 				    // Todo make doc_url customisable
-					$value = addslashes($_REQUEST[$A['var_name']]);
+					$fieldValue = DOCUMENTS_requestValue($_REQUEST, $A['var_name'], '');
+					if (is_array($fieldValue)) {
+						$fieldValue = '';
+					}
+					$value = addslashes((string) $fieldValue);
 					
 					// Todo check decimal to allow only decimal 
 					
 					// image
 					if($A['f_type'] == 'image') {
 						$name = 'file' . $A['fid'];
-						if(is_uploaded_file($_FILES[$name]['tmp_name'])) {
+						if (isset($_FILES[$name]) && is_array($_FILES[$name])
+						    && !empty($_FILES[$name]['tmp_name'])
+						    && is_uploaded_file($_FILES[$name]['tmp_name'])) {
 							
 							$image_names[] = $_REQUEST['doc_url'] . '-' . $A['fid'];
 							$input_names[] = $name;
