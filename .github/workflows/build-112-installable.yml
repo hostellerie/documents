@@ -104,10 +104,28 @@ jobs:
           new_return = "    $template->parse('output', 'doc');\n    $retval = $template->finish($template->get_var('output'));\n\n    return $retval;"
           if old_return in text:
               text = text.replace(old_return, new_return, 1)
-          if old_return in text:
-              raise SystemExit('Direct doc template parse return remains in include_edit.php')
-          if "$template->finish($template->get_var('output'))" not in text:
-              raise SystemExit('Document form finish() rendering is missing')
+
+          old_files = "    $template->set_file(array(\n        'doc' => 'doc_form.thtml',\n        'access' => 'access_permissions.thtml'\n    ));"
+          new_files = "    $template->set_file(array('doc' => 'doc_form.thtml'));"
+          if old_files in text:
+              text = text.replace(old_files, new_files, 1)
+
+          old_access_block = "        $template->set_var('lang_accessrights', $LANG_ACCESS['accessrights']);\n        $template->set_var('lang_owner', $LANG_ACCESS['owner']);\n        $template->set_var('owner_select', $ownerSelect);\n        $template->set_var('owner', COM_getDisplayName((int) $doc['owner_id']));\n        $template->set_var('lang_group', $LANG_ACCESS['group']);\n        $template->set_var('group_dropdown', SEC_getGroupDropdown((int) $doc['group_id'], 3));\n        $template->set_var(\n            'permissions_editor',\n            SEC_getPermissionsHTML(\n                $doc['perm_owner'],\n                $doc['perm_group'],\n                $doc['perm_members'],\n                $doc['perm_anon']\n            )\n        );\n        $template->set_var('lang_permissions', $LANG_ACCESS['permissions']);\n        $template->set_var('lang_perm_key', $LANG_ACCESS['permissionskey']);\n        $template->set_var('permissions_msg', $LANG_ACCESS['permmsg']);\n        $template->set_var('lang_permissions_msg', $LANG_ACCESS['permmsg']);\n        $template->parse('access_perms', 'access');\n        $accessPerms = $template->finish($template->get_var('access_perms'));"
+          new_access_block = "        $accessTemplate = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');\n        $accessTemplate->set_file(array('access' => 'access_permissions.thtml'));\n        $accessTemplate->set_var('lang_accessrights', $LANG_ACCESS['accessrights']);\n        $accessTemplate->set_var('lang_owner', $LANG_ACCESS['owner']);\n        $accessTemplate->set_var('owner_select', $ownerSelect);\n        $accessTemplate->set_var('owner', COM_getDisplayName((int) $doc['owner_id']));\n        $accessTemplate->set_var('lang_group', $LANG_ACCESS['group']);\n        $accessTemplate->set_var('group_dropdown', SEC_getGroupDropdown((int) $doc['group_id'], 3));\n        $accessTemplate->set_var(\n            'permissions_editor',\n            SEC_getPermissionsHTML(\n                $doc['perm_owner'],\n                $doc['perm_group'],\n                $doc['perm_members'],\n                $doc['perm_anon']\n            )\n        );\n        $accessTemplate->set_var('lang_permissions', $LANG_ACCESS['permissions']);\n        $accessTemplate->set_var('lang_perm_key', $LANG_ACCESS['permissionskey']);\n        $accessTemplate->set_var('permissions_msg', $LANG_ACCESS['permmsg']);\n        $accessTemplate->set_var('lang_permissions_msg', $LANG_ACCESS['permmsg']);\n        $accessTemplate->parse('access_perms', 'access');\n        $accessPerms = $accessTemplate->finish($accessTemplate->get_var('access_perms'));"
+          if old_access_block in text:
+              text = text.replace(old_access_block, new_access_block, 1)
+
+          old_final = "    $template->parse('output', 'doc');\n    $retval = $template->finish($template->get_var('output'));\n\n    return $retval;"
+          new_final = "    $template->parse('output', 'doc');\n    $retval = $template->finish($template->get_var('output'));\n    if (trim((string) $retval) === '') {\n        COM_errorLog('Documents: doc_form.thtml rendered an empty result for category ' . (int) $doc['cid']);\n        return '<div class=\"pluginAlert\">Documents: the document form template returned no output.</div>';\n    }\n\n    return $retval;"
+          if old_final in text:
+              text = text.replace(old_final, new_final, 1)
+
+          if "'access' => 'access_permissions.thtml'" in text[text.find('function DOCUMENTS_editDoc'):text.find('function DOCUMENTS_buildRawForm')]:
+              raise SystemExit('Document form still shares the access template object')
+          if "$accessTemplate->set_file(array('access' => 'access_permissions.thtml'));" not in text:
+              raise SystemExit('Dedicated access template renderer is missing')
+          if "document form template returned no output" not in text:
+              raise SystemExit('Empty document template guard is missing')
           path.write_text(text)
           PY
 
@@ -221,7 +239,8 @@ jobs:
           printf 'Routing check: PASS - generated list links work without mod_rewrite.\n' >> test-artifacts/lint-report.txt
           printf 'Field language check: PASS - existing_field is defined in EN/FR.\n' >> test-artifacts/lint-report.txt
           printf 'Document form check: PASS - stale required_doc access removed.\n' >> test-artifacts/lint-report.txt
-          printf 'Template rendering check: PASS - document form uses parse plus finish.\n' >> test-artifacts/lint-report.txt
+          printf 'Template rendering check: PASS - document and access templates use isolated renderers.\n' >> test-artifacts/lint-report.txt
+          printf 'Empty template guard: PASS - empty document form output is visible and logged.\n' >> test-artifacts/lint-report.txt
           printf 'RESULT: PASS - documents-1.1.2-test.zip created.\n' >> test-artifacts/lint-report.txt
 
       - name: Commit source corrections, diagnostic and package
@@ -233,6 +252,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Package is already current.'
           else
-            git commit -m 'Documents 1.1.2: finalize document form template rendering'
+            git commit -m 'Documents 1.1.2: isolate document form template rendering'
             git push origin HEAD:modernize-1.1.2
           fi
