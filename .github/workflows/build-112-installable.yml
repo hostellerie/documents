@@ -39,14 +39,8 @@ jobs:
           php -v | head -1 >> test-artifacts/lint-report.txt
           failed=0
           while IFS= read -r -d '' file; do
-            if ! php -l "$file" >> test-artifacts/lint-report.txt 2>&1; then
-              failed=1
-            fi
-          done < <(find . -type f -name '*.php' \
-            -not -path './.git/*' \
-            -not -path './build/*' \
-            -not -path './test-artifacts/*' \
-            -print0)
+            if ! php -l "$file" >> test-artifacts/lint-report.txt 2>&1; then failed=1; fi
+          done < <(find . -type f -name '*.php' -not -path './.git/*' -not -path './build/*' -not -path './test-artifacts/*' -print0)
           if [ "$failed" -ne 0 ]; then touch /tmp/documents-lint-failed; fi
           printf '\n' >> test-artifacts/lint-report.txt
 
@@ -63,14 +57,8 @@ jobs:
           php -v | head -1 >> test-artifacts/lint-report.txt
           failed=0
           while IFS= read -r -d '' file; do
-            if ! php -l "$file" >> test-artifacts/lint-report.txt 2>&1; then
-              failed=1
-            fi
-          done < <(find . -type f -name '*.php' \
-            -not -path './.git/*' \
-            -not -path './build/*' \
-            -not -path './test-artifacts/*' \
-            -print0)
+            if ! php -l "$file" >> test-artifacts/lint-report.txt 2>&1; then failed=1; fi
+          done < <(find . -type f -name '*.php' -not -path './.git/*' -not -path './build/*' -not -path './test-artifacts/*' -print0)
           if [ "$failed" -ne 0 ]; then touch /tmp/documents-lint-failed; fi
           printf '\n' >> test-artifacts/lint-report.txt
 
@@ -87,14 +75,8 @@ jobs:
           php -v | head -1 >> test-artifacts/lint-report.txt
           failed=0
           while IFS= read -r -d '' file; do
-            if ! php -l "$file" >> test-artifacts/lint-report.txt 2>&1; then
-              failed=1
-            fi
-          done < <(find . -type f -name '*.php' \
-            -not -path './.git/*' \
-            -not -path './build/*' \
-            -not -path './test-artifacts/*' \
-            -print0)
+            if ! php -l "$file" >> test-artifacts/lint-report.txt 2>&1; then failed=1; fi
+          done < <(find . -type f -name '*.php' -not -path './.git/*' -not -path './build/*' -not -path './test-artifacts/*' -print0)
           if [ "$failed" -ne 0 ]; then touch /tmp/documents-lint-failed; fi
           printf '\n' >> test-artifacts/lint-report.txt
 
@@ -136,14 +118,14 @@ jobs:
             exit 0
           fi
 
-          if [ ! -f build/documents/public_html/htaccess.txt ]; then
-            printf 'RESULT: FAILED - public_html/htaccess.txt missing from archive.\n' >> test-artifacts/lint-report.txt
+          if [ -f build/documents/public_html/.htaccess ] || [ -f build/documents/public_html/htaccess.txt ]; then
+            printf 'RESULT: FAILED - rewrite helper file must not be present in upload archive.\n' >> test-artifacts/lint-report.txt
             touch /tmp/documents-lint-failed
             exit 0
           fi
 
-          if [ -f build/documents/public_html/.htaccess ]; then
-            printf 'RESULT: FAILED - .htaccess must not be present in upload archive.\n' >> test-artifacts/lint-report.txt
+          if ! grep -q "file_put_contents(\$target, \$rules)" build/documents/autoinstall.php; then
+            printf 'RESULT: FAILED - direct postinstall htaccess generation missing.\n' >> test-artifacts/lint-report.txt
             touch /tmp/documents-lint-failed
             exit 0
           fi
@@ -152,8 +134,8 @@ jobs:
           zip -r ../test-artifacts/documents-1.1.2-test.zip documents >/dev/null
           cd ..
           printf 'Archive filename safety check: PASS - no dotfiles.\n' >> test-artifacts/lint-report.txt
-          printf 'Rewrite template check: PASS - public_html/htaccess.txt included.\n' >> test-artifacts/lint-report.txt
-          printf 'Postinstall check: plugin_postinstall_documents() will create public_html/documents/.htaccess.\n' >> test-artifacts/lint-report.txt
+          printf 'Rewrite helper check: PASS - no htaccess file/template in archive.\n' >> test-artifacts/lint-report.txt
+          printf 'Postinstall check: PASS - autoinstall writes .htaccess directly.\n' >> test-artifacts/lint-report.txt
           printf 'RESULT: PASS - documents-1.1.2-test.zip created.\n' >> test-artifacts/lint-report.txt
 
       - name: Commit diagnostic and package
@@ -165,12 +147,10 @@ jobs:
           if [ -f test-artifacts/documents-1.1.2-test.zip ]; then
             git add -- test-artifacts/documents-1.1.2-test.zip
           fi
-          git commit -m "Documents 1.1.2: publish postinstall htaccess test package"
+          git commit -m "Documents 1.1.2: publish direct-htaccess test package"
           git push origin HEAD:modernize-1.1.2
 
       - name: Fail workflow if validation failed
         shell: bash
         run: |
-          if [ -f /tmp/documents-lint-failed ]; then
-            exit 1
-          fi
+          if [ -f /tmp/documents-lint-failed ]; then exit 1; fi
