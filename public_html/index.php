@@ -32,4 +32,5 @@ if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGIN
 }
 
 require_once $_CONF['path'] . 'plugins/documents/include_compat.php';
+DOCUMENTS_initializeRequestDefaults($_REQUEST);
 require_once $_CONF['path'] . 'plugins/documents/include_html.php';
