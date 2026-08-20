@@ -14,35 +14,39 @@ def replace_once(old, new, label):
 
 
 replace_once(
-    "\t\t\tif ($_REQUEST['group_name'] == '') {",
-    "\t\t\t$groupName = trim((string) DOCUMENTS_requestValue($_REQUEST, 'group_name', ''));\n\t\t\t$groupHelp = (string) DOCUMENTS_requestValue($_REQUEST, 'group_help', '');\n\t\t\t$saveGroupId = DOCUMENTS_requestInt($_REQUEST, 'gid', 0);\n\n\t\t\tif ($groupName === '') {",
-    'group input normalization'
-)
-replace_once(
-    "\t\t\t$_REQUEST['group_name'] = addslashes($_REQUEST['group_name']);\t\n\t\t\t$_REQUEST['group_help'] = addslashes($_REQUEST['group_help']);\t\n\n\t\t\tif ( (!empty($_REQUEST['gid'])) && (is_numeric($_REQUEST['gid'])) ) {",
-    "\t\t\t$_REQUEST['group_name'] = addslashes($groupName);\n\t\t\t$_REQUEST['group_help'] = addslashes($groupHelp);\n\n\t\t\tif ($saveGroupId > 0) {",
-    'group escaped values'
-)
-replace_once(
-    "\t\t\t\t\t . \"WHERE gid = {$_REQUEST['gid']}\";",
-    "\t\t\t\t\t . \"WHERE gid = {$saveGroupId}\";",
-    'group id sql'
+    "            if ($creation == 1) {\n\n   \t\t\t// Submission\n\t\t\t\t\t\n\t\t\t\tif (SEC_hasRights('documents.admin') || SEC_hasRights('documents.publish')) {\n\t\t\t\t\t$active = $_REQUEST['active'];",
+    "            if ($creation == 1) {\n\n   \t\t\t// Submission\n\t\t\t\t\t\n\t\t\t\t$active = DOCUMENTS_requestInt($_REQUEST, 'active', DOCUMENTS_STATUS_SUBMISSION);\n\t\t\t\tif (SEC_hasRights('documents.admin') || SEC_hasRights('documents.publish')) {",
+    'create row active'
 )
 
 replace_once(
-    "\t\t\tif ($_REQUEST['s_name'] == '') {",
-    "\t\t\t$selectName = trim((string) DOCUMENTS_requestValue($_REQUEST, 's_name', ''));\n\t\t\t$selectValue = (string) DOCUMENTS_requestValue($_REQUEST, 's_value', '');\n\t\t\t$selectGroupId = DOCUMENTS_requestInt($_REQUEST, 's_group', 0);\n\t\t\t$selectOrder = DOCUMENTS_requestInt($_REQUEST, 's_order', 0);\n\t\t\t$saveSelectId = DOCUMENTS_requestInt($_REQUEST, 'sid', 0);\n\n\t\t\tif ($selectName === '') {",
-    'select input normalization'
+    "\t\t\t\t\tif (!SEC_hasRights('documents.admin')) {\n\t\t\t\t\t    ($_REQUEST['active'] == 2) ? $active = 2 : $active = 1;",
+    "\t\t\t\t\tif (!SEC_hasRights('documents.admin')) {\n\t\t\t\t\t    $active = ($active == DOCUMENTS_STATUS_DRAFT) ? DOCUMENTS_STATUS_DRAFT : DOCUMENTS_STATUS_ACTIVE;",
+    'publisher active'
 )
+
 replace_once(
-    "\t\t\t$_REQUEST['s_name'] = addslashes($_REQUEST['s_name']);\t\n\t\t\t$_REQUEST['s_value'] = addslashes($_REQUEST['s_value']);\t\n\n\t\t\tif ( (!empty($_REQUEST['sid'])) && (is_numeric($_REQUEST['sid'])) ) {",
-    "\t\t\t$_REQUEST['s_name'] = addslashes($selectName);\n\t\t\t$_REQUEST['s_value'] = addslashes($selectValue);\n\t\t\t$_REQUEST['s_group'] = $selectGroupId;\n\t\t\t$_REQUEST['s_order'] = $selectOrder;\n\n\t\t\tif ($saveSelectId > 0) {",
-    'select escaped values'
+    "\t\t\t\t//Get default permissions\n\t\t\t\tif ($_REQUEST['perm_owner'] == '') {\n\t\t\t\t\tSEC_setDefaultPermissions($_REQUEST, $_DOCUMENTS_CONF['default_permissions']);\n\t\t\t\t}\n\t\t\t\t\t\n\t\t\t\t$sql = \"active='$active', \"",
+    "\t\t\t\t//Get default permissions\n\t\t\t\tif (DOCUMENTS_requestValue($_REQUEST, 'perm_owner', '') === '') {\n\t\t\t\t\tSEC_setDefaultPermissions($_REQUEST, $_DOCUMENTS_CONF['default_permissions']);\n\t\t\t\t}\n\t\t\t\tlist($docPermOwner, $docPermGroup, $docPermMembers, $docPermAnon) = DOCUMENTS_requestPermissions($_REQUEST, array(3, 3, 2, 2));\n\t\t\t\t\t\n\t\t\t\t$sql = \"active='$active', \"",
+    'create row permissions setup'
 )
+
 replace_once(
-    "\t\t\t\t\t . \"WHERE sid = {$_REQUEST['sid']}\";",
-    "\t\t\t\t\t . \"WHERE sid = {$saveSelectId}\";",
-    'select id sql'
+    "\t\t\t\t\t. \"perm_owner = '{$_REQUEST['perm_owner']}', \"\n\t\t\t\t\t. \"perm_group = '{$_REQUEST['perm_group']}', \"\n\t\t\t\t\t. \"perm_members = '{$_REQUEST['perm_members']}', \"\n\t\t\t\t\t. \"perm_anon = '{$_REQUEST['perm_anon']}'",
+    "\t\t\t\t\t. \"perm_owner = '{$docPermOwner}', \"\n\t\t\t\t\t. \"perm_group = '{$docPermGroup}', \"\n\t\t\t\t\t. \"perm_members = '{$docPermMembers}', \"\n\t\t\t\t\t. \"perm_anon = '{$docPermAnon}'",
+    'create row permission values'
+)
+
+replace_once(
+    "\t\t\t    //Edition\n\t\t\t\t$active = $_REQUEST['active'];",
+    "\t\t\t    //Edition\n\t\t\t\t$active = DOCUMENTS_requestInt($_REQUEST, 'active', DOCUMENTS_STATUS_ACTIVE);",
+    'edit row active'
+)
+
+replace_once(
+    "\t\t\t\t$sql = \"UPDATE {$_TABLES['documents_docs']} SET $sql \"\n\t\t\t\t . \"WHERE doc_url='{$_REQUEST['doc_url']}' \";",
+    "\t\t\t\t$saveDocUrl = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', ''));\n\t\t\t\tif ($saveDocUrl === '') {\n\t\t\t\t\techo COM_refresh($_CONF['site_url'] . '/404.php');\n\t\t\t\t\texit();\n\t\t\t\t}\n\t\t\t\t$sql = \"UPDATE {$_TABLES['documents_docs']} SET $sql \"\n\t\t\t\t . \"WHERE doc_url='{$saveDocUrl}' \";",
+    'edit row doc url'
 )
 
 if text == original:
