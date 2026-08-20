@@ -1,5 +1,5 @@
 Documents 1.1.2 test package
-Commit: 64a875615c0ee7e18971781d8a9b6eb61b7ab7ac
+Commit: b0e229496feadb205cdcf4c115184e4a3b6398c4
 
 === PHP 5.6 ===
 PHP 5.6.40 (cli) 
@@ -52,4 +52,5 @@ No syntax errors detected in ./language/english.php
 No syntax errors detected in ./language/french_france_utf-8.php
 No syntax errors detected in ./include_compat.php
 
+Archive filename safety check: PASS
 RESULT: PASS - documents-1.1.2-test.zip created.
