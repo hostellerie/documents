@@ -517,7 +517,8 @@ function DOCUMENTS_editDoc($doc = array())
         $template->set_var('lang_perm_key', $LANG_ACCESS['permissionskey']);
         $template->set_var('permissions_msg', $LANG_ACCESS['permmsg']);
         $template->set_var('lang_permissions_msg', $LANG_ACCESS['permmsg']);
-        $accessPerms = $template->parse('access_perms', 'access');
+        $template->parse('access_perms', 'access');
+        $accessPerms = $template->finish($template->get_var('access_perms'));
     }
 
     $template->set_var('access_perms', $accessPerms);
@@ -525,7 +526,10 @@ function DOCUMENTS_editDoc($doc = array())
     $template->set_var('required_field', $LANG_DOCUMENTS_1['required_field']);
     $template->set_var('validate_button', $LANG_DOCUMENTS_1['validate_button']);
 
-    return $template->parse('output', 'doc');
+    $template->parse('output', 'doc');
+    $retval = $template->finish($template->get_var('output'));
+
+    return $retval;
 }
 
 function DOCUMENTS_buildRawForm($field, $doc, &$template, $i)
