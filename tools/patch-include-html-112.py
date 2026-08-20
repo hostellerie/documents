@@ -14,27 +14,39 @@ def replace_once(old, new, label):
 
 
 replace_once(
-    "\t\t\t\t\t\t$doc_url = $_POST[$A['var_name']];\n\t\t\t\t\t\t$doc_url = DOCUMENTS_slugify($doc_url);\n\t\t\t\t\t\tdefine(\"DOC_URL\", $unique . '-' . strtolower($doc_url));",
-    "\t\t\t\t\t\t$titleValue = DOCUMENTS_requestValue($_REQUEST, $A['var_name'], '');\n\t\t\t\t\t\tif (is_array($titleValue)) {\n\t\t\t\t\t\t\t$titleValue = '';\n\t\t\t\t\t\t}\n\t\t\t\t\t\t$doc_url = DOCUMENTS_slugify((string) $titleValue);\n\t\t\t\t\t\tif ($doc_url === '') {\n\t\t\t\t\t\t\t$doc_url = 'document';\n\t\t\t\t\t\t}\n\t\t\t\t\t\tdefine(\"DOC_URL\", $unique . '-' . strtolower($doc_url));",
-    'creation slug source'
+    "            if ($creation == 1) {\n\n   \t\t\t// Submission\n\t\t\t\t\t\n\t\t\t\tif (SEC_hasRights('documents.admin') || SEC_hasRights('documents.publish')) {\n\t\t\t\t\t$active = $_REQUEST['active'];",
+    "            if ($creation == 1) {\n\n   \t\t\t// Submission\n\t\t\t\t\t\n\t\t\t\t$active = DOCUMENTS_requestInt($_REQUEST, 'active', DOCUMENTS_STATUS_SUBMISSION);\n\t\t\t\tif (SEC_hasRights('documents.admin') || SEC_hasRights('documents.publish')) {",
+    'creation active normalization'
 )
 
 replace_once(
-    "\t\t\t\t\t// Default fields\n\t\t\t\t\tif ($_REQUEST['perm_owner'] == '') {\n\t\t\t\t\t\tSEC_setDefaultPermissions($_REQUEST, $_DOCUMENTS_CONF['default_permissions']);\n\t\t\t\t\t}\n\t\t\t\t\t\n\t\t\t\t\t// Convert array values to numeric permission values\n\t\t\t\t\tif (is_array($_REQUEST['perm_owner']) OR is_array($_REQUEST['perm_group']) OR is_array($_REQUEST['perm_members']) OR is_array($_REQUEST['perm_anon'])) {\n\t\t\t\t\t\tlist($perm_owner, $perm_group, $perm_members, $perm_anon) \n\t\t\t\t\t\t= SEC_getPermissionValues($_REQUEST['perm_owner'],$_REQUEST['perm_group'],$_REQUEST['perm_members'],$_REQUEST['perm_anon']);\n\t\t\t\t\t}",
-    "\t\t\t\t\t// Default fields and permissions\n\t\t\t\t\tif (DOCUMENTS_requestValue($_REQUEST, 'perm_owner', '') === '') {\n\t\t\t\t\t\tSEC_setDefaultPermissions($_REQUEST, $_DOCUMENTS_CONF['default_permissions']);\n\t\t\t\t\t}\n\t\t\t\t\tlist($perm_owner, $perm_group, $perm_members, $perm_anon) = DOCUMENTS_requestPermissions($_REQUEST, array(3, 3, 2, 2));",
-    'creation permissions'
+    "\t\t\t\t\tif (!SEC_hasRights('documents.admin')) {\n\t\t\t\t\t    ($_REQUEST['active'] == 2) ? $active = 2 : $active = 1;",
+    "\t\t\t\t\tif (!SEC_hasRights('documents.admin')) {\n\t\t\t\t\t    ($active == DOCUMENTS_STATUS_DRAFT) ? $active = DOCUMENTS_STATUS_DRAFT : $active = DOCUMENTS_STATUS_ACTIVE;",
+    'publisher active restriction'
 )
 
 replace_once(
-    "\t\t\t\t\t\tif($A['f_type'] == 'checkbox') {\n\t\t\t\t\t\t    ($_REQUEST[$A['var_name']] == 1 ) ? $value = 1 : $value = 0;",
-    "\t\t\t\t\t\tif($A['f_type'] == 'checkbox') {\n\t\t\t\t\t\t    $value = ((int) DOCUMENTS_requestValue($_REQUEST, $A['var_name'], 0) === 1) ? 1 : 0;",
-    'creation checkbox value'
+    "\t\t\t\t//Get default permissions\n\t\t\t\tif ($_REQUEST['perm_owner'] == '') {\n\t\t\t\t\tSEC_setDefaultPermissions($_REQUEST, $_DOCUMENTS_CONF['default_permissions']);\n\t\t\t\t}\n\t\t\t\t\t\n\t\t\t\t$sql = \"active='$active', \"",
+    "\t\t\t\t//Get default permissions\n\t\t\t\tif (DOCUMENTS_requestValue($_REQUEST, 'perm_owner', '') === '') {\n\t\t\t\t\tSEC_setDefaultPermissions($_REQUEST, $_DOCUMENTS_CONF['default_permissions']);\n\t\t\t\t}\n\t\t\t\tlist($docPermOwner, $docPermGroup, $docPermMembers, $docPermAnon) = DOCUMENTS_requestPermissions($_REQUEST, array(3, 3, 2, 2));\n\t\t\t\t\t\n\t\t\t\t$sql = \"active='$active', \"",
+    'creation document permissions'
 )
 
 replace_once(
-    "\t\t\t\t\t\t        $value = addslashes($_REQUEST[$A['var_name']]);",
-    "\t\t\t\t\t\t        $createValue = DOCUMENTS_requestValue($_REQUEST, $A['var_name'], '');\n\t\t\t\t\t\t        if (is_array($createValue)) {\n\t\t\t\t\t\t            $createValue = '';\n\t\t\t\t\t\t        }\n\t\t\t\t\t\t        $value = addslashes((string) $createValue);",
-    'creation field value'
+    "\t\t\t\t\t. \"perm_owner = '{$_REQUEST['perm_owner']}', \"\n\t\t\t\t\t. \"perm_group = '{$_REQUEST['perm_group']}', \"\n\t\t\t\t\t. \"perm_members = '{$_REQUEST['perm_members']}', \"\n\t\t\t\t\t. \"perm_anon = '{$_REQUEST['perm_anon']}'",
+    "\t\t\t\t\t. \"perm_owner = '{$docPermOwner}', \"\n\t\t\t\t\t. \"perm_group = '{$docPermGroup}', \"\n\t\t\t\t\t. \"perm_members = '{$docPermMembers}', \"\n\t\t\t\t\t. \"perm_anon = '{$docPermAnon}'",
+    'creation document permission values'
+)
+
+replace_once(
+    "\t\t\t    //Edition\n\t\t\t\t$active = $_REQUEST['active'];",
+    "\t\t\t    //Edition\n\t\t\t\t$active = DOCUMENTS_requestInt($_REQUEST, 'active', DOCUMENTS_STATUS_ACTIVE);",
+    'edition active normalization'
+)
+
+replace_once(
+    "\t\t\t\t$sql = \"UPDATE {$_TABLES['documents_docs']} SET $sql \"\n\t\t\t\t . \"WHERE doc_url='{$_REQUEST['doc_url']}' \";",
+    "\t\t\t\t$saveDocUrl = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', ''));\n\t\t\t\tif ($saveDocUrl === '') {\n\t\t\t\t\techo COM_refresh($_CONF['site_url'] . '/404.php');\n\t\t\t\t\texit();\n\t\t\t\t}\n\t\t\t\t$sql = \"UPDATE {$_TABLES['documents_docs']} SET $sql \"\n\t\t\t\t . \"WHERE doc_url='{$saveDocUrl}' \";",
+    'edition document url'
 )
 
 if text == original:
