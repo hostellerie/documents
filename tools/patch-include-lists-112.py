@@ -14,31 +14,25 @@ def replace_once(old, new, label):
 
 
 replace_once(
-    "function plugin_getListField_groups_fields($fieldname, $fieldvalue, $A, $icon_arr)\n{\n\n    global $_DOCUMENTS_CONF;",
-    "function plugin_getListField_groups_fields($fieldname, $fieldvalue, $A, $icon_arr)\n{\n\n    global $_DOCUMENTS_CONF;\n\n    $retval = '';",
-    'group callback retval initialization'
+    "\tif ($cat == '') return $retval;",
+    "\tif ($cat == '') return $retval;\n\t$cat = addslashes((string) $cat);",
+    'category SQL escaping'
 )
 
 replace_once(
-    "function DOCUMENTS_listSelects($group)\n{\n    global $_CONF, $_DOCUMENTS_CONF, $_TABLES, $LANG_DOCUMENTS_1;",
-    "function DOCUMENTS_listSelects($group)\n{\n    global $_CONF, $_DOCUMENTS_CONF, $_TABLES, $LANG_DOCUMENTS_1;\n\n    $group = (int) $group;",
-    'select group numeric normalization'
+    "\t\t\t\tif ($fieldvalue == $A['image'] && $fieldvalue != '') {",
+    "\t\t\t\t$imageValue = isset($A['image']) ? $A['image'] : '';\n\t\t\t\t$markerValue = isset($A['marker']) ? $A['marker'] : '';\n\t\t\t\tif ($fieldvalue == $imageValue && $fieldvalue != '') {",
+    'optional image result guard'
 )
 
 replace_once(
-    "\tif($group > 0) $sql .= \" AND s_group = '$group'\";",
-    "\tif ($group > 0) {\n\t\t$sql .= \" AND s_group = '{$group}'\";\n\t}",
-    'select group sql guard'
-)
-
-replace_once(
-    "function plugin_getListField_selects_fields($fieldname, $fieldvalue, $A, $icon_arr)\n{\n\n    global $_DOCUMENTS_CONF;",
-    "function plugin_getListField_selects_fields($fieldname, $fieldvalue, $A, $icon_arr)\n{\n\n    global $_DOCUMENTS_CONF;\n\n    $retval = '';",
-    'select callback retval initialization'
+    "\t\t\t\t} else if ($fieldvalue == $A['marker'] && $fieldvalue != '') {",
+    "\t\t\t\t} else if ($fieldvalue == $markerValue && $fieldvalue != '') {",
+    'optional marker result guard'
 )
 
 if text == original:
     raise RuntimeError('No changes were produced')
 
 path.write_text(text, encoding='utf-8')
-print('include_lists.php callback warning cleanup applied successfully')
+print('include_lists.php optional result guards applied successfully')
