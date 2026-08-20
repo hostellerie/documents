@@ -2075,21 +2075,22 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 							break;
 						}
 						*/
-						$doc_url = $_POST[$A['var_name']];
-						$doc_url = DOCUMENTS_slugify($doc_url);
+						$titleValue = DOCUMENTS_requestValue($_REQUEST, $A['var_name'], '');
+						if (is_array($titleValue)) {
+							$titleValue = '';
+						}
+						$doc_url = DOCUMENTS_slugify((string) $titleValue);
+						if ($doc_url === '') {
+							$doc_url = 'document';
+						}
 						define("DOC_URL", $unique . '-' . strtolower($doc_url));
 					}
 					
-					// Default fields
-					if ($_REQUEST['perm_owner'] == '') {
+					// Default fields and permissions
+					if (DOCUMENTS_requestValue($_REQUEST, 'perm_owner', '') === '') {
 						SEC_setDefaultPermissions($_REQUEST, $_DOCUMENTS_CONF['default_permissions']);
 					}
-					
-					// Convert array values to numeric permission values
-					if (is_array($_REQUEST['perm_owner']) OR is_array($_REQUEST['perm_group']) OR is_array($_REQUEST['perm_members']) OR is_array($_REQUEST['perm_anon'])) {
-						list($perm_owner, $perm_group, $perm_members, $perm_anon) 
-						= SEC_getPermissionValues($_REQUEST['perm_owner'],$_REQUEST['perm_group'],$_REQUEST['perm_members'],$_REQUEST['perm_anon']);
-					}
+					list($perm_owner, $perm_group, $perm_members, $perm_anon) = DOCUMENTS_requestPermissions($_REQUEST, array(3, 3, 2, 2));
 					
 					// Todo check decimal to allow only decimal 
 					// image
@@ -2102,7 +2103,7 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 					} else {
 					
 						if($A['f_type'] == 'checkbox') {
-						    ($_REQUEST[$A['var_name']] == 1 ) ? $value = 1 : $value = 0;
+						    $value = ((int) DOCUMENTS_requestValue($_REQUEST, $A['var_name'], 0) === 1) ? 1 : 0;
 						} else { 
 						    if($A['f_type'] == 'marker') {
 							   //Get map id
@@ -2110,7 +2111,11 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 							   //Create marker
 							   $value = DOCUMENTS_saveMarker($mid, DOCUMENTS_requestValue($_REQUEST, 'mkid'), DOC_URL);
 							} else {
-						        $value = addslashes($_REQUEST[$A['var_name']]);
+						        $createValue = DOCUMENTS_requestValue($_REQUEST, $A['var_name'], '');
+						        if (is_array($createValue)) {
+						            $createValue = '';
+						        }
+						        $value = addslashes((string) $createValue);
 							}
 						}
 						//Todo fix permission regarding field permission
