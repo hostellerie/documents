@@ -310,6 +310,7 @@ function DOCUMENTS_listDocs($cat='')
     $leftjoin = '';
 
 	if ($cat == '') return $retval;
+	$cat = addslashes((string) $cat);
 	
 	$css = '/admin/plugins/documents/document.css';
     $_SCRIPTS->setCSSFile('documents_css', $css, true);
@@ -637,7 +638,9 @@ function plugin_getListField_documents_docs($fieldname, $fieldvalue, $A, $icon_a
                                 $A['perm_members'], $A['perm_anon']);
 								
 			if ( $access >= 1) {
-				if ($fieldvalue == $A['image'] && $fieldvalue != '') {
+				$imageValue = isset($A['image']) ? $A['image'] : '';
+				$markerValue = isset($A['marker']) ? $A['marker'] : '';
+				if ($fieldvalue == $imageValue && $fieldvalue != '') {
 					//image
 					$doc_url = $_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url'] . '/' . $A['doc_url'];
 					$image = '<img class="document_img" src="' . $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . rawurlencode(basename($fieldvalue)) .
@@ -645,7 +648,7 @@ function plugin_getListField_documents_docs($fieldname, $fieldvalue, $A, $icon_a
 						
 					$retval = COM_createLink($image, $doc_url);
 
-				} else if ($fieldvalue == $A['marker'] && $fieldvalue != '') {
+				} else if ($fieldvalue == $markerValue && $fieldvalue != '') {
 					if (DOCUMENTS_hasMaps()) {
 						$retval = PLG_replaceTags('<div style="width:450px;">[marker:' . $fieldvalue . ' width:400px]</div>');
 					} else {
