@@ -34,6 +34,7 @@ jobs:
           done < <(find . -type f -name '*.php' \
             -not -path './.git/*' \
             -not -path './build/*' \
+            -not -path './test-artifacts/*' \
             -print0)
           exit "$status"
 
@@ -52,6 +53,7 @@ jobs:
             --exclude='.github' \
             --exclude='build' \
             --exclude='tools' \
+            --exclude='test-artifacts' \
             ./ build/documents/
           cd build
           zip -r documents-1.1.2-test.zip documents
