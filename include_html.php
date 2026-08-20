@@ -992,11 +992,10 @@ function DOCUMENTS_uploadImage ($image_name=array(), $input_name=array(), $field
     ));
 
     if (!$upload->setPath($_DOCUMENTS_CONF['path_images'])) {
-        $output = COM_siteHeader('menu', $LANG24[30]);
-        $output .= COM_startBlock($LANG24[30], '', COM_getBlockTemplate('_msg_block', 'header'));
+        $output = COM_startBlock($LANG24[30], '', COM_getBlockTemplate('_msg_block', 'header'));
         $output .= $upload->printErrors(false);
         $output .= COM_endBlock(COM_getBlockTemplate('_msg_block', 'footer'));
-        $output .= COM_siteFooter();
+        $output = COM_createHTMLDocument($output, array('pagetitle' => $LANG24[30]));
         COM_output($output);
         exit;
     }
@@ -1042,11 +1041,10 @@ function DOCUMENTS_uploadImage ($image_name=array(), $input_name=array(), $field
     $upload->uploadFiles();
 
     if ($upload->areErrors()) {
-        $retval = COM_siteHeader('menu', $LANG24[30]);
-        $retval .= COM_startBlock($LANG24[30], '', COM_getBlockTemplate('_msg_block', 'header'));
+        $retval = COM_startBlock($LANG24[30], '', COM_getBlockTemplate('_msg_block', 'header'));
         $retval .= $upload->printErrors(false);
         $retval .= COM_endBlock(COM_getBlockTemplate('_msg_block', 'footer'));
-        $retval .= COM_siteFooter();
+        $retval = COM_createHTMLDocument($retval, array('pagetitle' => $LANG24[30]));
         COM_output($retval);
         exit;
     }
@@ -2320,14 +2318,16 @@ if (defined("DOCUMENT_TITLE")) {
      $page_title = $LANG_DOCUMENTS_1['plugin_name'];
 }
 
-$display .= COM_siteHeader('menu',  $page_title);
 $display .= DOCUMENTS_user_menu();
 
 // If any message
 $display .= DOCUMENTS_message(DOCUMENTS_requestValue($_REQUEST, 'msg'));
 
 $display .= $content;
-$display .= COM_siteFooter();
+$display = COM_createHTMLDocument(
+    $display,
+    array('pagetitle' => $page_title)
+);
 
 COM_output($display);
 
