@@ -8,8 +8,11 @@ Documents is being stabilized with the following compatibility target:
 - PHP 5.6 through 8.1
 - Maps plugin: optional integration only
 - MediaGallery plugin: optional integration only
+- Multisite-safe persistent storage: plugin data must live under `$_CONF['path_data'] . 'site-documents/'`, not under the legacy `data/data_documents/` location that may be removed by cache/data cleanup routines in newer Geeklog setups.
 
 If Maps or MediaGallery is missing or inactive, Documents must not load their files, query their tables, enqueue their JavaScript, or render related controls/output.
+
+For Geeklog 2.2.2 and multisite deployments, persistent Documents data must be kept outside disposable cache-style locations. Existing installations using `data/data_documents/` must be migrated safely to `data/site-documents/` without losing custom templates or other stored plugin data. The migration must be idempotent and preserve backward compatibility during the transition.
 
 ## 1.1.x — Stabilization work
 
@@ -23,6 +26,7 @@ If Maps or MediaGallery is missing or inactive, Documents must not load their fi
 - Never load Maps or MediaGallery resources unless the integration is both active and required by the current document/form.
 - Audit direct request input used in SQL, paths and HTML.
 - Keep compatibility with PHP 5.6; do not introduce PHP 7+ syntax.
+- Introduce a central Documents persistent-data path targeting `site-documents/`, while retaining a safe legacy lookup path until migration is complete.
 
 ### 1.1.2 — PHP and logic fixes
 
@@ -58,11 +62,16 @@ If Maps or MediaGallery is missing or inactive, Documents must not load their fi
 - Reduce inline styles and obsolete XHTML-era markup.
 - Modernize admin navigation and document-state indicators.
 
-### 1.1.7 — Installation and upgrades
+### 1.1.7 — Installation, upgrades and persistent-data migration
 
 - Rework the upgrade chain into explicit version steps.
 - Test clean install, uninstall/reinstall and upgrade from 1.1.0.
 - Declare the supported Geeklog range accurately.
+- Migrate legacy `$_CONF['path_data'] . 'data_documents/'` content to `$_CONF['path_data'] . 'site-documents/'`.
+- Preserve custom templates and any other persistent Documents data during migration.
+- Make the migration idempotent: rerunning an upgrade must not overwrite newer files or duplicate data.
+- Keep a temporary read fallback to the legacy directory only while migration compatibility is needed; new writes must target `site-documents/`.
+- Verify the new directory is not treated as disposable cache data in Geeklog 2.2.2 multisite installations.
 
 ### 1.1.8 — Configuration, language and cleanup
 
@@ -76,6 +85,8 @@ Test the complete matrix:
 
 - Geeklog 2.1.1 through 2.2.2
 - PHP 5.6 through 8.1 where the Geeklog/PHP combination itself is viable
+- single-site and multisite installations
+- fresh `site-documents/` storage and migration from legacy `data_documents/`
 - Maps active / inactive / not installed
 - MediaGallery active / inactive / not installed
 - installation, upgrade, categories, fields, documents, drafts, submissions, permissions, search, images, comments and deletion
@@ -89,6 +100,7 @@ Test the complete matrix:
 - secured uploads and admin AJAX
 - no normal-use PHP warnings on supported environments
 - reliable upgrade from 1.1.0
+- persistent data stored under `site-documents/` and safe in Geeklog 2.2.2 multisite/cache-cleanup scenarios
 - Maps and MediaGallery fully optional
 - complete README and upgrade notes
 
@@ -103,6 +115,7 @@ Test the complete matrix:
 - Isolate Maps and MediaGallery adapters from the core plugin.
 - Define a consistent internal field-type API: render, edit, validate, normalize, search and export.
 - Improve routing while retaining compatibility with Geeklog URL handling.
+- Centralize filesystem/storage access behind a Documents storage layer so multisite-safe paths are not hard-coded throughout the plugin.
 
 ## 1.4.0 — Functional evolution
 
