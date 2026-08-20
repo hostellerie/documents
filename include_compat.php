@@ -84,18 +84,41 @@ function DOCUMENTS_linkifyUrlCallback($matches)
 }
 
 /**
- * Resolve a custom template directory without allowing path traversal.
+ * Validate a custom template directory name.
  *
- * The directory is always rooted inside the site-specific Documents data
- * directory returned by DOCUMENTS_dataDir().
+ * Only one directory component is accepted. This keeps custom templates rooted
+ * below the Documents data directory and blocks ../ traversal.
+ *
+ * @param string $template Template directory name
+ * @return string Empty string when invalid
+ */
+function DOCUMENTS_templateName($template)
+{
+    $template = trim((string) $template);
+    if ($template === '' || basename($template) !== $template || strpos($template, '..') !== false) {
+        return '';
+    }
+
+    if (!preg_match('/^[A-Za-z0-9._-]+$/', $template)) {
+        return '';
+    }
+
+    return $template;
+}
+
+/**
+ * Return the new multisite-safe custom template directory.
+ *
+ * This helper always points to the new persistent location and must be used for
+ * future writes. It never redirects writes to the legacy data_documents path.
  *
  * @param string $template Template directory name
  * @return string Empty string when invalid
  */
 function DOCUMENTS_customTemplateDir($template)
 {
-    $template = trim((string) $template);
-    if ($template === '' || basename($template) !== $template || strpos($template, '..') !== false) {
+    $template = DOCUMENTS_templateName($template);
+    if ($template === '') {
         return '';
     }
 
@@ -107,4 +130,40 @@ function DOCUMENTS_customTemplateDir($template)
     return rtrim($base, "/\\") . DIRECTORY_SEPARATOR
         . 'templates' . DIRECTORY_SEPARATOR
         . $template . DIRECTORY_SEPARATOR;
+}
+
+/**
+ * Resolve a custom template directory for reading during migration.
+ *
+ * The new multisite-safe location is preferred. Until the 1.1.7 migration has
+ * moved existing files, the historical data_documents directory is accepted as
+ * a read-only fallback. New writes must continue to use
+ * DOCUMENTS_customTemplateDir().
+ *
+ * @param string $template Template directory name
+ * @return string Empty string when no readable template directory exists
+ */
+function DOCUMENTS_customTemplateReadDir($template)
+{
+    $template = DOCUMENTS_templateName($template);
+    if ($template === '') {
+        return '';
+    }
+
+    $newDir = DOCUMENTS_customTemplateDir($template);
+    if ($newDir !== '' && is_dir($newDir)) {
+        return $newDir;
+    }
+
+    $legacyBase = function_exists('DOCUMENTS_legacyDataDir') ? DOCUMENTS_legacyDataDir() : '';
+    if ($legacyBase !== '') {
+        $legacyDir = rtrim($legacyBase, "/\\") . DIRECTORY_SEPARATOR
+            . 'templates' . DIRECTORY_SEPARATOR
+            . $template . DIRECTORY_SEPARATOR;
+        if (is_dir($legacyDir)) {
+            return $legacyDir;
+        }
+    }
+
+    return '';
 }
