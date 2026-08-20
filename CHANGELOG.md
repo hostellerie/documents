@@ -13,18 +13,54 @@ Compatibility target:
 - Added named document status constants for inactive, active, draft and submission states.
 - Added `DOCUMENTS_requestValue()` to avoid undefined-index notices on request arrays.
 - Added `DOCUMENTS_linkifyUrls()` based on `preg_replace_callback()` as the PHP 5.6–8.1 replacement for the historical `preg_replace(... /e ...)` implementation.
-- Added `DOCUMENTS_customTemplateDir()` to resolve custom template directories only inside the site-specific Documents data directory and reject traversal-style template names.
+- Added strict custom-template name validation.
+- Added `DOCUMENTS_customTemplateDir()` for the new site-specific multisite-safe template location.
+- Added `DOCUMENTS_customTemplateReadDir()` so existing installations can temporarily read legacy `data_documents/templates/` content until the physical 1.1.7 migration.
 - The public entry point now loads the compatibility layer before `include_html.php`.
 - Plugin development metadata is now 1.1.2.
 
+### Public controller and rendering
+
+- Removed the obsolete `preg_replace(... /e ...)` URL-linking code from document rendering.
+- Fixed the `catorder` / `cat_order` category reorder bug.
+- Fixed the `list_fields` / `list_groups` menu comparison.
+- Added safe category/document existence checks before reading database result keys.
+- Initialized rendering accumulators and comment/OpenGraph defaults before use.
+- Custom templates now prefer the multisite-safe Documents data directory and use the historical directory only as a temporary read fallback.
+- Missing/invalid custom-template directories fall back to the standard plugin templates instead of constructing an arbitrary path.
+- Image previews now pass local Documents filenames to the restricted image endpoint.
+- Radio rendering no longer indexes the wrong field value/select array.
+
+### Optional integrations
+
+- Public Maps rendering now uses `DOCUMENTS_hasMaps()` and performs no Maps query/output when Maps is unavailable.
+- Google Maps JavaScript is loaded only while rendering an actual marker field and now uses HTTPS without the obsolete `adsense` library.
+- Public MediaGallery rendering now uses `DOCUMENTS_hasMediaGallery()` and performs no MediaGallery include/query when unavailable.
+- MediaGallery thumbnails are rendered from MediaGallery's own thumbnail URL rather than being sent through the Documents local-only image endpoint.
+- Existing marker/album values are preserved when their optional plugin is inactive during document editing.
+- Forged attempts to create unavailable optional field types are rejected by the controller.
+
+### Upload and marker stabilization
+
+- Reworked image upload bookkeeping so filenames, input controls and field metadata remain synchronized when only some image fields contain an upload.
+- Empty upload batches now return cleanly without passing undefined filename arrays to Geeklog's upload class.
+- Upload-generated filenames are restricted to a safe local basename before the Geeklog upload class performs MIME/dimension validation.
+- Fixed a marker-save bug that could replace a Documents field ID with the returned Maps marker ID.
+- `mkid` is now treated as an alphanumeric/string identifier instead of a numeric request value.
+- Marker persistence now guards request keys, quotes marker IDs in SQL and skips Maps work entirely when Maps is unavailable.
+
+### Test packaging
+
+- Test packaging runs PHP syntax checks against PHP 5.6, 7.4 and 8.1 before creating the ZIP.
+- Development-only `.github/` and `tools/` files are excluded from the installable archive.
+- Test artifact name: `documents-1.1.2-test.zip`.
+
 ### Remaining 1.1.2 work
 
-- Replace the historical URL-linking `/e` expression in `include_html.php` with `DOCUMENTS_linkifyUrls()`.
-- Fix the `catorder` / `cat_order` category reorder bug.
-- Fix the `list_fields` / `list_groups` menu comparison.
-- Initialize rendering accumulators and optional metadata before use.
-- Switch custom templates from the historical `data_documents/templates/` path to `DOCUMENTS_customTemplateDir()` with temporary legacy lookup support where required.
-- Ensure Maps and MediaGallery display paths use the centralized availability helpers and perform no query/include when unavailable.
+- Continue the request/SQL audit in the remaining save/list paths for PHP 8.1 warnings and malformed-input handling.
+- Review `include_lists.php` accumulators and image-preview calls.
+- Confirm the PHP 5.6/7.4/8.1 lint workflow completes successfully on the final 1.1.2 commit.
+- Run manual functional tests on Geeklog 2.1.1 and 2.2.2 before considering 1.1.2 complete.
 
 ## 1.1.1 — Security, optional integrations and multisite storage
 
@@ -72,5 +108,5 @@ Compatibility target:
 
 - complete migration of custom templates from the old data directory;
 - broader CSRF coverage for category/field/list mutations;
-- full upload workflow audit and remaining PHP warnings;
+- remaining PHP warnings and request/SQL cleanup;
 - data-integrity and orphan-record checks.
