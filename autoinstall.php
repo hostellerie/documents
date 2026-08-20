@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.1                                                    |
+// | Documents Plugin 1.1.2                                                    |
 // +---------------------------------------------------------------------------+
 // | autoinstall.php                                                           |
 // |                                                                           |
@@ -31,12 +31,6 @@
  * @package Documents
  */
 
-/**
- * Plugin autoinstall function.
- *
- * @param  string $pi_name Plugin name
- * @return array           Plugin information
- */
 function plugin_autoinstall_documents($pi_name)
 {
     $pi_name         = 'documents';
@@ -46,7 +40,7 @@ function plugin_autoinstall_documents($pi_name)
     $info = array(
         'pi_name'         => $pi_name,
         'pi_display_name' => $pi_display_name,
-        'pi_version'      => '1.1.1',
+        'pi_version'      => '1.1.2',
         'pi_gl_version'   => '2.1.1',
         'pi_homepage'     => 'https://github.com/Geeklog-Plugins/documents'
     );
@@ -57,10 +51,8 @@ function plugin_autoinstall_documents($pi_name)
     );
 
     $features = array(
-        $pi_name . '.admin'   => 'Full access to ' . $pi_display_name
-                                 . ' plugin',
-        $pi_name . '.publish' => 'Can publish ' . $pi_display_name
-                                 . ' (skip submission queue)'
+        $pi_name . '.admin'   => 'Full access to ' . $pi_display_name . ' plugin',
+        $pi_name . '.publish' => 'Can publish ' . $pi_display_name . ' (skip submission queue)'
     );
 
     $mappings = array(
@@ -87,12 +79,6 @@ function plugin_autoinstall_documents($pi_name)
     );
 }
 
-/**
- * Create the initial configuration for the plugin.
- *
- * @param  string $pi_name Plugin name
- * @return boolean
- */
 function plugin_load_configuration_documents($pi_name)
 {
     global $_CONF;
@@ -105,16 +91,6 @@ function plugin_load_configuration_documents($pi_name)
     return plugin_initconfig_documents();
 }
 
-/**
- * Check whether this plugin supports the current Geeklog/PHP environment.
- *
- * Supported target:
- * - Geeklog 2.1.1 through 2.2.2
- * - PHP 5.6 through 8.1
- *
- * @param  string $pi_name Plugin name
- * @return boolean
- */
 function plugin_compatible_with_this_version_documents($pi_name)
 {
     global $_CONF, $_DB_dbms;
@@ -140,14 +116,6 @@ function plugin_compatible_with_this_version_documents($pi_name)
     return true;
 }
 
-/**
- * Post-install hook.
- *
- * No installation telemetry or unsolicited email is sent.
- *
- * @param  string $pi_name Plugin name
- * @return boolean
- */
 function plugin_postinstall_documents($pi_name)
 {
     return true;
