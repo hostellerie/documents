@@ -2158,11 +2158,11 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 
     			// Submission
 					
+				$active = DOCUMENTS_requestInt($_REQUEST, 'active', DOCUMENTS_STATUS_SUBMISSION);
 				if (SEC_hasRights('documents.admin') || SEC_hasRights('documents.publish')) {
-					$active = $_REQUEST['active'];
 					// Todo if user is publisher email doc_url to admin
 					if (!SEC_hasRights('documents.admin')) {
-					    ($_REQUEST['active'] == 2) ? $active = 2 : $active = 1;
+					    $active = ($active == DOCUMENTS_STATUS_DRAFT) ? DOCUMENTS_STATUS_DRAFT : DOCUMENTS_STATUS_ACTIVE;
 					}
 				} else {
 					// Email submission to admin
@@ -2172,9 +2172,10 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 				}
 				
 				//Get default permissions
-				if ($_REQUEST['perm_owner'] == '') {
+				if (DOCUMENTS_requestValue($_REQUEST, 'perm_owner', '') === '') {
 					SEC_setDefaultPermissions($_REQUEST, $_DOCUMENTS_CONF['default_permissions']);
 				}
+				list($docPermOwner, $docPermGroup, $docPermMembers, $docPermAnon) = DOCUMENTS_requestPermissions($_REQUEST, array(3, 3, 2, 2));
 					
 				$sql = "active='$active', "
 					. "doc_url='" . DOC_URL . "', "
@@ -2182,10 +2183,10 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 					. "modified =  NOW(), "
 					. "owner_id = '{$_USER['uid']}', "
 					. "group_id = '{$group_id}', "
-					. "perm_owner = '{$_REQUEST['perm_owner']}', "
-					. "perm_group = '{$_REQUEST['perm_group']}', "
-					. "perm_members = '{$_REQUEST['perm_members']}', "
-					. "perm_anon = '{$_REQUEST['perm_anon']}'
+					. "perm_owner = '{$docPermOwner}', "
+					. "perm_group = '{$docPermGroup}', "
+					. "perm_members = '{$docPermMembers}', "
+					. "perm_anon = '{$docPermAnon}'
 					";
 				$sql = "INSERT INTO {$_TABLES['documents_docs']} SET $sql ";
 				DB_query($sql);
@@ -2194,7 +2195,7 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			} else {
 			    //Edition
-				$active = $_REQUEST['active'];
+				$active = DOCUMENTS_requestInt($_REQUEST, 'active', DOCUMENTS_STATUS_ACTIVE);
 				if (!SEC_hasRights('documents.admin') ) {
 				    if (!in_array($active,array(1,2))) $active = 1;
 				}
@@ -2231,8 +2232,13 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 							   ";
 				    }
 			    }
+				$saveDocUrl = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', ''));
+				if ($saveDocUrl === '') {
+					echo COM_refresh($_CONF['site_url'] . '/404.php');
+					exit();
+				}
 				$sql = "UPDATE {$_TABLES['documents_docs']} SET $sql "
-				 . "WHERE doc_url='{$_REQUEST['doc_url']}' ";
+				 . "WHERE doc_url='{$saveDocUrl}' ";
 				DB_query($sql);		
 			}
 			
