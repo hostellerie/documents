@@ -34,6 +34,17 @@ Compatibility target:
 - Image previews now pass local Documents filenames to the restricted image endpoint.
 - Radio rendering no longer indexes the wrong field value/select array.
 
+### Save-path stabilization
+
+- Document saves now normalize the category ID before SQL and reject missing categories before field processing.
+- Dynamic field values no longer read `$_REQUEST[$var_name]` blindly; missing/array values are handled safely.
+- Image upload detection now verifies the `$_FILES` entry and temporary filename before calling `is_uploaded_file()`.
+- New document slugs are built from the normalized request source instead of reading a dynamic `$_POST` key directly.
+- New document checkbox and general field values now use guarded request access.
+- New document permissions are normalized through `DOCUMENTS_requestPermissions()` before value rows are inserted.
+- Group saves normalize name/help values and cast the group ID before SQL.
+- Select-option saves normalize name/value/group/order values and cast the option ID before SQL.
+
 ### List rendering
 
 - Updated `include_lists.php` metadata to 1.1.2.
@@ -71,7 +82,8 @@ Compatibility target:
 
 ### Remaining 1.1.2 work
 
-- Continue the request/SQL audit in the remaining save paths for malformed-input handling and stronger per-handler normalization.
+- Finalize normalization of the `documents_docs` row create/update path and the remaining edit/new malformed-input guards.
+- Review `save_cat` and `save_field` for stronger per-handler normalization beyond the global request-default safety net.
 - Confirm the PHP 5.6/7.4/8.1 lint workflow completes successfully on the final 1.1.2 commit.
 - Run manual functional tests on Geeklog 2.1.1 and 2.2.2 before considering 1.1.2 complete.
 
