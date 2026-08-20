@@ -1322,14 +1322,18 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			// Prepare strings for insertion
 			
             // Todo check if cat_url is well formated			
-			$_REQUEST['cat_url'] = urlencode($_REQUEST['cat_url']);
+			$_REQUEST['cat_url'] = urlencode((string) DOCUMENTS_requestValue($_REQUEST, 'cat_url', ''));
+			$_REQUEST['cat_name'] = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'cat_name', ''));
+			$_REQUEST['css'] = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'css', ''));
+			$_REQUEST['template'] = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'template', ''));
+			$_REQUEST['cat_help'] = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'cat_help', ''));
+			$_REQUEST['custom_header'] = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'custom_header', ''));
+			$_REQUEST['custom_footer'] = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'custom_footer', ''));
 			
 			// Convert array values to numeric permission values
 			
-			if (is_array($_REQUEST['perm_owner']) OR is_array($_REQUEST['perm_group']) OR is_array($_REQUEST['perm_members']) OR is_array($_REQUEST['perm_anon'])) {
-				list($_REQUEST['perm_owner'],$_REQUEST['perm_group'],$_REQUEST['perm_members'],$_REQUEST['perm_anon']) 
-				= SEC_getPermissionValues($_REQUEST['perm_owner'],$_REQUEST['perm_group'],$_REQUEST['perm_members'],$_REQUEST['perm_anon']);
-		    }
+			list($_REQUEST['perm_owner'], $_REQUEST['perm_group'], $_REQUEST['perm_members'], $_REQUEST['perm_anon']) =
+			    DOCUMENTS_requestPermissions($_REQUEST, array(3, 3, 2, 2));
 			
 			( empty($_REQUEST['cat_order']) ) ? $_REQUEST['cat_order'] = 0 : 0;
 
@@ -1341,7 +1345,15 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 				}
 			}
 
-			if ( (!empty($_REQUEST['cid'])) && (is_numeric($_REQUEST['cid'])) ) {
+			$_REQUEST['cid'] = DOCUMENTS_requestInt($_REQUEST, 'cid', 0);
+			$_REQUEST['cat_order'] = DOCUMENTS_requestInt($_REQUEST, 'cat_order', 0);
+			$_REQUEST['map'] = DOCUMENTS_requestInt($_REQUEST, 'map', 0);
+			$_REQUEST['list_index'] = DOCUMENTS_requestInt($_REQUEST, 'list_index', 0);
+			$_REQUEST['submitable'] = DOCUMENTS_requestInt($_REQUEST, 'submitable', 0);
+			$_REQUEST['owner_id'] = DOCUMENTS_requestInt($_REQUEST, 'owner_id', 0);
+			$_REQUEST['group_id'] = DOCUMENTS_requestInt($_REQUEST, 'group_id', 0);
+
+			if ($_REQUEST['cid'] > 0) {
 				
 				//Edit mode 
 				
@@ -1438,13 +1450,15 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			// Delete field
 			$new = -1;
-			if ($_REQUEST['op'] == 'delete' && !empty($_REQUEST['fid']) && is_numeric($_REQUEST['fid'])) {
+			$saveFieldId = DOCUMENTS_requestInt($_REQUEST, 'fid', 0);
+			$saveFieldCatId = DOCUMENTS_requestInt($_REQUEST, 'cat_id', 0);
+			if (DOCUMENTS_requestValue($_REQUEST, 'op') === 'delete' && $saveFieldId > 0) {
 			   
 			    // delete the field from documents_fields table
-			    DB_query ("DELETE FROM {$_TABLES['documents_fields']} WHERE fid = ". $_REQUEST['fid']);
+			    DB_query ("DELETE FROM {$_TABLES['documents_fields']} WHERE fid = " . $saveFieldId);
 			   
 			    // delete all fields from the documents_values table
-			    DB_query ("DELETE FROM {$_TABLES['documents_values']} WHERE field_id = ". $_REQUEST['fid']);
+			    DB_query ("DELETE FROM {$_TABLES['documents_values']} WHERE field_id = " . $saveFieldId);
 			    
 				// delete complete, return to field list
 				if (DB_error()) {
@@ -1484,14 +1498,21 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 
 				// Convert array values to numeric permission values
 				
-				if (is_array($_REQUEST['perm_owner']) OR is_array($_REQUEST['perm_group']) OR is_array($_REQUEST['perm_members']) OR is_array($_REQUEST['perm_anon'])) {
-					list($_REQUEST['perm_owner'],$_REQUEST['perm_group'],$_REQUEST['perm_members'],$_REQUEST['perm_anon']) 
-					= SEC_getPermissionValues($_REQUEST['perm_owner'],$_REQUEST['perm_group'],$_REQUEST['perm_members'],$_REQUEST['perm_anon']);
-				}
+				list($_REQUEST['perm_owner'], $_REQUEST['perm_group'], $_REQUEST['perm_members'], $_REQUEST['perm_anon']) =
+				    DOCUMENTS_requestPermissions($_REQUEST, array(3, 3, 2, 2));
 				
 				( empty($_REQUEST['f_order']) ) ? $_REQUEST['f_order'] = 0 : 0;
 
-				if ( (!empty($_REQUEST['fid'])) && (is_numeric($_REQUEST['fid'])) ) {
+				$_REQUEST['fid'] = $saveFieldId;
+				$_REQUEST['cat_id'] = $saveFieldCatId;
+				$_REQUEST['f_order'] = DOCUMENTS_requestInt($_REQUEST, 'f_order', 0);
+				$_REQUEST['sel_id'] = DOCUMENTS_requestInt($_REQUEST, 'sel_id', 0);
+				$_REQUEST['f_required'] = DOCUMENTS_requestInt($_REQUEST, 'f_required', 0);
+				$_REQUEST['f_on_list'] = DOCUMENTS_requestInt($_REQUEST, 'f_on_list', 0);
+				$_REQUEST['owner_id'] = DOCUMENTS_requestInt($_REQUEST, 'owner_id', 0);
+				$_REQUEST['group_id'] = DOCUMENTS_requestInt($_REQUEST, 'group_id', 0);
+
+				if ($saveFieldId > 0) {
 					
 					// Todo query if f_type or sel_id change then update existing documents
 					
@@ -1574,7 +1595,7 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 					// Todo update existing documents
 				}
 				
-				DOCUMENTS_reorderFields($_REQUEST['cat_id']);	
+				DOCUMENTS_reorderFields($saveFieldCatId);	
 				
 				// Save complete, return to field list
 				
