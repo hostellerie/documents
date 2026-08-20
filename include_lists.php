@@ -163,8 +163,8 @@ function plugin_getListField_documents_categories($fieldname, $fieldvalue, $A, $
 				if ($B['v_value'] != '') {
 				    
 					$doc_images .= '<div class="document_light" style="float:left; width:75px; min-height: 150px; margin:0px 10px;">' . COM_createLink('<img class="document_img" src="' 
-					. $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . $_DOCUMENTS_CONF['images_url'] 
-					. $B['v_value'] . '&amp;w=75&amp;h=75&amp;q=90&amp;zc=1" vspace="5" hspace="0" width="75" height="75"
+					. $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . rawurlencode(basename($B['v_value'])) 
+					. '&amp;w=75&amp;h=75" vspace="5" hspace="0" width="75" height="75"
 					border="0" align="none" alt="' . $B['name'] . '" title="' . $B['name'] . '" />', $display_url) . '<br'.XHTML.'>' . $title. '</div>';
 					$images++;
 			    } else {
@@ -640,8 +640,8 @@ function plugin_getListField_documents_docs($fieldname, $fieldvalue, $A, $icon_a
 				if ($fieldvalue == $A['image'] && $fieldvalue != '') {
 					//image
 					$doc_url = $_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url'] . '/' . $A['doc_url'];
-					$image = '<img class="document_img" src="' . $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . $_DOCUMENTS_CONF['images_url'] .
-						$fieldvalue . '&amp;w=200&amp;h=200" align="top" alt="" />';
+					$image = '<img class="document_img" src="' . $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . rawurlencode(basename($fieldvalue)) .
+						'&amp;w=200&amp;h=200" align="top" alt="" />';
 						
 					$retval = COM_createLink($image, $doc_url);
 
