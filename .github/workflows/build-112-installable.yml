@@ -1,6 +1,7 @@
 name: Build Documents 1.1.2 installable test package
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - modernize-1.1.2
