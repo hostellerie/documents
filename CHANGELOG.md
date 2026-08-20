@@ -20,6 +20,7 @@ Compatibility target:
 - Added `DOCUMENTS_customTemplateReadDir()` so existing installations can temporarily read legacy `data_documents/templates/` content until the physical 1.1.7 migration.
 - The public entry point now loads the compatibility layer before `include_html.php`.
 - Plugin development metadata is now 1.1.2.
+- Confirmed that the Geeklog database APIs used by this stabilization line (`DB_count()` and `DB_escapeString()`) predate the Geeklog 2.1.1 compatibility floor.
 
 ### Public controller and rendering
 
@@ -28,6 +29,8 @@ Compatibility target:
 - Fixed the `list_fields` / `list_groups` menu comparison.
 - Added safe category/document existence checks before reading database result keys.
 - Normalized edit-category, edit-field, edit-group and edit-select identifiers before SQL lookup.
+- New-document routing now validates and escapes the category URL and rejects a missing category before building the edit form.
+- Document editing now initializes the document structure, escapes the requested document URL for SQL, rejects missing documents before access checks, and validates the numeric category ID before loading category metadata.
 - Initialized rendering accumulators and comment/OpenGraph defaults before use.
 - Custom templates now prefer the multisite-safe Documents data directory and use the historical directory only as a temporary read fallback.
 - Missing/invalid custom-template directories fall back to the standard plugin templates instead of constructing an arbitrary path.
