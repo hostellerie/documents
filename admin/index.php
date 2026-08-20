@@ -64,6 +64,8 @@ $display .= '<p><a href="'
     . htmlspecialchars($pluginName, ENT_QUOTES, 'UTF-8')
     . '</a></p>';
 $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+
+// Geeklog 2.1.1 and newer use COM_createHTMLDocument() for full-page output.
 $display = COM_createHTMLDocument(
     $display,
     array('pagetitle' => $pluginName)
