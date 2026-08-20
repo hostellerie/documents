@@ -122,7 +122,7 @@ jobs:
             rel="${path#build/documents/}"
             IFS='/' read -r -a parts <<< "$rel"
             for part in "${parts[@]}"; do
-              if [[ "$part" == .* ]]; then
+              if [[ "$part" == .* && "$part" != ".htaccess" ]]; then
                 printf 'Unsafe archive path component: %s\n' "$rel" >> test-artifacts/lint-report.txt
                 unsafe=1
                 break
@@ -136,10 +136,17 @@ jobs:
             exit 0
           fi
 
+          if [ ! -f build/documents/public_html/.htaccess ]; then
+            printf 'RESULT: FAILED - public_html/.htaccess missing from archive.\n' >> test-artifacts/lint-report.txt
+            touch /tmp/documents-lint-failed
+            exit 0
+          fi
+
           cd build
           zip -r ../test-artifacts/documents-1.1.2-test.zip documents >/dev/null
           cd ..
-          printf 'Archive filename safety check: PASS\n' >> test-artifacts/lint-report.txt
+          printf 'Archive filename safety check: PASS (.htaccess explicitly allowed)\n' >> test-artifacts/lint-report.txt
+          printf 'Rewrite file check: PASS - public_html/.htaccess included.\n' >> test-artifacts/lint-report.txt
           printf 'RESULT: PASS - documents-1.1.2-test.zip created.\n' >> test-artifacts/lint-report.txt
 
       - name: Commit diagnostic and package
