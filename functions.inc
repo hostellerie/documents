@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.2                                                    |
+// | Documents Plugin 1.1.1                                                    |
 // +---------------------------------------------------------------------------+
 // | functions.inc                                                             |
 // |                                                                           |
@@ -37,30 +37,10 @@ if (file_exists($langfile)) {
     require_once $plugin_path . 'language/english.php';
 }
 
-/*
- * Always start with safe defaults. config::get_config() returns false when a
- * configuration group is not available in the current request, which must not
- * then be used as an array (notably on PHP 8.1).
- */
-$documents_defaults = array(
-    'documents_folder'      => 'documents',
-    'documents_main_header' => '',
-    'documents_main_footer' => '',
-    'default_permissions'   => array(3, 3, 2, 2)
-);
-
-if (!isset($_DOCUMENTS_CONF) || !is_array($_DOCUMENTS_CONF)) {
+if (!isset($_DOCUMENTS_CONF)) {
     require_once $_CONF['path_system'] . 'classes/config.class.php';
     $documents_config = config::get_instance();
-    $documents_loaded_config = $documents_config->get_config('documents');
-
-    if (!is_array($documents_loaded_config)) {
-        $documents_loaded_config = array();
-    }
-
-    $_DOCUMENTS_CONF = array_merge($documents_defaults, $documents_loaded_config);
-} else {
-    $_DOCUMENTS_CONF = array_merge($documents_defaults, $_DOCUMENTS_CONF);
+    $_DOCUMENTS_CONF = $documents_config->get_config('documents');
 }
 
 /**
@@ -279,3 +259,369 @@ function plugin_geticon_documents()
 
     return $_CONF['site_admin_url'] . '/plugins/documents/images/documents.png';
 }
+
+function plugin_chkVersion_documents()
+{
+    global $_CONF;
+
+    require_once $_CONF['path'] . 'plugins/documents/autoinstall.php';
+    $inst_parms = plugin_autoinstall_documents('documents');
+
+    return $inst_parms['info']['pi_version'];
+}
+
+function plugin_upgrade_documents()
+{
+    global $_CONF, $_TABLES;
+
+    $installed_version = DB_getItem(
+        $_TABLES['plugins'],
+        'pi_version',
+        "pi_name = 'documents'"
+    );
+    $code_version = plugin_chkVersion_documents();
+
+    if ($installed_version == $code_version) {
+        return true;
+    }
+
+    require_once $_CONF['path'] . 'plugins/documents/autoinstall.php';
+
+    if (!plugin_compatible_with_this_version_documents('documents')) {
+        return 3002;
+    }
+
+    switch ($installed_version) {
+        case '1.0':
+            DB_query("ALTER TABLE {$_TABLES['documents_cat']} ADD map INT AFTER css");
+            // Fall through.
+        case '1.0.0':
+            DB_query("ALTER TABLE {$_TABLES['documents_cat']} CHANGE COLUMN map map INT AFTER css");
+            // Fall through.
+        case '1.0.1':
+        case '1.1.0':
+        default:
+            $inst_parms = plugin_autoinstall_documents('documents');
+            $pi_gl_version = $inst_parms['info']['pi_gl_version'];
+            DB_query(
+                "UPDATE {$_TABLES['plugins']} SET pi_version = '"
+                . DB_escapeString($code_version) . "', pi_gl_version = '"
+                . DB_escapeString($pi_gl_version) . "' WHERE pi_name = 'documents'"
+            );
+            break;
+    }
+
+    return true;
+}
+
+function plugin_autouninstall_documents()
+{
+    return array(
+        'tables' => array(
+            'documents_cat',
+            'documents_docs',
+            'documents_fields',
+            'documents_values',
+            'documents_selects',
+            'documents_selects_group',
+            'documents_pics'
+        ),
+        'groups' => array('Documents Admin'),
+        'features' => array('documents.admin', 'documents.publish'),
+        'php_blocks' => array(),
+        'vars' => array()
+    );
+}
+
+function plugin_displaycomment_documents($id, $cid, $title, $order, $format, $page, $view)
+{
+    global $_TABLES, $LANG_ACCESS, $LANG_STATIC;
+
+    $retval = '';
+    $safeId = DB_escapeString($id);
+
+    if (!defined('DOC_URL')) {
+        define('DOC_URL', $id);
+    }
+
+    $sql = "SELECT c.cat_url FROM {$_TABLES['documents_values']} AS v "
+        . "LEFT JOIN {$_TABLES['documents_fields']} AS f ON f.fid = v.field_id "
+        . "LEFT JOIN {$_TABLES['documents_cat']} AS c ON c.cid = f.cat_id "
+        . "LEFT JOIN {$_TABLES['documents_docs']} AS d ON d.doc_url = v.doc_url "
+        . "WHERE v.doc_url = '{$safeId}' LIMIT 1";
+    $res = DB_query($sql);
+    $cat = DB_fetchArray($res);
+
+    if (!defined('CAT_URL')) {
+        define('CAT_URL', isset($cat['cat_url']) ? $cat['cat_url'] : '');
+    }
+
+    $sql = "SELECT COUNT(*) AS count, owner_id, group_id, perm_owner, "
+        . "perm_group, perm_members, perm_anon FROM {$_TABLES['documents_docs']} "
+        . "WHERE (doc_url = '{$safeId}') AND (active = 1)"
+        . COM_getPermSQL('AND') . ' GROUP BY doc_url';
+    $result = DB_query($sql);
+    $A = DB_fetchArray($result);
+
+    if (!is_array($A) || empty($A['count'])) {
+        return COM_startBlock(
+            $LANG_ACCESS['accessdenied'],
+            '',
+            COM_getBlockTemplate('_msg_block', 'header')
+        ) . $LANG_STATIC['deny_msg']
+        . COM_endBlock(COM_getBlockTemplate('_msg_block', 'footer'));
+    }
+
+    $A['commentcode'] = 0;
+    $comment_page = 1;
+    $delete_option = SEC_hasRights('documents.admin')
+        && SEC_hasAccess(
+            $A['owner_id'],
+            $A['group_id'],
+            $A['perm_owner'],
+            $A['perm_group'],
+            $A['perm_members'],
+            $A['perm_anon']
+        ) == 3;
+
+    $retval .= CMT_userComments(
+        $id,
+        $title,
+        'documents',
+        $order,
+        $format,
+        $cid,
+        $comment_page,
+        $view,
+        $delete_option,
+        $A['commentcode']
+    );
+
+    return $retval;
+}
+
+function plugin_savecomment_documents($title, $comment, $id, $pid, $postmode)
+{
+    global $_CONF, $_TABLES, $LANG03, $_DOCUMENTS_CONF;
+
+    $retval = '';
+    $safeId = DB_escapeString($id);
+
+    $sql = "SELECT c.cat_url FROM {$_TABLES['documents_values']} AS v "
+        . "LEFT JOIN {$_TABLES['documents_fields']} AS f ON f.fid = v.field_id "
+        . "LEFT JOIN {$_TABLES['documents_cat']} AS c ON c.cid = f.cat_id "
+        . "WHERE v.doc_url = '{$safeId}' LIMIT 1";
+    $res = DB_query($sql);
+    $A = DB_fetchArray($res);
+    $catUrl = is_array($A) && isset($A['cat_url']) ? $A['cat_url'] : '';
+
+    $ret = CMT_saveComment($title, $comment, $id, $pid, 'documents', $postmode);
+    if ($ret > 0) {
+        $retval .= COM_siteHeader('menu', $LANG03[1])
+            . CMT_commentForm(
+                $title,
+                $comment,
+                $id,
+                $pid,
+                'documents',
+                $LANG03[14],
+                $postmode
+            )
+            . COM_siteFooter();
+    } else {
+        $cid = DB_insertId();
+        $url = $url2 = COM_buildUrl(
+            $_DOCUMENTS_CONF['site_url'] . '/' . $catUrl . '/' . $id
+        );
+
+        if (($_CONF['commentsubmission'] == 1) && !SEC_hasRights('comment.submit')) {
+            $url .= ($_CONF['url_rewrite'] ? '?' : '&') . 'msg=15';
+        } else {
+            $uid = (int) DB_getItem(
+                $_TABLES['documents_docs'],
+                'owner_id',
+                "doc_url = '{$safeId}'"
+            );
+            $username = DB_getItem(
+                $_TABLES['comments'],
+                'name',
+                'cid = ' . (int) $cid
+            );
+            DOCUMENTS_sendNotification($title, $comment, $uid, $username, $url2);
+        }
+
+        $retval = COM_refresh($url);
+    }
+
+    return $retval;
+}
+
+function plugin_deletecomment_documents($cid, $id)
+{
+    global $_CONF, $_TABLES, $_USER, $_DOCUMENTS_CONF;
+
+    $retval = '';
+    $safeId = DB_escapeString($id);
+    $result = DB_query(
+        "SELECT owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+        . "FROM {$_TABLES['documents_docs']} WHERE doc_url = '{$safeId}'"
+    );
+    $A = DB_fetchArray($result);
+
+    $allowed = is_array($A)
+        && SEC_hasRights('documents.admin')
+        && SEC_hasAccess(
+            $A['owner_id'],
+            $A['group_id'],
+            $A['perm_owner'],
+            $A['perm_group'],
+            $A['perm_members'],
+            $A['perm_anon']
+        ) == 3;
+
+    if ($allowed) {
+        CMT_deleteComment((int) $cid, $id, 'documents');
+        $catUrl = defined('CAT_URL') ? CAT_URL : '';
+        $retval .= COM_refresh(
+            COM_buildUrl($_DOCUMENTS_CONF['site_url'] . '/' . $catUrl . '/' . $id)
+        );
+    } else {
+        $username = isset($_USER['username']) ? $_USER['username'] : 'unknown';
+        $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'unknown';
+        COM_errorLog(
+            "User {$username} (IP: {$ip}) tried to illegally delete comment "
+            . (int) $cid . " from documents {$id}"
+        );
+        $retval .= COM_refresh($_CONF['site_url'] . '/index.php');
+    }
+
+    return $retval;
+}
+
+function plugin_getcommenturlid_documents()
+{
+    global $_DOCUMENTS_CONF;
+
+    $catUrl = defined('CAT_URL') ? CAT_URL : '';
+    $docUrl = defined('DOC_URL') ? DOC_URL : '';
+
+    return array(
+        $_DOCUMENTS_CONF['site_url'] . '/' . $catUrl . '/' . $docUrl,
+        ''
+    );
+}
+
+/**
+ * Filter submitted variables in place.
+ *
+ * @param array $vars
+ * @param array $arr
+ */
+function DOCUMENTS_filterVars($vars, &$arr)
+{
+    foreach ($vars as $var => $type) {
+        if (!isset($arr[$var])) {
+            $arr[$var] = '';
+        }
+
+        switch ($type) {
+            case 'number':
+                $arr[$var] = COM_applyFilter($arr[$var], true);
+                break;
+
+            case 'html':
+                $arr[$var] = COM_checkHTML($arr[$var], 'documents.admin');
+                break;
+
+            case 'text':
+                $arr[$var] = htmlspecialchars(
+                    strip_tags(COM_stripslashes($arr[$var])),
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+                break;
+
+            case 'alpha':
+            default:
+                $arr[$var] = COM_applyFilter($arr[$var], false);
+                break;
+        }
+    }
+}
+
+function DOCUMENTS_menuCat()
+{
+    global $_TABLES, $_DOCUMENTS_CONF, $LANG_DOCUMENTS_1;
+
+    $result = DB_query(
+        "SELECT * FROM {$_TABLES['documents_cat']} ORDER BY cat_order ASC"
+    );
+    $retval = '<ul>';
+
+    while ($A = DB_fetchArray($result)) {
+        $retval .= '<li><a href="'
+            . $_DOCUMENTS_CONF['site_url'] . '/'
+            . htmlspecialchars($A['cat_url'], ENT_QUOTES, 'UTF-8') . '">'
+            . htmlspecialchars($A['cat_name'], ENT_QUOTES, 'UTF-8')
+            . '</a></li>';
+    }
+
+    $retval .= '<li><a href="' . $_DOCUMENTS_CONF['site_url'] . '">'
+        . $LANG_DOCUMENTS_1['see_all_docs'] . '</a></li></ul>';
+
+    return $retval;
+}
+
+/**
+ * Maps callback. This function is harmless when Maps is absent because it is
+ * only called by Maps when that optional plugin is active.
+ */
+function MAPS_ReadMore_documents()
+{
+    global $LANG_DOCUMENTS_1;
+
+    return $LANG_DOCUMENTS_1['read_more_marker'];
+}
+
+function DOCUMENTS_sendNotification($title, $comment, $uid, $username, $url)
+{
+    global $_CONF, $LANG03, $LANG08, $LANG_DOCUMENTS_1;
+
+    $title = stripslashes($title);
+    $comment = stripslashes($comment);
+
+    if (preg_match('/<.*>/', $comment) != 0) {
+        $comment = strip_tags($comment);
+    }
+
+    $uid = (int) $uid;
+    if ($uid < 1) {
+        $uid = 1;
+    }
+
+    if (($uid == 1) && !empty($username)) {
+        $author = $username;
+    } else {
+        $author = COM_getDisplayName($uid);
+    }
+
+    $mailbody = $LANG03[16] . ': ' . $title . "\n"
+        . $LANG03[5] . ': ' . $author . "\n";
+
+    if ($_CONF['emailstorieslength'] > 0) {
+        if ($_CONF['emailstorieslength'] > 1) {
+            $comment = MBYTE_substr($comment, 0, $_CONF['emailstorieslength']) . '...';
+        }
+        $mailbody .= $comment . "\n\n";
+    }
+
+    $mailsubject = $LANG_DOCUMENTS_1['new_comment'] . ' ' . $_CONF['site_name'];
+    $mailbody .= $LANG03[39] . ' <' . $url . ">\n\n";
+    $mailbody .= "\n------------------------------\n";
+    $mailbody .= "\n" . $LANG08[34] . "\n";
+    $mailbody .= "\n------------------------------\n";
+
+    return COM_mail($_CONF['site_mail'], $mailsubject, $mailbody);
+}
+
+?>
