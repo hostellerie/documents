@@ -725,6 +725,8 @@ function plugin_getListField_groups_fields($fieldname, $fieldvalue, $A, $icon_ar
 {
 
     global $_DOCUMENTS_CONF;
+
+    $retval = '';
 	
 	switch($fieldname) {
 			
@@ -749,6 +751,8 @@ function plugin_getListField_groups_fields($fieldname, $fieldvalue, $A, $icon_ar
 function DOCUMENTS_listSelects($group)
 {
     global $_CONF, $_DOCUMENTS_CONF, $_TABLES, $LANG_DOCUMENTS_1;
+
+    $group = (int) $group;
 
     require_once $_CONF['path_system'] . 'lib-admin.php';
 
@@ -784,7 +788,9 @@ function DOCUMENTS_listSelects($group)
 			WHERE 1=1";
 			
 				
-	if($group > 0) $sql .= " AND s_group = '$group'";
+	if ($group > 0) {
+		$sql .= " AND s_group = '{$group}'";
+	}
 
     $query_arr = array(
         'sql'            => $sql,
@@ -812,6 +818,8 @@ function plugin_getListField_selects_fields($fieldname, $fieldvalue, $A, $icon_a
 {
 
     global $_DOCUMENTS_CONF;
+
+    $retval = '';
 	
 	switch($fieldname) {
 			
