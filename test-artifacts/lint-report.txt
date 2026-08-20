@@ -1,5 +1,5 @@
 Documents 1.1.2 test package
-Commit: 0bcb59284b3e9dccbb8266a94d9df20ecf5b47ba
+Commit: 2c329757b0a66201879ba87f435c07c7826556ce
 
 === PHP 5.6 ===
 PHP 5.6.40 (cli) 
@@ -52,6 +52,7 @@ No syntax errors detected in ./language/english.php
 No syntax errors detected in ./language/french_france_utf-8.php
 No syntax errors detected in ./include_compat.php
 
-Archive filename safety check: PASS (.htaccess explicitly allowed)
-Rewrite file check: PASS - public_html/.htaccess included.
+Archive filename safety check: PASS - no dotfiles.
+Rewrite template check: PASS - public_html/htaccess.txt included.
+Postinstall check: plugin_postinstall_documents() will create public_html/documents/.htaccess.
 RESULT: PASS - documents-1.1.2-test.zip created.
