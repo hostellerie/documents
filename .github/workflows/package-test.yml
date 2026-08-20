@@ -46,7 +46,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build installable archive
+        shell: bash
         run: |
+          rm -rf build
           mkdir -p build/documents
           rsync -a \
             --exclude='.git' \
@@ -54,7 +56,25 @@ jobs:
             --exclude='build' \
             --exclude='tools' \
             --exclude='test-artifacts' \
+            --exclude='.gitkeep' \
             ./ build/documents/
+
+          unsafe=0
+          while IFS= read -r -d '' path; do
+            rel="${path#build/documents/}"
+            IFS='/' read -r -a parts <<< "$rel"
+            for part in "${parts[@]}"; do
+              if [[ "$part" == .* ]]; then
+                echo "Unsafe archive path component: $rel"
+                unsafe=1
+                break
+              fi
+            done
+          done < <(find build/documents -mindepth 1 -print0)
+          if [ "$unsafe" -ne 0 ]; then
+            exit 1
+          fi
+
           cd build
           zip -r documents-1.1.2-test.zip documents
 
