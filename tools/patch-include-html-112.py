@@ -14,27 +14,27 @@ def replace_once(old, new, label):
 
 
 replace_once(
-    "\t\tif (isset($_REQUEST['cid']) &&  $_REQUEST['cid']> 0) {\n\t\t    \n\t\t\t// Get category\n\t\t\t\n\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$_REQUEST['cid']}\";\n\t\t\t$res = DB_query($sql);\n\t\t\t$cat = DB_fetchArray($res);\n\t\t\tif ( $cat['submitable'] == 0 && !SEC_hasRights('documents.admin') ) {",
-    "\t\t$saveCid = DOCUMENTS_requestInt($_REQUEST, 'cid', 0);\n\t\tif ($saveCid > 0) {\n\t\t    \n\t\t\t// Get category\n\t\t\t\n\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$saveCid}\";\n\t\t\t$res = DB_query($sql);\n\t\t\t$cat = DB_fetchArray($res);\n\t\t\tif (!is_array($cat) || empty($cat['cid'])) {\n\t\t\t\techo COM_refresh($_CONF['site_url'] . '/404.php');\n\t\t\t\texit();\n\t\t\t}\n\t\t\tif ( $cat['submitable'] == 0 && !SEC_hasRights('documents.admin') ) {",
-    'save category guard'
+    "\t\t\t\t\t\t$doc_url = $_POST[$A['var_name']];\n\t\t\t\t\t\t$doc_url = DOCUMENTS_slugify($doc_url);\n\t\t\t\t\t\tdefine(\"DOC_URL\", $unique . '-' . strtolower($doc_url));",
+    "\t\t\t\t\t\t$titleValue = DOCUMENTS_requestValue($_REQUEST, $A['var_name'], '');\n\t\t\t\t\t\tif (is_array($titleValue)) {\n\t\t\t\t\t\t\t$titleValue = '';\n\t\t\t\t\t\t}\n\t\t\t\t\t\t$doc_url = DOCUMENTS_slugify((string) $titleValue);\n\t\t\t\t\t\tif ($doc_url === '') {\n\t\t\t\t\t\t\t$doc_url = 'document';\n\t\t\t\t\t\t}\n\t\t\t\t\t\tdefine(\"DOC_URL\", $unique . '-' . strtolower($doc_url));",
+    'creation slug source'
 )
 
 replace_once(
-    "\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_fields']} WHERE cat_id = {$_REQUEST['cid']} ORDER BY f_order ASC\";",
-    "\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_fields']} WHERE cat_id = {$saveCid} ORDER BY f_order ASC\";",
-    'save fields category id'
+    "\t\t\t\t\t// Default fields\n\t\t\t\t\tif ($_REQUEST['perm_owner'] == '') {\n\t\t\t\t\t\tSEC_setDefaultPermissions($_REQUEST, $_DOCUMENTS_CONF['default_permissions']);\n\t\t\t\t\t}\n\t\t\t\t\t\n\t\t\t\t\t// Convert array values to numeric permission values\n\t\t\t\t\tif (is_array($_REQUEST['perm_owner']) OR is_array($_REQUEST['perm_group']) OR is_array($_REQUEST['perm_members']) OR is_array($_REQUEST['perm_anon'])) {\n\t\t\t\t\t\tlist($perm_owner, $perm_group, $perm_members, $perm_anon) \n\t\t\t\t\t\t= SEC_getPermissionValues($_REQUEST['perm_owner'],$_REQUEST['perm_group'],$_REQUEST['perm_members'],$_REQUEST['perm_anon']);\n\t\t\t\t\t}",
+    "\t\t\t\t\t// Default fields and permissions\n\t\t\t\t\tif (DOCUMENTS_requestValue($_REQUEST, 'perm_owner', '') === '') {\n\t\t\t\t\t\tSEC_setDefaultPermissions($_REQUEST, $_DOCUMENTS_CONF['default_permissions']);\n\t\t\t\t\t}\n\t\t\t\t\tlist($perm_owner, $perm_group, $perm_members, $perm_anon) = DOCUMENTS_requestPermissions($_REQUEST, array(3, 3, 2, 2));",
+    'creation permissions'
 )
 
 replace_once(
-    "\t\t\t\t\t$value = addslashes($_REQUEST[$A['var_name']]);",
-    "\t\t\t\t\t$fieldValue = DOCUMENTS_requestValue($_REQUEST, $A['var_name'], '');\n\t\t\t\t\tif (is_array($fieldValue)) {\n\t\t\t\t\t\t$fieldValue = '';\n\t\t\t\t\t}\n\t\t\t\t\t$value = addslashes((string) $fieldValue);",
-    'dynamic field value'
+    "\t\t\t\t\t\tif($A['f_type'] == 'checkbox') {\n\t\t\t\t\t\t    ($_REQUEST[$A['var_name']] == 1 ) ? $value = 1 : $value = 0;",
+    "\t\t\t\t\t\tif($A['f_type'] == 'checkbox') {\n\t\t\t\t\t\t    $value = ((int) DOCUMENTS_requestValue($_REQUEST, $A['var_name'], 0) === 1) ? 1 : 0;",
+    'creation checkbox value'
 )
 
 replace_once(
-    "\t\t\t\t\t\tif(is_uploaded_file($_FILES[$name]['tmp_name'])) {",
-    "\t\t\t\t\t\tif (isset($_FILES[$name]) && is_array($_FILES[$name])\n\t\t\t\t\t\t    && !empty($_FILES[$name]['tmp_name'])\n\t\t\t\t\t\t    && is_uploaded_file($_FILES[$name]['tmp_name'])) {",
-    'image upload input guard'
+    "\t\t\t\t\t\t        $value = addslashes($_REQUEST[$A['var_name']]);",
+    "\t\t\t\t\t\t        $createValue = DOCUMENTS_requestValue($_REQUEST, $A['var_name'], '');\n\t\t\t\t\t\t        if (is_array($createValue)) {\n\t\t\t\t\t\t            $createValue = '';\n\t\t\t\t\t\t        }\n\t\t\t\t\t\t        $value = addslashes((string) $createValue);",
+    'creation field value'
 )
 
 if text == original:
