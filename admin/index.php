@@ -72,7 +72,18 @@ if ($documentsDebug === 'auth') {
 
 $display = '';
 
-if (!SEC_hasRights('documents.admin')) {
+$hasAdminRights = SEC_hasRights('documents.admin');
+
+if ($documentsDebug === 'rights') {
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Documents debug RIGHTS: ' . ($hasAdminRights ? 'YES' : 'NO') . "\n";
+    echo 'Language loaded: ' . (isset($LANG_DOCUMENTS_1['plugin_name']) ? 'YES' : 'NO') . "\n";
+    echo 'Config loaded: ' . (isset($_DOCUMENTS_CONF) && is_array($_DOCUMENTS_CONF) ? 'YES' : 'NO') . "\n";
+    echo 'site_url: ' . (isset($_DOCUMENTS_CONF['site_url']) ? $_DOCUMENTS_CONF['site_url'] : '(missing)') . "\n";
+    exit;
+}
+
+if (!$hasAdminRights) {
     $username = isset($_USER['username']) ? $_USER['username'] : 'unknown';
 
     $display .= COM_siteHeader('menu', $MESSAGE[30]);
@@ -95,11 +106,35 @@ $documentsUrl = isset($_DOCUMENTS_CONF['site_url'])
     ? $_DOCUMENTS_CONF['site_url']
     : $_CONF['site_url'] . '/documents';
 
+if ($documentsDebug === 'header') {
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo "Documents debug HEADER: before COM_siteHeader().\n";
+    $header = COM_siteHeader('menu', $pluginName);
+    echo 'COM_siteHeader length: ' . strlen($header) . "\n";
+    exit;
+}
+
 $display .= COM_siteHeader('menu', $pluginName);
+
+if ($documentsDebug === 'block') {
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Documents debug BLOCK: header length=' . strlen($display) . "\n";
+    $block = COM_startBlock($pluginName);
+    echo 'COM_startBlock length: ' . strlen($block) . "\n";
+    exit;
+}
+
 $display .= COM_startBlock($pluginName);
 $display .= '<p><a href="' . htmlspecialchars($documentsUrl, ENT_QUOTES, 'UTF-8') . '">'
     . htmlspecialchars($pluginName, ENT_QUOTES, 'UTF-8') . '</a></p>';
 $display .= COM_endBlock();
 $display .= COM_siteFooter();
+
+if ($documentsDebug === 'output') {
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Documents debug OUTPUT: display length=' . strlen($display) . "\n";
+    echo 'First 120 chars: ' . substr(strip_tags($display), 0, 120) . "\n";
+    exit;
+}
 
 COM_output($display);
