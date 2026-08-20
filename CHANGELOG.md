@@ -11,7 +11,9 @@ Compatibility target:
 
 - Added `include_compat.php` for stabilization helpers shared by the 1.1.x line.
 - Added named document status constants for inactive, active, draft and submission states.
-- Added `DOCUMENTS_requestValue()` to avoid undefined-index notices on request arrays.
+- Added `DOCUMENTS_requestValue()` and `DOCUMENTS_requestInt()` to avoid undefined-index notices and normalize numeric identifiers.
+- Added `DOCUMENTS_requestPermissions()` for safe handling of Geeklog permission arrays or already-normalized permission values.
+- Added `DOCUMENTS_initializeRequestDefaults()` as a compatibility safety net for the legacy public controller; the public entry point invokes it before `include_html.php` so missing request keys do not generate PHP 8.1 warnings.
 - Added `DOCUMENTS_linkifyUrls()` based on `preg_replace_callback()` as the PHP 5.6–8.1 replacement for the historical `preg_replace(... /e ...)` implementation.
 - Added strict custom-template name validation.
 - Added `DOCUMENTS_customTemplateDir()` for the new site-specific multisite-safe template location.
@@ -25,6 +27,7 @@ Compatibility target:
 - Fixed the `catorder` / `cat_order` category reorder bug.
 - Fixed the `list_fields` / `list_groups` menu comparison.
 - Added safe category/document existence checks before reading database result keys.
+- Normalized edit-category, edit-field, edit-group and edit-select identifiers before SQL lookup.
 - Initialized rendering accumulators and comment/OpenGraph defaults before use.
 - Custom templates now prefer the multisite-safe Documents data directory and use the historical directory only as a temporary read fallback.
 - Missing/invalid custom-template directories fall back to the standard plugin templates instead of constructing an arbitrary path.
@@ -68,7 +71,7 @@ Compatibility target:
 
 ### Remaining 1.1.2 work
 
-- Continue the request/SQL audit in the remaining save paths for PHP 8.1 warnings and malformed-input handling.
+- Continue the request/SQL audit in the remaining save paths for malformed-input handling and stronger per-handler normalization.
 - Confirm the PHP 5.6/7.4/8.1 lint workflow completes successfully on the final 1.1.2 commit.
 - Run manual functional tests on Geeklog 2.1.1 and 2.2.2 before considering 1.1.2 complete.
 
