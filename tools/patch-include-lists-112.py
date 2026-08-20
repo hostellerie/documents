@@ -14,38 +14,8 @@ def replace_once(old, new, label):
 
 
 replace_once(
-    "    $retval = '';\n\n\tif ($cat == '') return $retval;",
-    "    $retval = '';\n    $morefields = '';\n    $leftjoin = '';\n\n\tif ($cat == '') return $retval;",
-    'list docs accumulator initialization'
-)
-
-replace_once(
-    '\tdefine("CAT_URL", $cat);',
-    "\tif (!defined('CAT_URL')) {\n\t\tdefine('CAT_URL', $cat);\n\t}",
-    'category url constant guard'
-)
-
-replace_once(
-    "\t$category = DB_fetchArray(DB_query($sql));\n\t\n\t//is cat submitable",
-    "\t$category = DB_fetchArray(DB_query($sql));\n\tif (!is_array($category) || empty($category['cid'])) {\n\t\treturn $retval;\n\t}\n\n\t//is cat submitable",
-    'category result guard'
-)
-
-replace_once(
-    "\tif ($category['map'] != '' && $category['map'] > 0) $retval .= PLG_replaceTags(\"[maps:{$category['map']}]\");",
-    "\tif (DOCUMENTS_hasMaps() && $category['map'] != '' && $category['map'] > 0) {\n\t\t$retval .= PLG_replaceTags(\"[maps:{$category['map']}]\");\n\t}",
-    'category maps output guard'
-)
-
-replace_once(
-    "    global $_DOCUMENTS_CONF, $_CONF, $LANG_DOCUMENTS_1;\n\n\tswitch($fieldname) {",
-    "    global $_DOCUMENTS_CONF, $_CONF, $LANG_DOCUMENTS_1;\n\n    $retval = '';\n    $edit = '';\n    $inactive = '';\n\n\tswitch($fieldname) {",
-    'document callback initialization'
-)
-
-replace_once(
-    ". $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . $_DOCUMENTS_CONF['images_url'] \n\t\t\t\t\t. $B['v_value'] . '&amp;w=75&amp;h=75&amp;q=90&amp;zc=1\"",
-    ". $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . rawurlencode(basename($B['v_value'])) \n\t\t\t\t\t. '&amp;w=75&amp;h=75\"",
+    "\t\t\t\t\t. $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . $_DOCUMENTS_CONF['images_url'] \n\t\t\t\t\t. $B['v_value'] . '&amp;w=75&amp;h=75&amp;q=90&amp;zc=1\" vspace=\"5\" hspace=\"0\" width=\"75\" height=\"75\"",
+    "\t\t\t\t\t. $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . rawurlencode(basename($B['v_value'])) \n\t\t\t\t\t. '&amp;w=75&amp;h=75\" vspace=\"5\" hspace=\"0\" width=\"75\" height=\"75\"",
     'category image preview endpoint'
 )
 
@@ -55,14 +25,8 @@ replace_once(
     'document image preview endpoint'
 )
 
-replace_once(
-    "\t\t\t\t} else if ($fieldvalue == $A['marker'] && $fieldvalue != '') {\n\t\t\t\t\t$retval = PLG_replaceTags('<div style=\"width:450px;\">[marker:' . $fieldvalue . ' width:400px]</div>');",
-    "\t\t\t\t} else if ($fieldvalue == $A['marker'] && $fieldvalue != '') {\n\t\t\t\t\tif (DOCUMENTS_hasMaps()) {\n\t\t\t\t\t\t$retval = PLG_replaceTags('<div style=\"width:450px;\">[marker:' . $fieldvalue . ' width:400px]</div>');\n\t\t\t\t\t} else {\n\t\t\t\t\t\t$retval = '';\n\t\t\t\t\t}",
-    'document marker output guard'
-)
-
 if text == original:
     raise RuntimeError('No changes were produced')
 
 path.write_text(text, encoding='utf-8')
-print('include_lists.php second atomic cleanup applied successfully')
+print('include_lists.php image preview cleanup applied successfully')
