@@ -87,16 +87,20 @@ jobs:
               text = path.read_text()
               if "'existing_field'" not in text:
                   marker = "\t'field_order'     => 'Field order',\n"
-                  if filename.endswith('english.php'):
-                      if marker not in text:
-                          raise SystemExit('English field_order marker not found')
-                      text = text.replace(marker, marker + addition, 1)
-                  else:
-                      marker = "\t'field_order'     => 'Field order',\n"
-                      if marker not in text:
-                          raise SystemExit('French field_order marker not found')
-                      text = text.replace(marker, marker + addition, 1)
+                  if marker not in text:
+                      raise SystemExit('%s field_order marker not found' % filename)
+                  text = text.replace(marker, marker + addition, 1)
               path.write_text(text)
+
+          # required_doc is a stale variable: doc_form.thtml does not use it.
+          path = Path('include_edit.php')
+          text = path.read_text()
+          stale = "    $template->set_var('required_doc', $LANG_DOCUMENTS_1['required_doc']);\n"
+          if stale in text:
+              text = text.replace(stale, '', 1)
+          if "['required_doc']" in text:
+              raise SystemExit('Stale required_doc language access remains in include_edit.php')
+          path.write_text(text)
           PY
 
       - name: Validate HTML document API
@@ -208,6 +212,7 @@ jobs:
           printf 'Missing-field validation check: PASS - empty arrays do not trigger errors.\n' >> test-artifacts/lint-report.txt
           printf 'Routing check: PASS - generated list links work without mod_rewrite.\n' >> test-artifacts/lint-report.txt
           printf 'Field language check: PASS - existing_field is defined in EN/FR.\n' >> test-artifacts/lint-report.txt
+          printf 'Document form check: PASS - stale required_doc access removed.\n' >> test-artifacts/lint-report.txt
           printf 'RESULT: PASS - documents-1.1.2-test.zip created.\n' >> test-artifacts/lint-report.txt
 
       - name: Commit source corrections, diagnostic and package
@@ -215,10 +220,10 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- include_html.php include_lists.php language/english.php language/french_france_utf-8.php test-artifacts/lint-report.txt test-artifacts/documents-1.1.2-test.zip
+          git add -- include_html.php include_lists.php include_edit.php language/english.php language/french_france_utf-8.php test-artifacts/lint-report.txt test-artifacts/documents-1.1.2-test.zip
           if git diff --cached --quiet; then
             echo 'Package is already current.'
           else
-            git commit -m 'Documents 1.1.2: fix routing and field form'
+            git commit -m 'Documents 1.1.2: fix document form runtime warning'
             git push origin HEAD:modernize-1.1.2
           fi
