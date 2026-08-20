@@ -31,6 +31,17 @@ Compatibility target:
 - Image previews now pass local Documents filenames to the restricted image endpoint.
 - Radio rendering no longer indexes the wrong field value/select array.
 
+### List rendering
+
+- Updated `include_lists.php` metadata to 1.1.2.
+- Initialized category/document/group/select callback return values and list SQL accumulators to avoid PHP 8.1 undefined-variable warnings.
+- Added the missing `$_USER` global in the category callback.
+- Category lookup is validated before its fields are read and its URL is escaped before use in legacy SQL.
+- Select-group identifiers are normalized to integers before being appended to SQL.
+- Category and document image previews now pass only a local basename to the restricted Documents image endpoint; obsolete TimThumb `q` and `zc` parameters are no longer emitted.
+- Missing `image`/`marker` keys in submission and draft list rows are handled without undefined-array-key warnings.
+- Category Maps autotags and document marker autotags are emitted only when Maps is actually available.
+
 ### Optional integrations
 
 - Public Maps rendering now uses `DOCUMENTS_hasMaps()` and performs no Maps query/output when Maps is unavailable.
@@ -57,8 +68,7 @@ Compatibility target:
 
 ### Remaining 1.1.2 work
 
-- Continue the request/SQL audit in the remaining save/list paths for PHP 8.1 warnings and malformed-input handling.
-- Review `include_lists.php` accumulators and image-preview calls.
+- Continue the request/SQL audit in the remaining save paths for PHP 8.1 warnings and malformed-input handling.
 - Confirm the PHP 5.6/7.4/8.1 lint workflow completes successfully on the final 1.1.2 commit.
 - Run manual functional tests on Geeklog 2.1.1 and 2.2.2 before considering 1.1.2 complete.
 
