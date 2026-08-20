@@ -1,5 +1,5 @@
 Documents 1.1.2 test package
-Commit: b85554c62ee4b06403f49950c1ab5766082a990d
+Commit: 1fd0f526891bdbabeb8dd34a29b2440dad9f4185
 
 === PHP 5.6 ===
 PHP 5.6.40 (cli) 
