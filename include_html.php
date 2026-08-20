@@ -1304,7 +1304,7 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			$missingfields = DOCUMENTS_missingFieldCat();
 			
-			if ($missingfields != '') {
+			if (!empty($missingfields)) {
 				$content = COM_startBlock($LANG_DOCUMENTS_1['error']);
 				$content .= $LANG_DOCUMENTS_1['missing_field'];
 				$content .= '<ul>';
@@ -1476,7 +1476,7 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 				if (($fType === 'marker' && !DOCUMENTS_hasMaps()) || ($fType === 'album' && !DOCUMENTS_hasMediaGallery())) {
 					$missingfields[] = 'Optional field type is unavailable because its plugin is inactive.';
 				}
-				if ($missingfields != '') {
+				if (!empty($missingfields)) {
 					$display .= COM_startBlock($LANG_DOCUMENTS_1['error']);
 					$display .= $LANG_DOCUMENTS_1['missing_field'];
 					$display .= '<ul>';
