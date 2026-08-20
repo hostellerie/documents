@@ -1,0 +1,21 @@
+<script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script>
+<div id="documents_display">
+    <fieldset id="document">
+	    <legend style="text-transform:uppercase;"><h1>{active}{doc_name}</h1> {editor}</legend>		    
+		{raws}
+		<table cellpadding="10" class="documents">
+			<td valign="top"><label class="document_field">&nbsp;</label></td>
+			<td>
+				<p>{doc_by} {user_name} {displayed} {hits} {times} </p>
+			</td>
+		</table>
+
+    </fieldset>
+</div>
+	
+<div id="comments">	
+	<div id="commentbar">
+		{commentbar}
+	</div>
+</div>
+

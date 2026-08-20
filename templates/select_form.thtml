@@ -1,0 +1,33 @@
+<form action="{doc_url}/index.php?mode=save_select" method="POST">
+{sid}
+    <fieldset style="margin-top: 10px;">
+	    <legend><b>{select_informations}</b></legend>
+
+	        <div>
+    	        <p><label>{select_label}<font color="red"> *</font></label>
+			    <input type="text" name="s_name" value="{select_name}" size="80" maxlength="255" {xhtml}></p>
+	        </div>
+			
+			<div>
+    	        <p><label>{value_label}</label>
+			    <input type="text" name="s_value" value="{value}" size="80" maxlength="255" {xhtml}></p>
+	        </div>
+			
+			<div>
+			    <p><label>{group_label}</label> {group_select}</p>
+			</div>
+			
+			<div>
+	            <p><label>{s_order_label}</label>
+                <input type="text" name="s_order" value="{s_order}" size="5" maxlength="5" {xhtml}></p>
+				<p>{existing_select}
+				{select_order}</p>
+	        </div>
+
+    </fieldset>
+	
+    <p><strong><font color="red">*</font><em> {required_field}</em></strong></p>
+	{admin_options}
+    <input type="submit" name="submit" value="{validate_button}" {xhtml}>
+
+</form>
