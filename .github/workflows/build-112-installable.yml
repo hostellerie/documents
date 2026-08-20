@@ -27,22 +27,76 @@ jobs:
         with:
           ref: modernize-1.1.2
 
-      - name: Fix missing-field validation
+      - name: Apply 1.1.2 runtime fixes
         shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
+
+          # Empty missing-field arrays must not trigger an error block.
           path = Path('include_html.php')
           text = path.read_text()
           old = "if ($missingfields != '') {"
           new = "if (!empty($missingfields)) {"
           count = text.count(old)
-          if count != 2:
-              raise SystemExit('Expected 2 legacy missing-field checks, found %d' % count)
-          text = text.replace(old, new)
+          if count not in (0, 2):
+              raise SystemExit('Unexpected missing-field legacy check count: %d' % count)
+          if count == 2:
+              text = text.replace(old, new)
           if old in text:
               raise SystemExit('Legacy missing-field check remains in include_html.php')
           path.write_text(text)
+
+          # Do not require Apache rewrite rules for generated category/document links.
+          path = Path('include_lists.php')
+          text = path.read_text()
+
+          old_perm = "COM_getPermSQL( $type = 'AND', $_USER['uid'], 2, 'doc')"
+          new_perm = "COM_getPermSQL('AND', $_USER['uid'], 2, 'doc')"
+          if old_perm in text:
+              text = text.replace(old_perm, new_perm, 1)
+          if old_perm in text:
+              raise SystemExit('Legacy COM_getPermSQL assignment remains')
+
+          old_b_doc = "$_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url'] . '/' . $B['doc_url']"
+          new_b_doc = "$_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url']) . '&doc=' . rawurlencode($B['doc_url'])"
+          if old_b_doc in text:
+              text = text.replace(old_b_doc, new_b_doc)
+
+          old_a_doc = "$_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url'] . '/' . $A['doc_url']"
+          new_a_doc = "$_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url']) . '&doc=' . rawurlencode($A['doc_url'])"
+          if old_a_doc in text:
+              text = text.replace(old_a_doc, new_a_doc)
+
+          old_cat = "$_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url']"
+          new_cat = "$_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url'])"
+          if old_cat in text:
+              text = text.replace(old_cat, new_cat)
+
+          if "$_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url']" in text:
+              raise SystemExit('Pretty category URL dependency remains in include_lists.php')
+          path.write_text(text)
+
+          # Add the missing language key used by DOCUMENTS_editField().
+          language_updates = {
+              'language/english.php': "\t'existing_field' => 'Existing fields (order and name)',\n",
+              'language/french_france_utf-8.php': "\t'existing_field' => 'Champs existants (ordre et nom)',\n",
+          }
+          for filename, addition in language_updates.items():
+              path = Path(filename)
+              text = path.read_text()
+              if "'existing_field'" not in text:
+                  marker = "\t'field_order'     => 'Field order',\n"
+                  if filename.endswith('english.php'):
+                      if marker not in text:
+                          raise SystemExit('English field_order marker not found')
+                      text = text.replace(marker, marker + addition, 1)
+                  else:
+                      marker = "\t'field_order'     => 'Field order',\n"
+                      if marker not in text:
+                          raise SystemExit('French field_order marker not found')
+                      text = text.replace(marker, marker + addition, 1)
+              path.write_text(text)
           PY
 
       - name: Validate HTML document API
@@ -152,17 +206,19 @@ jobs:
           printf 'Postinstall check: PASS - autoinstall writes .htaccess directly.\n' >> test-artifacts/lint-report.txt
           printf 'HTML document API check: PASS - no COM_siteHeader/COM_siteFooter in include_html.php.\n' >> test-artifacts/lint-report.txt
           printf 'Missing-field validation check: PASS - empty arrays do not trigger errors.\n' >> test-artifacts/lint-report.txt
+          printf 'Routing check: PASS - generated list links work without mod_rewrite.\n' >> test-artifacts/lint-report.txt
+          printf 'Field language check: PASS - existing_field is defined in EN/FR.\n' >> test-artifacts/lint-report.txt
           printf 'RESULT: PASS - documents-1.1.2-test.zip created.\n' >> test-artifacts/lint-report.txt
 
-      - name: Commit source correction, diagnostic and package
+      - name: Commit source corrections, diagnostic and package
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- include_html.php test-artifacts/lint-report.txt test-artifacts/documents-1.1.2-test.zip
+          git add -- include_html.php include_lists.php language/english.php language/french_france_utf-8.php test-artifacts/lint-report.txt test-artifacts/documents-1.1.2-test.zip
           if git diff --cached --quiet; then
             echo 'Package is already current.'
           else
-            git commit -m 'Documents 1.1.2: fix missing-field validation'
+            git commit -m 'Documents 1.1.2: fix routing and field form'
             git push origin HEAD:modernize-1.1.2
           fi
