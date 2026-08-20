@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.1                                                    |
+// | Documents Plugin 1.1.2                                                    |
 // +---------------------------------------------------------------------------+
 // | index.php                                                                 |
 // |                                                                           |
@@ -31,4 +31,5 @@ if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGIN
     exit;
 }
 
+require_once $_CONF['path'] . 'plugins/documents/include_compat.php';
 require_once $_CONF['path'] . 'plugins/documents/include_html.php';
