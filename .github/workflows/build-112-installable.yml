@@ -30,16 +30,20 @@ jobs:
       - name: Fix missing-field validation
         shell: bash
         run: |
-          count=$(grep -F 'if ($missingfields != '\''\'') {' include_html.php | wc -l)
-          if [ "$count" -ne 2 ]; then
-            echo "Expected 2 legacy missing-field checks, found $count"
-            exit 1
-          fi
-          sed -i 's/if ($missingfields != '\''\'') {/if (!empty($missingfields)) {/g' include_html.php
-          if grep -Fq 'if ($missingfields != '\''\'') {' include_html.php; then
-            echo 'Legacy missing-field check remains in include_html.php'
-            exit 1
-          fi
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('include_html.php')
+          text = path.read_text()
+          old = "if ($missingfields != '') {"
+          new = "if (!empty($missingfields)) {"
+          count = text.count(old)
+          if count != 2:
+              raise SystemExit('Expected 2 legacy missing-field checks, found %d' % count)
+          text = text.replace(old, new)
+          if old in text:
+              raise SystemExit('Legacy missing-field check remains in include_html.php')
+          path.write_text(text)
+          PY
 
       - name: Validate HTML document API
         shell: bash
