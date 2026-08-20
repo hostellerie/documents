@@ -33,17 +33,10 @@ if (!SEC_hasRights('documents.admin')) {
     $username = isset($_USER['username']) ? $_USER['username'] : 'unknown';
 
     $display .= COM_showMessageText($MESSAGE[29], $MESSAGE[30]);
-
-    if (function_exists('COM_createHTMLDocument')) {
-        $display = COM_createHTMLDocument(
-            $display,
-            array('pagetitle' => $MESSAGE[30])
-        );
-    } elseif (function_exists('COM_siteHeader') && function_exists('COM_siteFooter')) {
-        $display = COM_siteHeader('menu', $MESSAGE[30])
-            . $display
-            . COM_siteFooter();
-    }
+    $display = COM_createHTMLDocument(
+        $display,
+        array('pagetitle' => $MESSAGE[30])
+    );
 
     COM_accessLog(
         'User ' . $username
@@ -71,16 +64,9 @@ $display .= '<p><a href="'
     . htmlspecialchars($pluginName, ENT_QUOTES, 'UTF-8')
     . '</a></p>';
 $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
-
-if (function_exists('COM_createHTMLDocument')) {
-    $display = COM_createHTMLDocument(
-        $display,
-        array('pagetitle' => $pluginName)
-    );
-} elseif (function_exists('COM_siteHeader') && function_exists('COM_siteFooter')) {
-    $display = COM_siteHeader('menu', $pluginName)
-        . $display
-        . COM_siteFooter();
-}
+$display = COM_createHTMLDocument(
+    $display,
+    array('pagetitle' => $pluginName)
+);
 
 COM_output($display);
