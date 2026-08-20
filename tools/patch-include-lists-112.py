@@ -14,19 +14,31 @@ def replace_once(old, new, label):
 
 
 replace_once(
-    "\t\t\t\t\t. $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . $_DOCUMENTS_CONF['images_url'] \n\t\t\t\t\t. $B['v_value'] . '&amp;w=75&amp;h=75&amp;q=90&amp;zc=1\" vspace=\"5\" hspace=\"0\" width=\"75\" height=\"75\"",
-    "\t\t\t\t\t. $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . rawurlencode(basename($B['v_value'])) \n\t\t\t\t\t. '&amp;w=75&amp;h=75\" vspace=\"5\" hspace=\"0\" width=\"75\" height=\"75\"",
-    'category image preview endpoint'
+    "function plugin_getListField_groups_fields($fieldname, $fieldvalue, $A, $icon_arr)\n{\n\n    global $_DOCUMENTS_CONF;",
+    "function plugin_getListField_groups_fields($fieldname, $fieldvalue, $A, $icon_arr)\n{\n\n    global $_DOCUMENTS_CONF;\n\n    $retval = '';",
+    'group callback retval initialization'
 )
 
 replace_once(
-    "$image = '<img class=\"document_img\" src=\"' . $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . $_DOCUMENTS_CONF['images_url'] .\n\t\t\t\t\t\t$fieldvalue . '&amp;w=200&amp;h=200\" align=\"top\" alt=\"\" />';",
-    "$image = '<img class=\"document_img\" src=\"' . $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . rawurlencode(basename($fieldvalue)) .\n\t\t\t\t\t\t'&amp;w=200&amp;h=200\" align=\"top\" alt=\"\" />';",
-    'document image preview endpoint'
+    "function DOCUMENTS_listSelects($group)\n{\n    global $_CONF, $_DOCUMENTS_CONF, $_TABLES, $LANG_DOCUMENTS_1;",
+    "function DOCUMENTS_listSelects($group)\n{\n    global $_CONF, $_DOCUMENTS_CONF, $_TABLES, $LANG_DOCUMENTS_1;\n\n    $group = (int) $group;",
+    'select group numeric normalization'
+)
+
+replace_once(
+    "\tif($group > 0) $sql .= \" AND s_group = '$group'\";",
+    "\tif ($group > 0) {\n\t\t$sql .= \" AND s_group = '{$group}'\";\n\t}",
+    'select group sql guard'
+)
+
+replace_once(
+    "function plugin_getListField_selects_fields($fieldname, $fieldvalue, $A, $icon_arr)\n{\n\n    global $_DOCUMENTS_CONF;",
+    "function plugin_getListField_selects_fields($fieldname, $fieldvalue, $A, $icon_arr)\n{\n\n    global $_DOCUMENTS_CONF;\n\n    $retval = '';",
+    'select callback retval initialization'
 )
 
 if text == original:
     raise RuntimeError('No changes were produced')
 
 path.write_text(text, encoding='utf-8')
-print('include_lists.php image preview cleanup applied successfully')
+print('include_lists.php callback warning cleanup applied successfully')
