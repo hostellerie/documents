@@ -2,13 +2,13 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.0                                                    |
+// | Documents Plugin 1.1.1                                                    |
 // +---------------------------------------------------------------------------+
 // | autoinstall.php                                                           |
 // |                                                                           |
 // | This file provides helper functions for the automatic plugin install.     |
 // +---------------------------------------------------------------------------+
-// | Copyright (C) 2012-2014 by the following authors:                         |
+// | Copyright (C) 2012-2026 by the following authors:                         |
 // |                                                                           |
 // | Authors: Ben - ben AT geeklog DOT fr                                      |
 // +---------------------------------------------------------------------------+
@@ -25,23 +25,18 @@
 // | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             |
 // | GNU General Public License for more details.                              |
 // |                                                                           |
-// | You should have received a copy of the GNU General Public License         |
-// | along with this program; if not, write to the Free Software Foundation,   |
-// | Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.           |
-// |                                                                           |
 // +---------------------------------------------------------------------------+
 
 /**
-* @package Documents
-*/
+ * @package Documents
+ */
 
 /**
-* Plugin autoinstall function
-*
-* @param    string  $pi_name    Plugin name
-* @return   array               Plugin information
-*
-*/
+ * Plugin autoinstall function.
+ *
+ * @param  string $pi_name Plugin name
+ * @return array           Plugin information
+ */
 function plugin_autoinstall_documents($pi_name)
 {
     $pi_name         = 'documents';
@@ -51,9 +46,9 @@ function plugin_autoinstall_documents($pi_name)
     $info = array(
         'pi_name'         => $pi_name,
         'pi_display_name' => $pi_display_name,
-        'pi_version'      => '1.1.0',
-        'pi_gl_version'   => '1.6.0',
-        'pi_homepage'     => 'http://geeklog.fr'
+        'pi_version'      => '1.1.1',
+        'pi_gl_version'   => '2.1.1',
+        'pi_homepage'     => 'https://github.com/Geeklog-Plugins/documents'
     );
 
     $groups = array(
@@ -62,40 +57,42 @@ function plugin_autoinstall_documents($pi_name)
     );
 
     $features = array(
-        $pi_name . '.admin'    => 'Full access to ' . $pi_display_name
-                                  . ' plugin',
-		$pi_name . '.publish'   => 'Can publish ' . $pi_display_name
-                                  . ' (skip submission queue)'
+        $pi_name . '.admin'   => 'Full access to ' . $pi_display_name
+                                 . ' plugin',
+        $pi_name . '.publish' => 'Can publish ' . $pi_display_name
+                                 . ' (skip submission queue)'
     );
 
     $mappings = array(
-        $pi_name . '.admin'     => array($pi_admin),
-        $pi_name . '.publish'   => array($pi_admin)
+        $pi_name . '.admin'   => array($pi_admin),
+        $pi_name . '.publish' => array($pi_admin)
     );
 
     $tables = array(
         'documents_cat',
         'documents_docs',
-		'documents_fields',
-		'documents_values',
-		'documents_selects',
-		'documents_selects_group',
-		'documents_pics',
+        'documents_fields',
+        'documents_values',
+        'documents_selects',
+        'documents_selects_group',
+        'documents_pics'
     );
 
-    $inst_parms = array(
-        'info'      => $info,
-        'groups'    => $groups,
-        'features'  => $features,
-        'mappings'  => $mappings,
-        'tables'    => $tables
+    return array(
+        'info'     => $info,
+        'groups'   => $groups,
+        'features' => $features,
+        'mappings' => $mappings,
+        'tables'   => $tables
     );
-
-    return $inst_parms;
 }
+
 /**
-Create the initial configuration for the plugin
-*/
+ * Create the initial configuration for the plugin.
+ *
+ * @param  string $pi_name Plugin name
+ * @return boolean
+ */
 function plugin_load_configuration_documents($pi_name)
 {
     global $_CONF;
@@ -107,40 +104,51 @@ function plugin_load_configuration_documents($pi_name)
 
     return plugin_initconfig_documents();
 }
-	
+
 /**
-* Check if the plugin is compatible with this Geeklog version
-*
-* @param    string  $pi_name    Plugin name
-* @return   boolean             true: plugin compatible; false: not compatible
-*
-*/
+ * Check whether this plugin supports the current Geeklog/PHP environment.
+ *
+ * Supported target:
+ * - Geeklog 2.1.1 through 2.2.2
+ * - PHP 5.6 through 8.1
+ *
+ * @param  string $pi_name Plugin name
+ * @return boolean
+ */
 function plugin_compatible_with_this_version_documents($pi_name)
 {
     global $_CONF, $_DB_dbms;
 
-    // check if we support the DBMS the site is running on
     $dbFile = $_CONF['path'] . 'plugins/' . $pi_name . '/sql/'
             . $_DB_dbms . '_install.php';
-    if (! file_exists($dbFile)) {
+    if (!file_exists($dbFile)) {
         return false;
     }
 
-    // add checks here
+    if (version_compare(PHP_VERSION, '5.6.0', '<')
+        || version_compare(PHP_VERSION, '8.2.0', '>=')) {
+        return false;
+    }
+
+    if (defined('VERSION')) {
+        if (version_compare(VERSION, '2.1.1', '<')
+            || version_compare(VERSION, '2.2.3', '>=')) {
+            return false;
+        }
+    }
 
     return true;
 }
 
+/**
+ * Post-install hook.
+ *
+ * No installation telemetry or unsolicited email is sent.
+ *
+ * @param  string $pi_name Plugin name
+ * @return boolean
+ */
 function plugin_postinstall_documents($pi_name)
 {
-    global $_TABLES, $_CONF, $_USER;
-	
-    /* This code is for statistics ONLY */
-    $message =  'Completed Documents plugin install: ' .date('m d Y',time()) . "   AT " . date('H:i', time()) . "\n";
-    $message .= 'Site: ' . $_CONF['site_url'] . ' and Sitename: ' . $_CONF['site_name'] . "\n";
-    $pi_version = DB_getItem($_TABLES['plugins'], 'pi_version', "pi_name = 'documents'");
-    COM_mail("ben@geeklog.fr","$pi_name Version:$pi_version Install successfull",$message);
-
-	return true;
+    return true;
 }
-?>
