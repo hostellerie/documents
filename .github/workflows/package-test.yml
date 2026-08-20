@@ -3,11 +3,34 @@ name: Package Documents test build
 on:
   push:
     branches:
-      - modernize-1.1.1
+      - modernize-1.1.2
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['5.6', '7.4', '8.1']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+
+      - name: PHP syntax check
+        run: |
+          find . -type f -name '*.php' \
+            -not -path './.git/*' \
+            -not -path './build/*' \
+            -print0 | xargs -0 -n1 php -l
+
   package:
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
