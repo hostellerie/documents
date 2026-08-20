@@ -1,0 +1,139 @@
+name: Build Documents 1.1.2 installable test package
+
+on:
+  push:
+    branches:
+      - modernize-1.1.2
+    paths:
+      - .github/workflows/build-112-installable.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-package:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: modernize-1.1.2
+
+      - name: Prepare report
+        run: |
+          rm -rf test-artifacts
+          mkdir -p test-artifacts
+          printf 'Documents 1.1.2 test package\nCommit: %s\n\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
+
+      - name: Setup PHP 5.6
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '5.6'
+          coverage: none
+
+      - name: Lint PHP 5.6
+        shell: bash
+        run: |
+          printf '=== PHP 5.6 ===\n' >> test-artifacts/lint-report.txt
+          php -v | head -1 >> test-artifacts/lint-report.txt
+          failed=0
+          while IFS= read -r -d '' file; do
+            if ! php -l "$file" >> test-artifacts/lint-report.txt 2>&1; then
+              failed=1
+            fi
+          done < <(find . -type f -name '*.php' \
+            -not -path './.git/*' \
+            -not -path './build/*' \
+            -not -path './test-artifacts/*' \
+            -print0)
+          if [ "$failed" -ne 0 ]; then touch /tmp/documents-lint-failed; fi
+          printf '\n' >> test-artifacts/lint-report.txt
+
+      - name: Setup PHP 7.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+
+      - name: Lint PHP 7.4
+        shell: bash
+        run: |
+          printf '=== PHP 7.4 ===\n' >> test-artifacts/lint-report.txt
+          php -v | head -1 >> test-artifacts/lint-report.txt
+          failed=0
+          while IFS= read -r -d '' file; do
+            if ! php -l "$file" >> test-artifacts/lint-report.txt 2>&1; then
+              failed=1
+            fi
+          done < <(find . -type f -name '*.php' \
+            -not -path './.git/*' \
+            -not -path './build/*' \
+            -not -path './test-artifacts/*' \
+            -print0)
+          if [ "$failed" -ne 0 ]; then touch /tmp/documents-lint-failed; fi
+          printf '\n' >> test-artifacts/lint-report.txt
+
+      - name: Setup PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: Lint PHP 8.1
+        shell: bash
+        run: |
+          printf '=== PHP 8.1 ===\n' >> test-artifacts/lint-report.txt
+          php -v | head -1 >> test-artifacts/lint-report.txt
+          failed=0
+          while IFS= read -r -d '' file; do
+            if ! php -l "$file" >> test-artifacts/lint-report.txt 2>&1; then
+              failed=1
+            fi
+          done < <(find . -type f -name '*.php' \
+            -not -path './.git/*' \
+            -not -path './build/*' \
+            -not -path './test-artifacts/*' \
+            -print0)
+          if [ "$failed" -ne 0 ]; then touch /tmp/documents-lint-failed; fi
+          printf '\n' >> test-artifacts/lint-report.txt
+
+      - name: Build installable ZIP when lint passes
+        shell: bash
+        run: |
+          if [ -f /tmp/documents-lint-failed ]; then
+            printf 'RESULT: FAILED - ZIP not created.\n' >> test-artifacts/lint-report.txt
+            exit 0
+          fi
+          rm -rf build
+          mkdir -p build/documents
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='build' \
+            --exclude='tools' \
+            --exclude='test-artifacts' \
+            ./ build/documents/
+          cd build
+          zip -r ../test-artifacts/documents-1.1.2-test.zip documents >/dev/null
+          cd ..
+          printf 'RESULT: PASS - documents-1.1.2-test.zip created.\n' >> test-artifacts/lint-report.txt
+
+      - name: Commit diagnostic and package
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- test-artifacts/lint-report.txt
+          if [ -f test-artifacts/documents-1.1.2-test.zip ]; then
+            git add -- test-artifacts/documents-1.1.2-test.zip
+          fi
+          git commit -m "Documents 1.1.2: publish lint report and test package"
+          git push origin HEAD:modernize-1.1.2
+
+      - name: Fail workflow if lint failed
+        shell: bash
+        run: |
+          if [ -f /tmp/documents-lint-failed ]; then
+            exit 1
+          fi
