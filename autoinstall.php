@@ -118,5 +118,30 @@ function plugin_compatible_with_this_version_documents($pi_name)
 
 function plugin_postinstall_documents($pi_name)
 {
+    global $_CONF;
+
+    $publicDir = rtrim($_CONF['path_html'], "/\\") . DIRECTORY_SEPARATOR
+               . $pi_name . DIRECTORY_SEPARATOR;
+    $source = $publicDir . 'htaccess.txt';
+    $target = $publicDir . '.htaccess';
+
+    if (!is_file($source)) {
+        COM_errorLog('Documents postinstall: missing htaccess.txt template at ' . $source);
+        return false;
+    }
+
+    if (is_file($target)) {
+        @unlink($source);
+        return true;
+    }
+
+    if (!@rename($source, $target)) {
+        if (!@copy($source, $target)) {
+            COM_errorLog('Documents postinstall: unable to create ' . $target);
+            return false;
+        }
+        @unlink($source);
+    }
+
     return true;
 }
