@@ -34,6 +34,7 @@ Compatibility target:
 - Initialized rendering accumulators and comment/OpenGraph defaults before use.
 - Custom templates now prefer the multisite-safe Documents data directory and use the historical directory only as a temporary read fallback.
 - Missing/invalid custom-template directories fall back to the standard plugin templates instead of constructing an arbitrary path.
+- Fixed the custom-template `rtrim()` mask escaping that caused `include_html.php` to fail syntax checks on PHP 5.6, 7.4 and 8.1.
 - Image previews now pass local Documents filenames to the restricted image endpoint.
 - Radio rendering no longer indexes the wrong field value/select array.
 
