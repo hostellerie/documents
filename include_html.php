@@ -1822,19 +1822,26 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
             // Todo make this customisable			
 			$content = SEC_loginRequiredForm();
 			break;
-		} else if (isset($_GET['cat']) && $_REQUEST['cat'] !='') {
-			$sql = "SELECT * FROM {$_TABLES['documents_cat']} WHERE cat_url = '{$_REQUEST['cat']}'";
+		} else {
+			$newCatUrl = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'cat', ''));
+			if ($newCatUrl === '') {
+				echo COM_refresh($_CONF['site_url'] . '/404.php');
+				exit();
+			}
+			$sql = "SELECT * FROM {$_TABLES['documents_cat']} WHERE cat_url = '{$newCatUrl}'";
 			$res = DB_query($sql);
 			$cat = DB_fetchArray($res);
+			if (!is_array($cat) || empty($cat['cid'])) {
+				echo COM_refresh($_CONF['site_url'] . '/404.php');
+				exit();
+			}
 			if ( $cat['submitable'] == 0 && !SEC_hasRights('documents.admin') ) {
 			   echo COM_refresh($_CONF['site_url'] . '/404.php');
 			   exit();
 			}
-		} else {
-	       echo COM_refresh($_CONF['site_url'] . '/404.php');
-		   exit();
 		}
 		
+	    $doc = array();
 	    $doc['cid'] = $cat['cid'];
 		$doc['cat_name'] = $cat['cat_name'];
 		$doc['cat_url'] = $cat['cat_url'];
@@ -1860,21 +1867,23 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 		
 	case 'edit' :
 	
-		if (isset($_GET['doc_url']) &&  $_GET['doc_url']!= '') {
+		$editDocUrl = addslashes((string) DOCUMENTS_requestValue($_GET, 'doc_url', ''));
+		if ($editDocUrl !== '') {
 		    
 			//Edit mode
 			
 			if (!defined("DOC_URL")) {
-                   define("DOC_URL", $_GET['doc_url']);
+                   define("DOC_URL", $editDocUrl);
 			}
 			
+			$doc = array();
 			$sql = "SELECT v.field_id, f.fid, f.f_type, f.sel_id, v.v_value, d.doc_url, d.active, d.owner_id , d.group_id, d.perm_owner, d.perm_group, d.perm_members, d.perm_anon 
 			           FROM {$_TABLES['documents_values']} AS v
 			        LEFT JOIN {$_TABLES['documents_fields']} AS f
 			           ON f.fid = v.field_id
                     LEFT JOIN {$_TABLES['documents_docs']} AS d
 			           ON d.doc_url = v.doc_url					   
-					WHERE v.doc_url = '{$_GET['doc_url']}' ORDER BY f.f_order";
+					WHERE v.doc_url = '{$editDocUrl}' ORDER BY f.f_order";
 			$res = DB_query($sql);
 			
 			// Build doc array
@@ -1893,6 +1902,10 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 				$doc['perm_members'] = $A['perm_members'];
 				$doc['perm_anon'] = $A['perm_anon'];
 			}
+			if (empty($doc) || !isset($doc['owner_id'], $doc['group_id'], $doc['perm_owner'], $doc['perm_group'], $doc['perm_members'], $doc['perm_anon'])) {
+				echo COM_refresh($_CONF['site_url'] . '/404.php');
+				exit();
+			}
 			
 			// check secury access
 			$access = SEC_hasAccess($doc['owner_id'], $doc['group_id'],
@@ -1904,11 +1917,16 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			   exit();
 			}
 			
-			if (isset($_GET['cat']) && $_REQUEST['cat'] !='') {
+			$editCatId = DOCUMENTS_requestInt($_REQUEST, 'cat', 0);
+			if ($editCatId > 0) {
 
-				$sql = "SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = '{$_REQUEST['cat']}'";
+				$sql = "SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$editCatId}";
 				$res = DB_query($sql);
 				$cat = DB_fetchArray($res);
+				if (!is_array($cat) || empty($cat['cid'])) {
+					echo COM_refresh($_CONF['site_url'] . '/404.php');
+					exit();
+				}
 				if ( $cat['submitable'] == 0 && !SEC_hasRights('documents.admin') ) {
 				   echo COM_refresh($_CONF['site_url'] . '/404.php');
 				   exit();
@@ -1929,7 +1947,7 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 		    exit();
 		}
 		
-		$doc['cid'] = $_REQUEST['cat'];
+		$doc['cid'] = $editCatId;
 		$doc['cat_name'] = $cat['cat_name'];
 		$doc['cat_url'] = $cat['cat_url'];
 		$doc['cat_order'] = $cat['cat_order'];
