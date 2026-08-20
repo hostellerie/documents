@@ -1,0 +1,58 @@
+<form action="{doc_url}/index.php?mode=save_cat" method="POST">
+{cid}
+    <fieldset style="margin-top: 10px;">
+	    <legend><b>{cat_informations}</b></legend>
+
+	        <div>
+    	        <p><label>{category_label}<font color="red"> *</font></label>
+			    <input type="text" name="cat_name" value="{category}" size="80" maxlength="255" {xhtml}></p>
+	        </div>
+			<div>
+    	        <p><label>{cat_url_label}<font color="red"> *</font></label>
+			    <input type="text" name="cat_url" value="{cat_url}" size="80" maxlength="255" {xhtml}></p>
+	        </div>
+			<div>
+    	        <p><label>{template_label}</label>
+			    <input type="text" name="template" value="{template}" size="80" maxlength="255" {xhtml}></p>
+	        </div>
+			<div>
+    	        <p><label>{css_label}</label>
+			    <input type="text" name="css" value="{css}" size="80" maxlength="255" {xhtml}></p>
+	        </div>
+			{map}
+			<div>
+    	        <p><label>{custom_header_label}</label>
+			    <input type="text" name="custom_header" value="{custom_header}" size="80" maxlength="255" {xhtml}></p>
+	        </div>
+			<div>
+    	        <p><label>{custom_footer_label}</label>
+			    <input type="text" name="custom_footer" value="{custom_footer}" size="80" maxlength="255" {xhtml}></p>
+	        </div>
+	        <div>
+	            <p><label>{catorder_label}</label>
+                <input type="text" name="cat_order" value="{cat_order}" size="5" maxlength="5" {xhtml}></p>
+				<p>{existing_cat}
+				{categories_order}</p>
+	        </div>
+
+			<div>
+			    <p><input type="checkbox" name="list_index" value="1" {list_index_ckecked} {xhtml}> {list_index}<br{xhtml}>
+			       <input type="checkbox" name="submitable" value="1" {submitable_ckecked} {xhtml}> {submitable}</p>
+			</div>
+			<div id="lang_accessrights">
+				<div><p>{lang_owner}: {owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}></p></div>
+				<div><p>{lang_group}: {group_dropdown}</p></div>
+			</div>
+			<div id="lang_permissions">
+				<p>{lang_perm_key}</p>
+				<p>{permissions_editor}</p>
+				<p>{lang_permissions_msg}</p>
+			</div>
+
+    </fieldset>
+	
+    <p><strong><font color="red">*</font><em> {required_field}</em></strong></p>
+	{admin_options}
+    <input type="submit" name="submit" value="{validate_button}" {xhtml}>
+
+</form>
