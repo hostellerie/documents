@@ -84,8 +84,7 @@ if (!SEC_hasRights('documents.admin')) {
 }
 
 if ($documentsDebug) {
-    $display .= '<div style="padding:1em;background:#fff;color:#060;border:1px solid #060;">'
-        . 'Documents debug: lib-common.php and auth.inc.php loaded successfully.'</n        . '</div>';
+    $display .= '<div style="padding:1em;background:#fff;color:#060;border:1px solid #060;">Documents debug: lib-common.php and auth.inc.php loaded successfully.</div>';
 }
 
 $pluginName = isset($LANG_DOCUMENTS_1['plugin_name'])
