@@ -122,25 +122,25 @@ function plugin_postinstall_documents($pi_name)
 
     $publicDir = rtrim($_CONF['path_html'], "/\\") . DIRECTORY_SEPARATOR
                . $pi_name . DIRECTORY_SEPARATOR;
-    $source = $publicDir . 'htaccess.txt';
     $target = $publicDir . '.htaccess';
 
-    if (!is_file($source)) {
-        COM_errorLog('Documents postinstall: missing htaccess.txt template at ' . $source);
-        return false;
-    }
-
     if (is_file($target)) {
-        @unlink($source);
         return true;
     }
 
-    if (!@rename($source, $target)) {
-        if (!@copy($source, $target)) {
-            COM_errorLog('Documents postinstall: unable to create ' . $target);
-            return false;
-        }
-        @unlink($source);
+    if (!is_dir($publicDir)) {
+        COM_errorLog('Documents postinstall: public directory not found at ' . $publicDir);
+        return true;
+    }
+
+    $rules = "RewriteEngine on\n"
+           . "RewriteCond %{REQUEST_FILENAME} !-f\n"
+           . "RewriteCond %{REQUEST_FILENAME} !-d\n"
+           . "RewriteRule ^([^/]*)\\/?$ index.php?mode=view&cat=$1\n"
+           . "RewriteRule ^([^/]*)/([^/]+)$ index.php?mode=view&cat=$1&doc=$2 [L]\n";
+
+    if (@file_put_contents($target, $rules) === false) {
+        COM_errorLog('Documents postinstall: unable to create ' . $target);
     }
 
     return true;
