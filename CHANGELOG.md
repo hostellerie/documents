@@ -1,6 +1,32 @@
 # Changelog
 
-## 1.1.1 — Stabilization in progress
+## 1.1.2 — PHP and logic stabilization in progress
+
+Compatibility target:
+
+- Geeklog 2.1.1 through 2.2.2
+- PHP 5.6 through 8.1
+
+### Compatibility layer
+
+- Added `include_compat.php` for stabilization helpers shared by the 1.1.x line.
+- Added named document status constants for inactive, active, draft and submission states.
+- Added `DOCUMENTS_requestValue()` to avoid undefined-index notices on request arrays.
+- Added `DOCUMENTS_linkifyUrls()` based on `preg_replace_callback()` as the PHP 5.6–8.1 replacement for the historical `preg_replace(... /e ...)` implementation.
+- Added `DOCUMENTS_customTemplateDir()` to resolve custom template directories only inside the site-specific Documents data directory and reject traversal-style template names.
+- The public entry point now loads the compatibility layer before `include_html.php`.
+- Plugin development metadata is now 1.1.2.
+
+### Remaining 1.1.2 work
+
+- Replace the historical URL-linking `/e` expression in `include_html.php` with `DOCUMENTS_linkifyUrls()`.
+- Fix the `catorder` / `cat_order` category reorder bug.
+- Fix the `list_fields` / `list_groups` menu comparison.
+- Initialize rendering accumulators and optional metadata before use.
+- Switch custom templates from the historical `data_documents/templates/` path to `DOCUMENTS_customTemplateDir()` with temporary legacy lookup support where required.
+- Ensure Maps and MediaGallery display paths use the centralized availability helpers and perform no query/include when unavailable.
+
+## 1.1.1 — Security, optional integrations and multisite storage
 
 Compatibility target:
 
@@ -42,14 +68,9 @@ Compatibility target:
 - Fixed the comment notification username assignment bug.
 - Added README and ROADMAP documentation.
 
-### Still scheduled before 1.2.0
+## Still scheduled before 1.2.0
 
-The following historical code is deliberately handled in later 1.1.x stabilization steps rather than being mixed into 1.1.1:
-
-- `include_html.php` logic/PHP cleanup, including the obsolete `preg_replace(... /e ...)` URL conversion.
-- category reorder `catorder` / `cat_order` bug.
-- user-menu `list_fields` / `list_groups` comparison bug.
-- complete migration of custom templates from the old data directory.
-- broader CSRF coverage for category/field/list mutations.
-- full upload workflow audit and remaining PHP warnings.
+- complete migration of custom templates from the old data directory;
+- broader CSRF coverage for category/field/list mutations;
+- full upload workflow audit and remaining PHP warnings;
 - data-integrity and orphan-record checks.
