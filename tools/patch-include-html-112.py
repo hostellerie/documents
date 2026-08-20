@@ -14,19 +14,27 @@ def replace_once(old, new, label):
 
 
 replace_once(
-    "\t\t\trequire_once ($_CONF['path']  . 'plugins/documents/include_edit.php');\n\t\t\t\n\t\t\t$missingfields = DOCUMENTS_missingFieldCat();",
-    "\t\t\trequire_once ($_CONF['path']  . 'plugins/documents/include_edit.php');\n\n\t\t\t$catDefaults = array(\n\t\t\t\t'cid' => 0, 'cat_name' => '', 'cat_url' => '', 'cat_order' => 0, 'css' => '',\n\t\t\t\t'map' => 0, 'template' => '', 'list_index' => 0, 'submitable' => 0,\n\t\t\t\t'cat_help' => '', 'custom_header' => '', 'custom_footer' => '',\n\t\t\t\t'owner_id' => 0, 'group_id' => 0, 'perm_owner' => '', 'perm_group' => '',\n\t\t\t\t'perm_members' => '', 'perm_anon' => ''\n\t\t\t);\n\t\t\tforeach ($catDefaults as $key => $default) {\n\t\t\t\tif (!isset($_REQUEST[$key])) {\n\t\t\t\t\t$_REQUEST[$key] = $default;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t$missingfields = DOCUMENTS_missingFieldCat();",
-    'category defaults'
+    "\t\tif (isset($_REQUEST['cid']) &&  $_REQUEST['cid']> 0) {\n\t\t    \n\t\t\t// Get category\n\t\t\t\n\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$_REQUEST['cid']}\";\n\t\t\t$res = DB_query($sql);\n\t\t\t$cat = DB_fetchArray($res);\n\t\t\tif ( $cat['submitable'] == 0 && !SEC_hasRights('documents.admin') ) {",
+    "\t\t$saveCid = DOCUMENTS_requestInt($_REQUEST, 'cid', 0);\n\t\tif ($saveCid > 0) {\n\t\t    \n\t\t\t// Get category\n\t\t\t\n\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$saveCid}\";\n\t\t\t$res = DB_query($sql);\n\t\t\t$cat = DB_fetchArray($res);\n\t\t\tif (!is_array($cat) || empty($cat['cid'])) {\n\t\t\t\techo COM_refresh($_CONF['site_url'] . '/404.php');\n\t\t\t\texit();\n\t\t\t}\n\t\t\tif ( $cat['submitable'] == 0 && !SEC_hasRights('documents.admin') ) {",
+    'save category guard'
 )
+
 replace_once(
-    "\t\t\tif (is_array($_REQUEST['perm_owner']) OR is_array($_REQUEST['perm_group']) OR is_array($_REQUEST['perm_members']) OR is_array($_REQUEST['perm_anon'])) {",
-    "\t\t\tif (is_array($_REQUEST['perm_owner']) || is_array($_REQUEST['perm_group']) || is_array($_REQUEST['perm_members']) || is_array($_REQUEST['perm_anon'])) {",
-    'category permissions'
+    "\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_fields']} WHERE cat_id = {$_REQUEST['cid']} ORDER BY f_order ASC\";",
+    "\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_fields']} WHERE cat_id = {$saveCid} ORDER BY f_order ASC\";",
+    'save fields category id'
 )
+
 replace_once(
-    "\t\t\tif ( (!empty($_REQUEST['cid'])) && (is_numeric($_REQUEST['cid'])) ) {",
-    "\t\t\t$_REQUEST['cid'] = (int) $_REQUEST['cid'];\n\t\t\t$_REQUEST['cat_order'] = (int) $_REQUEST['cat_order'];\n\t\t\t$_REQUEST['map'] = (int) $_REQUEST['map'];\n\t\t\t$_REQUEST['list_index'] = (int) $_REQUEST['list_index'];\n\t\t\t$_REQUEST['submitable'] = (int) $_REQUEST['submitable'];\n\t\t\t$_REQUEST['owner_id'] = (int) $_REQUEST['owner_id'];\n\t\t\t$_REQUEST['group_id'] = (int) $_REQUEST['group_id'];\n\n\t\t\tif ($_REQUEST['cid'] > 0) {",
-    'category numerics'
+    "\t\t\t\t\t$value = addslashes($_REQUEST[$A['var_name']]);",
+    "\t\t\t\t\t$fieldValue = DOCUMENTS_requestValue($_REQUEST, $A['var_name'], '');\n\t\t\t\t\tif (is_array($fieldValue)) {\n\t\t\t\t\t\t$fieldValue = '';\n\t\t\t\t\t}\n\t\t\t\t\t$value = addslashes((string) $fieldValue);",
+    'dynamic field value'
+)
+
+replace_once(
+    "\t\t\t\t\t\tif(is_uploaded_file($_FILES[$name]['tmp_name'])) {",
+    "\t\t\t\t\t\tif (isset($_FILES[$name]) && is_array($_FILES[$name])\n\t\t\t\t\t\t    && !empty($_FILES[$name]['tmp_name'])\n\t\t\t\t\t\t    && is_uploaded_file($_FILES[$name]['tmp_name'])) {",
+    'image upload input guard'
 )
 
 if text == original:
