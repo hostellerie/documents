@@ -363,7 +363,7 @@ function DOCUMENTS_displayDocument($cat_url, $doc_url) {
             $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
             $doc['template'] = '';
         } else {
-            $template = COM_newTemplate(rtrim($templateDir, '/\'));
+            $template = COM_newTemplate(rtrim($templateDir, '/\\'));
             $jsfile = $templateDir . 'scripts.thtml';
             if (is_file($jsfile) && is_readable($jsfile)) {
                 $_SCRIPTS->setJavaScript(file_get_contents($jsfile), false);
