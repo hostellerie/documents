@@ -1,5 +1,5 @@
 Documents 1.1.2 test package
-Commit: 3e86967868c5f020e4b394a43508a61fd964fe7c
+Commit: 039fa1fe2e8310b94ca0c117fd3c1c5e2b64f86f
 
 === PHP 5.6 ===
 PHP 5.6.40 (cli) 
@@ -9,6 +9,7 @@ No syntax errors detected in ./sql/mssql_install.php
 No syntax errors detected in ./public_html/image.php
 No syntax errors detected in ./public_html/index.php
 No syntax errors detected in ./include_lists.php
+No syntax errors detected in ./functions.inc
 No syntax errors detected in ./install_defaults.php
 No syntax errors detected in ./include_edit.php
 No syntax errors detected in ./autoinstall.php
@@ -26,6 +27,7 @@ No syntax errors detected in ./sql/mssql_install.php
 No syntax errors detected in ./public_html/image.php
 No syntax errors detected in ./public_html/index.php
 No syntax errors detected in ./include_lists.php
+No syntax errors detected in ./functions.inc
 No syntax errors detected in ./install_defaults.php
 No syntax errors detected in ./include_edit.php
 No syntax errors detected in ./autoinstall.php
@@ -43,6 +45,7 @@ No syntax errors detected in ./sql/mssql_install.php
 No syntax errors detected in ./public_html/image.php
 No syntax errors detected in ./public_html/index.php
 No syntax errors detected in ./include_lists.php
+No syntax errors detected in ./functions.inc
 No syntax errors detected in ./install_defaults.php
 No syntax errors detected in ./include_edit.php
 No syntax errors detected in ./autoinstall.php
