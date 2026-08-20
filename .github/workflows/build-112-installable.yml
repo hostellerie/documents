@@ -33,7 +33,6 @@ jobs:
           python3 <<'PY'
           from pathlib import Path
 
-          # Empty missing-field arrays must not trigger an error block.
           path = Path('include_html.php')
           text = path.read_text()
           old = "if ($missingfields != '') {"
@@ -47,10 +46,8 @@ jobs:
               raise SystemExit('Legacy missing-field check remains in include_html.php')
           path.write_text(text)
 
-          # Do not require Apache rewrite rules for generated category/document links.
           path = Path('include_lists.php')
           text = path.read_text()
-
           old_perm = "COM_getPermSQL( $type = 'AND', $_USER['uid'], 2, 'doc')"
           new_perm = "COM_getPermSQL('AND', $_USER['uid'], 2, 'doc')"
           if old_perm in text:
@@ -72,12 +69,10 @@ jobs:
           new_cat = "$_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url'])"
           if old_cat in text:
               text = text.replace(old_cat, new_cat)
-
           if "$_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url']" in text:
               raise SystemExit('Pretty category URL dependency remains in include_lists.php')
           path.write_text(text)
 
-          # Add the missing language key used by DOCUMENTS_editField().
           language_updates = {
               'language/english.php': "\t'existing_field' => 'Existing fields (order and name)',\n",
               'language/french_france_utf-8.php': "\t'existing_field' => 'Champs existants (ordre et nom)',\n",
@@ -92,7 +87,6 @@ jobs:
                   text = text.replace(marker, marker + addition, 1)
               path.write_text(text)
 
-          # required_doc is a stale variable: doc_form.thtml does not use it.
           path = Path('include_edit.php')
           text = path.read_text()
           stale = "    $template->set_var('required_doc', $LANG_DOCUMENTS_1['required_doc']);\n"
@@ -100,6 +94,20 @@ jobs:
               text = text.replace(stale, '', 1)
           if "['required_doc']" in text:
               raise SystemExit('Stale required_doc language access remains in include_edit.php')
+
+          old_access = "        $accessPerms = $template->parse('access_perms', 'access');"
+          new_access = "        $template->parse('access_perms', 'access');\n        $accessPerms = $template->finish($template->get_var('access_perms'));"
+          if old_access in text:
+              text = text.replace(old_access, new_access, 1)
+
+          old_return = "    return $template->parse('output', 'doc');"
+          new_return = "    $template->parse('output', 'doc');\n    $retval = $template->finish($template->get_var('output'));\n\n    return $retval;"
+          if old_return in text:
+              text = text.replace(old_return, new_return, 1)
+          if old_return in text:
+              raise SystemExit('Direct doc template parse return remains in include_edit.php')
+          if "$template->finish($template->get_var('output'))" not in text:
+              raise SystemExit('Document form finish() rendering is missing')
           path.write_text(text)
           PY
 
@@ -213,6 +221,7 @@ jobs:
           printf 'Routing check: PASS - generated list links work without mod_rewrite.\n' >> test-artifacts/lint-report.txt
           printf 'Field language check: PASS - existing_field is defined in EN/FR.\n' >> test-artifacts/lint-report.txt
           printf 'Document form check: PASS - stale required_doc access removed.\n' >> test-artifacts/lint-report.txt
+          printf 'Template rendering check: PASS - document form uses parse plus finish.\n' >> test-artifacts/lint-report.txt
           printf 'RESULT: PASS - documents-1.1.2-test.zip created.\n' >> test-artifacts/lint-report.txt
 
       - name: Commit source corrections, diagnostic and package
@@ -224,6 +233,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Package is already current.'
           else
-            git commit -m 'Documents 1.1.2: fix document form runtime warning'
+            git commit -m 'Documents 1.1.2: finalize document form template rendering'
             git push origin HEAD:modernize-1.1.2
           fi
