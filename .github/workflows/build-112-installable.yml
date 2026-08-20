@@ -27,6 +27,20 @@ jobs:
         with:
           ref: modernize-1.1.2
 
+      - name: Fix missing-field validation
+        shell: bash
+        run: |
+          count=$(grep -F "if ($missingfields != '') {" include_html.php | wc -l)
+          if [ "$count" -ne 2 ]; then
+            echo "Expected 2 legacy missing-field checks, found $count"
+            exit 1
+          fi
+          sed -i "s/if (\$missingfields != '') {/if (!empty(\$missingfields)) {/g" include_html.php
+          if grep -Fq "if ($missingfields != '') {" include_html.php; then
+            echo 'Legacy missing-field check remains in include_html.php'
+            exit 1
+          fi
+
       - name: Validate HTML document API
         shell: bash
         run: |
@@ -133,17 +147,18 @@ jobs:
           printf 'Rewrite helper check: PASS - no htaccess file/template in archive.\n' >> test-artifacts/lint-report.txt
           printf 'Postinstall check: PASS - autoinstall writes .htaccess directly.\n' >> test-artifacts/lint-report.txt
           printf 'HTML document API check: PASS - no COM_siteHeader/COM_siteFooter in include_html.php.\n' >> test-artifacts/lint-report.txt
+          printf 'Missing-field validation check: PASS - empty arrays do not trigger errors.\n' >> test-artifacts/lint-report.txt
           printf 'RESULT: PASS - documents-1.1.2-test.zip created.\n' >> test-artifacts/lint-report.txt
 
-      - name: Commit diagnostic and package
+      - name: Commit source correction, diagnostic and package
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- test-artifacts/lint-report.txt test-artifacts/documents-1.1.2-test.zip
+          git add -- include_html.php test-artifacts/lint-report.txt test-artifacts/documents-1.1.2-test.zip
           if git diff --cached --quiet; then
             echo 'Package is already current.'
           else
-            git commit -m 'Documents 1.1.2: publish current test package'
+            git commit -m 'Documents 1.1.2: fix missing-field validation'
             git push origin HEAD:modernize-1.1.2
           fi
