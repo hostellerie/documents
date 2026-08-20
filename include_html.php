@@ -2,13 +2,13 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.0                                                    |
+// | Documents Plugin 1.1.2                                                    |
 // +---------------------------------------------------------------------------+
 // | include_html.php                                                          |
 // |                                                                           |
 // | Plugin administration page                                                |
 // +---------------------------------------------------------------------------+
-// | Copyright (C) 2012-2014 by the following authors:                         |
+// | Copyright (C) 2012-2026 by the following authors:                         |
 // |                                                                           |
 // | Authors: Ben - ben AT geeklog DOT fr                                      |
 // +---------------------------------------------------------------------------+
@@ -57,7 +57,8 @@ function DOCUMENTS_user_menu()
 	
 	if (SEC_hasRights('documents.admin')) {
         $admin_menu = '> ' . '<a href="' . $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=list_fields">' . $LANG_DOCUMENTS_1['fields'] . '</a>';
-		if ($_REQUEST['mode'] ==  ('list_fields' || 'list_groups')) {
+		$mode = DOCUMENTS_requestValue($_REQUEST, 'mode');
+		if ($mode === 'list_fields' || $mode === 'list_groups') {
 		     $admin_menu .= ' > ' . '<a href="' . $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=list_groups">' . $LANG_DOCUMENTS_1['selects'] . '</a>';
 		}
 		$menu->set_var('fields', $admin_menu);
@@ -89,7 +90,7 @@ function DOCUMENTS_missingFieldCat ()
 {
     global $LANG_DOCUMENTS_1, $_TABLES;
 	
-	$fields_array = '';
+	$fields_array = array();
 	if ($_REQUEST['cat_name'] == '') $fields_array[] .= $LANG_DOCUMENTS_1['cat_name'];
 	if ($_REQUEST['cat_url'] == '') $fields_array[] .= $LANG_DOCUMENTS_1['cat_url'];
 	
@@ -117,7 +118,7 @@ function DOCUMENTS_missingField ($field)
 {
     global $LANG_DOCUMENTS_1;
 	
-	$fields_array = '';
+	$fields_array = array();
 	if ($field['f_name'] == '') $fields_array[] .= $LANG_DOCUMENTS_1['field_name'];
 	if ($field['var_name'] == '') $fields_array[] .= $LANG_DOCUMENTS_1['var_name'];
     
@@ -161,7 +162,7 @@ function DOCUMENTS_reorderCategories()
     for ($i = 0; $i < $nrows; $i++) {
         $A = DB_fetchArray($result);
 
-        if ($A['catorder'] != $catOrd) {  // only update incorrect ones
+        if ($A['cat_order'] != $catOrd) {  // only update incorrect ones
             $q = "UPDATE " . $_TABLES['documents_cat'] . " SET cat_order = '" .
                   $catOrd . "' WHERE cid = '" . $A['cid'] ."'";
             DB_query($q);
@@ -174,23 +175,22 @@ function DOCUMENTS_reorderSelects()
 {
     global $_TABLES;
 
-    $sql = "SELECT * FROM {$_TABLES['documents_selects']} WHERE s_group={$_REQUEST['s_group']} ORDER BY s_order ASC;";
+    $group = (int) DOCUMENTS_requestValue($_REQUEST, 's_group', 0);
+    if ($group <= 0) {
+        return;
+    }
+
+    $sql = "SELECT * FROM {$_TABLES['documents_selects']} WHERE s_group={$group} ORDER BY s_order ASC;";
     $result = DB_query($sql);
     $nrows = DB_numRows($result);
-
-
     $sOrd = 10;
-    $stepNumber = 10;
 
     for ($i = 0; $i < $nrows; $i++) {
         $A = DB_fetchArray($result);
-
-        if ($A['s_order'] != $sOrd) {  // only update incorrect ones
-            $q = "UPDATE " . $_TABLES['documents_selects'] . " SET s_order = '" .
-                  $sOrd . "' WHERE sid = '" . $A['sid'] ."'";
-            DB_query($q);
+        if ((int) $A['s_order'] !== $sOrd) {
+            DB_query("UPDATE {$_TABLES['documents_selects']} SET s_order = '{$sOrd}' WHERE sid = '" . (int) $A['sid'] . "'");
         }
-        $sOrd += $stepNumber;
+        $sOrd += 10;
     }
 }
 
@@ -198,39 +198,39 @@ function DOCUMENTS_reorderFields($cat)
 {
     global $_TABLES;
 
-    $sql = "SELECT * FROM {$_TABLES['documents_fields']} WHERE cat_id=$cat ORDER BY f_order ASC;";
+    $cat = (int) $cat;
+    if ($cat <= 0) {
+        return;
+    }
+
+    $sql = "SELECT * FROM {$_TABLES['documents_fields']} WHERE cat_id={$cat} ORDER BY f_order ASC;";
     $result = DB_query($sql);
     $nrows = DB_numRows($result);
-
-
     $fOrd = 10;
-    $stepNumber = 10;
 
     for ($i = 0; $i < $nrows; $i++) {
         $A = DB_fetchArray($result);
-
-        if ($A['f_order'] != $fOrd) {  // only update incorrect ones
-            $q = "UPDATE " . $_TABLES['documents_fields'] . " SET f_order = '" .
-                  $fOrd . "' WHERE fid = '" . $A['fid'] ."'";
-            DB_query($q);
+        if ((int) $A['f_order'] !== $fOrd) {
+            DB_query("UPDATE {$_TABLES['documents_fields']} SET f_order = '{$fOrd}' WHERE fid = '" . (int) $A['fid'] . "'");
         }
-        $fOrd += $stepNumber;
+        $fOrd += 10;
     }
 }
 
 function DOCUMENTS_displayDocument($cat_url, $doc_url) {
 
-    global $_TABLES, $_CONF, $_SCRIPTS, $_DOCUMENTS_CONF, $LANG_DOCUMENTS_1, $_USER, $_PLUGINS, $_MAPS_CONF;
+    global $_TABLES, $_CONF, $_SCRIPTS, $_DOCUMENTS_CONF, $LANG_DOCUMENTS_1, $_USER, $_MAPS_CONF;
 	
 	$_SCRIPTS->setCSSFile('document_css', '/admin/plugins/documents/documents.css');
     $_SCRIPTS->setJavaScriptLibrary('jquery');
-    
-    if (in_array('maps', $_PLUGINS)) {
-        $_SCRIPTS->setJavaScript('<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=' . $_MAPS_CONF['google_api_key'] . '&amp;libraries=adsense"></script>', false, false);
-    }
 	
 	// Category
-	
+	$cat_url = addslashes((string) $cat_url);
+	$doc_url = addslashes((string) $doc_url);
+	$doc = array();
+	$raws = '';
+	$retval = '';
+
 	$sql = "SELECT * FROM {$_TABLES['documents_cat']} 
 			WHERE cat_url = '{$cat_url}'";
 	$res = DB_query($sql);
@@ -350,15 +350,20 @@ function DOCUMENTS_displayDocument($cat_url, $doc_url) {
 	// Select template
 	
 	if ($doc['template'] == '') {
-    	$template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
-	} else {
-	    $template = COM_newTemplate($_CONF['path_data'] . 'data_documents/templates/' . $doc['template']);
-		//js and css
-		$jsfile = $_CONF['path_data'] . 'data_documents/templates/' . $doc['template'] .  '/scripts.thtml';
-		if (file_exists($jsfile)) $_SCRIPTS->setJavaScript(file_get_contents ($jsfile), false);
-		
-		
-	}
+        $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
+    } else {
+        $templateDir = DOCUMENTS_customTemplateReadDir($doc['template']);
+        if ($templateDir === '') {
+            $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
+            $doc['template'] = '';
+        } else {
+            $template = COM_newTemplate(rtrim($templateDir, '/\'));
+            $jsfile = $templateDir . 'scripts.thtml';
+            if (is_file($jsfile) && is_readable($jsfile)) {
+                $_SCRIPTS->setJavaScript(file_get_contents($jsfile), false);
+            }
+        }
+    }
 	$template->set_file(array('doc' => 'document.thtml',
 	                           'comments' => 'doccomments.thtml'));
 	$template->set_var('doc_name', DOC_NAME);
@@ -448,7 +453,9 @@ function DOCUMENTS_displayDocument($cat_url, $doc_url) {
 	$template->set_var('document_url', $_DOCUMENTS_CONF['site_url'] . '/' . $cat_url . '/' . $doc_url);
 	
 	
-	//Comments
+	// Comments
+	$comment_page = 1;
+	$delete_option = false;
 	require_once $_CONF['path_system'] . 'lib-comment.php';
 	$template->set_var('commentbar',
                             CMT_userComments(DOC_URL, DOCUMENT_TITLE, 'documents',
@@ -459,13 +466,15 @@ function DOCUMENTS_displayDocument($cat_url, $doc_url) {
 	$retval .= $template->finish($template->parse('output', 'doc'));
 	
 	// Meta fb
-	$script = '<meta property="og:title" content="' . DOCUMENT_TITLE . '" />
+	$mainDocImg = defined('MAIN_DOC_IMG') ? MAIN_DOC_IMG : '';
+	$facebookKey = isset($_CONF['facebook_consumer_key']) ? $_CONF['facebook_consumer_key'] : '';
+	$script = '<meta property="og:title" content="' . htmlspecialchars(DOCUMENT_TITLE, ENT_QUOTES, 'UTF-8') . '" />
 	<meta property="og:description" content="' . DOCUMENT_TITLE . '" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="' . $_DOCUMENTS_CONF['site_url'] . '/' . $cat_url . '/' . $doc_url . '" />
-	<meta property="og:image" content="' . MAIN_DOC_IMG . '" />
+	<meta property="og:image" content="' . $mainDocImg . '" />
 	<meta property="og:site_name" content="' . $_CONF['site_name'] .'" />
-	<meta property="fb:app_id" content="' . $_CONF['facebook_consumer_key'] .'" />';
+	<meta property="fb:app_id" content="' . $facebookKey .'" />';
 	
 	$_SCRIPTS->setJavaScript($script, false, false);
 	
@@ -477,260 +486,220 @@ function DOCUMENTS_displayDocument($cat_url, $doc_url) {
 }
 
 function DOCUMENTS_buildRawDocument ($field, $doc, &$template, $i) {
-    
-	global $_CONF, $_DOCUMENTS_CONF, $_MG_CONF, $_PLUGINS, $_TABLES, $_SCRIPTS;
-	    
-	// Todo handle display_empty field
-	if ($doc['v_value'][$i] == '' && $field['f_type'] <> 'checkbox') return;
-	
-	switch ($field['f_type']) {
-		
-		
-		case 'checkbox' :
-			$html .= '<td valign="top">&nbsp;</td>' . LB ;
 
-			$checked = '<img src="' . $_CONF['site_url'] . '/admin/plugins/documents/images/disabled.png" align="top" alt="" /> ';
-			if($doc['v_value'][$i] == 1) {
-				$checked = '<img src="' . $_CONF['site_url'] . '/admin/plugins/documents/images/enabled.png" align="top" alt="" /> ';
-			}
-			$content = $checked . '<label class="document_field_right">' . $field['f_name'] . '</label>';
-			$html .= '<td class="document_value">' . $content . '</td>' . LB ;
-			break;
-			
-		case 'radio' :
-			
-			$html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB ;
+    global $_CONF, $_DOCUMENTS_CONF, $_MG_CONF, $_TABLES, $_SCRIPTS, $_MAPS_CONF;
 
-			$count = count($doc['selects']);
-			$checked = '<img src="' . $_CONF['site_url'] . '/admin/plugins/documents/images/enabled.png" align="top" alt="" /> ';
-			$select = '';
-			for ($it=0; $it<=$count; $it++) {   
-				//COM_errorLog ($it . ' | ' . $doc['v_value'][1] . ' | ' . $doc['selects']['name'][$it] . ' | ' . $doc['selects']['value'][$it]);
-				if ($doc['v_value'][1] == $doc['selects']['name'][$it]) {
-					$select .= $checked . $doc['selects']['value'][$it] . '&nbsp;&nbsp;&nbsp;';
-				} else {
-					if ($it == 0) {
-						$select .= $doc['selects']['value'][$it] . '&nbsp;&nbsp;&nbsp;';
-					} else {
-						$select .= '&nbsp;&nbsp;&nbsp;' . $doc['selects']['value'][$it] . '&nbsp;&nbsp;&nbsp;';
-					}
-				}
-			}
-            $content = $select;
-			$html .= '<td class="document_value">' . $content .'</td>' . LB ;
-			break;
-			
-		case 'album' :
-		    
-			if (in_array('mediagallery', $_PLUGINS)) {
-			    $album_name =  DB_getItem($_TABLES['mg_albums'],'album_title',"album_id='{$doc['v_value'][$i]}'");
-				if ($album_name != '') {
-					$content = '<p><strong><a href="' . $_MG_CONF['site_url'] . '/album.php?aid=' . $doc['v_value'][$i] . '">' . $album_name . '</a></strong></p>';
-					$content .= DOCUMENTS_albumGallery($doc['v_value'][$i]);
-					$html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB ;
-					$html .= '<td class="document_value">' . $content . '</td>' . LB ;
-				} else {
-				    break;
-				}
-			} else {
-			    $content = '';
-				$html .= '';
-			}
-			break;
-			
-		case 'category' :
-			//TODO display an item from the category
-			break;
-			
-		case 'file' :
-			//TODO display a link from the downloads plugin
-			break;
-		
-		case 'marker' :
-			if (in_array('maps', $_PLUGINS)) {
-				//TODO display a map from the maps plugin
-				$html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB ;
-				$html .= '<td width="100%" class="document_value">
-					<div id="map_canvas" style="width: 100%; height: 400px">
-					</div></td>';
-				
-				//Get marker info 
-				$sql = "SELECT *
-							FROM {$_TABLES['maps_markers']}
-						WHERE mkid = '{$doc['v_value'][$i]}'";
-								
-				$res = DB_query($sql);
-				$marker = DB_fetchArray($res);
-				
-				$js = LB . '
-				<script type="text/javascript">	
-					
-					var map;
+    $html = '';
+    $content = '';
+    $value = isset($doc['v_value'][$i]) ? $doc['v_value'][$i] : '';
 
-					function initializeGMap() {
-						
-						var mapOptions = {
-						  center: new google.maps.LatLng(' . $marker['lat'] . ', ' . $marker['lng'] . '),
-						  zoom: 10,
-						  mapTypeId: google.maps.MapTypeId.ROADMAP
-						};
-						
-						map = new google.maps.Map(document.getElementById("map_canvas"),
-							mapOptions);
-							
-						var marker = new google.maps.Marker({
-						  map: map,
-						  position: new google.maps.LatLng('. $marker['lat']. ', '. $marker['lng'] .'),
-						  title: "' .  $marker['name'] . '",
-						  animation: google.maps.Animation.DROP,
-						});
-						
-					}
-					
-					google.maps.event.addDomListener(window, \'load\', initializeGMap);
-						
-					</script>' . LB. LB;
-					
-				$_SCRIPTS->setJavaScript($js, false);
-				$content = '<div id="map_canvas" style="width: 100%; height: 400px">
-					</div>';
-			} else {
-			    $content = '';
-				$html .= '';
-			}
-				
-			break;
-			
-		case 'image':
-			$image = '';
-			if(is_file($_DOCUMENTS_CONF['path_images'] . $doc['v_value'][$i])) {
-			    if ($doc['template'] == '') {
-					$img_url = $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . $_DOCUMENTS_CONF['images_url'] .
-					   $doc['v_value'][$i] . '&amp;w=450';
-					$image = '<img class="document_img_big" src="' . $img_url . '" align="top" alt="' . DOC_NAME . '" />';
-				} else {
-				    $img_url = $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . $_DOCUMENTS_CONF['images_url'] .
-						$doc['v_value'][$i] . '&amp;w=700';
-					$image = '<img class="document_img_big" width="100%" src="' . $img_url . '" align="top" alt="' . DOC_NAME . '" />';
-				}
-				if (!defined('MAIN_DOC_IMG')) {
-				    define("MAIN_DOC_IMG", $img_url);
-				}
-			}
-			$html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB ;
-			$content = $image;
-			$html .= '<td class="document_value">' . $content . '</td>' . LB ;
-			break;
-		
-		
-		case 'select' :
-			$html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB ;
-			$content = $doc['s_name'][$i];
-			$html .= '<td class="document_value">' . $content . '</td>' . LB ;
-			break;
-			
-		case 'decimal':
-			$decimal['decimal'] = $doc['v_value'][$i];
-			DOCUMENTS_filterVars(array('decimal'=>'number'), $decimal);
-				$doc['v_value'][$i] = number_format( $decimal['decimal'], $_CONF['decimal_count'], $_CONF['decimal_separator'], $_CONF['thousand_separator']);
+    if ($value === '' && $field['f_type'] != 'checkbox') {
+        $template->set_var($field['var_name'], '');
+        return '';
+    }
 
-			$html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB ;
-			$content = $doc['v_value'][$i];
-			$html .= '<td class="document_value">' . $content . '</td>' . LB ;
-			break;
-			
-		case 'date':
-			//$date = COM_getUserDateTimeFormat($doc['v_value'][$i]);
-			//$doc['v_value'][$i] = $date[0];
-			//$date = COM_getUserDateTimeFormat($doc['v_value'][$i]);
-			try {
-				$date = new DateTime($doc['v_value'][$i]);
-				$doc['v_value'][$i] = $date->format($_DOCUMENTS_CONF['date']);
-			} catch (Exception $e) {
-				
-			}
+    switch ($field['f_type']) {
+        case 'checkbox':
+            $html .= '<td valign="top">&nbsp;</td>' . LB;
+            $checked = '<img src="' . $_CONF['site_url'] . '/admin/plugins/documents/images/disabled.png" align="top" alt="" /> ';
+            if ((int) $value === 1) {
+                $checked = '<img src="' . $_CONF['site_url'] . '/admin/plugins/documents/images/enabled.png" align="top" alt="" /> ';
+            }
+            $content = $checked . '<label class="document_field_right">' . $field['f_name'] . '</label>';
+            $html .= '<td class="document_value">' . $content . '</td>' . LB;
+            break;
 
-			$html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB ;
-			$content = $doc['v_value'][$i];
-			$html .= '<td class="document_value">' . $content . '</td>' . LB ;
-			
-			break;
-			
+        case 'radio':
+            $html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB;
+            $options = isset($doc['selects'][$i]) && is_array($doc['selects'][$i]) ? $doc['selects'][$i] : array();
+            $names = isset($options['name']) && is_array($options['name']) ? $options['name'] : array();
+            $values = isset($options['value']) && is_array($options['value']) ? $options['value'] : array();
+            $selected = '';
+            $checked = '<img src="' . $_CONF['site_url'] . '/admin/plugins/documents/images/enabled.png" align="top" alt="" /> ';
+            $count = count($names);
+            for ($it = 0; $it < $count; $it++) {
+                $label = isset($values[$it]) ? $values[$it] : '';
+                if ($value == $names[$it]) {
+                    $selected .= $checked . $label . '&nbsp;&nbsp;&nbsp;';
+                } else {
+                    $selected .= $label . '&nbsp;&nbsp;&nbsp;';
+                }
+            }
+            $content = $selected;
+            $html .= '<td class="document_value">' . $content . '</td>' . LB;
+            break;
 
-		case 'text':
-				
-		default:
-			$html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB ;
-			$content =  nl2br( stripslashes($doc['v_value'][$i]));
-			// convert link to url
-            $content = preg_replace('/((http:\/\/|https:\/\/)[^ |<)]+)/e', "'<a href=\"$1\" target=\"_blank\" title=\"$1\" >'. ((strlen('$1')>=50 ? substr('$1',0,50).'...':'$1')).'</a> '", $content);
-			
-			$html .= '<td class="document_value">' . $content . '</td>' . LB ;
-			break;
-		
-	}
-	
-	// For custom template
-	$template->set_var($field['var_name'], PLG_replaceTags($content));
-	
-	$html = '<tr>' . LB . $html . LB;
-	$html .= '</tr>' . LB;
+        case 'album':
+            if (!DOCUMENTS_hasMediaGallery() || !is_numeric($value)) {
+                $template->set_var($field['var_name'], '');
+                return '';
+            }
+            $albumId = (int) $value;
+            $album_name = DB_getItem($_TABLES['mg_albums'], 'album_title', "album_id='{$albumId}'");
+            if ($album_name === '') {
+                $template->set_var($field['var_name'], '');
+                return '';
+            }
+            $content = '<p><strong><a href="' . $_MG_CONF['site_url'] . '/album.php?aid=' . $albumId . '">' . $album_name . '</a></strong></p>';
+            $content .= DOCUMENTS_albumGallery($albumId);
+            $html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB;
+            $html .= '<td class="document_value">' . $content . '</td>' . LB;
+            break;
 
-    // replace autotag
-	$html = PLG_replaceTags($html);
-	return $html;
-	
+        case 'category':
+        case 'file':
+            $template->set_var($field['var_name'], '');
+            return '';
+
+        case 'marker':
+            if (!DOCUMENTS_hasMaps()) {
+                $template->set_var($field['var_name'], '');
+                return '';
+            }
+            $mkid = addslashes((string) $value);
+            $sql = "SELECT * FROM {$_TABLES['maps_markers']} WHERE mkid = '{$mkid}'";
+            $res = DB_query($sql);
+            $marker = DB_fetchArray($res);
+            if (!is_array($marker) || !isset($marker['lat'], $marker['lng'])) {
+                $template->set_var($field['var_name'], '');
+                return '';
+            }
+            if (isset($_MAPS_CONF['google_api_key']) && $_MAPS_CONF['google_api_key'] !== '') {
+                $_SCRIPTS->setJavaScript('<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=' . rawurlencode($_MAPS_CONF['google_api_key']) . '"></script>', false, false);
+            }
+            $mapId = 'map_canvas_' . (int) $i;
+            $html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB;
+            $html .= '<td width="100%" class="document_value"><div id="' . $mapId . '" style="width: 100%; height: 400px"></div></td>';
+            $lat = (float) $marker['lat'];
+            $lng = (float) $marker['lng'];
+            $markerName = isset($marker['name']) ? json_encode($marker['name']) : '""';
+            $js = '<script type="text/javascript">'
+                . 'function initializeGMap_' . (int) $i . '(){'
+                . 'var center=new google.maps.LatLng(' . $lat . ',' . $lng . ');'
+                . 'var map=new google.maps.Map(document.getElementById(' . json_encode($mapId) . '),{center:center,zoom:10,mapTypeId:google.maps.MapTypeId.ROADMAP});'
+                . 'new google.maps.Marker({map:map,position:center,title:' . $markerName . ',animation:google.maps.Animation.DROP});'
+                . '}'
+                . 'google.maps.event.addDomListener(window,"load",initializeGMap_' . (int) $i . ');'
+                . '</script>';
+            $_SCRIPTS->setJavaScript($js, false);
+            $content = '<div id="' . $mapId . '" style="width: 100%; height: 400px"></div>';
+            break;
+
+        case 'image':
+            $image = '';
+            $filename = basename((string) $value);
+            if ($filename !== '' && is_file($_DOCUMENTS_CONF['path_images'] . $filename)) {
+                $previewWidth = ($doc['template'] == '') ? 450 : 700;
+                $img_url = $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . rawurlencode($filename) . '&amp;w=' . $previewWidth;
+                $widthAttr = ($doc['template'] == '') ? '' : ' width="100%"';
+                $image = '<img class="document_img_big"' . $widthAttr . ' src="' . $img_url . '" align="top" alt="' . htmlspecialchars(DOC_NAME, ENT_QUOTES, 'UTF-8') . '" />';
+                if (!defined('MAIN_DOC_IMG')) {
+                    define('MAIN_DOC_IMG', $img_url);
+                }
+            }
+            $html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB;
+            $content = $image;
+            $html .= '<td class="document_value">' . $content . '</td>' . LB;
+            break;
+
+        case 'select':
+            $html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB;
+            $content = isset($doc['s_name'][$i]) ? $doc['s_name'][$i] : '';
+            $html .= '<td class="document_value">' . $content . '</td>' . LB;
+            break;
+
+        case 'decimal':
+            $decimal = array('decimal' => $value);
+            DOCUMENTS_filterVars(array('decimal' => 'number'), $decimal);
+            $decimalCount = isset($_CONF['decimal_count']) ? (int) $_CONF['decimal_count'] : 2;
+            $decimalSeparator = isset($_CONF['decimal_separator']) ? $_CONF['decimal_separator'] : '.';
+            $thousandSeparator = isset($_CONF['thousand_separator']) ? $_CONF['thousand_separator'] : ',';
+            $content = number_format((float) $decimal['decimal'], $decimalCount, $decimalSeparator, $thousandSeparator);
+            $html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB;
+            $html .= '<td class="document_value">' . $content . '</td>' . LB;
+            break;
+
+        case 'date':
+            $content = $value;
+            try {
+                $date = new DateTime($value);
+                $content = $date->format($_DOCUMENTS_CONF['date']);
+            } catch (Exception $e) {
+                // Keep the stored value when it cannot be parsed.
+            }
+            $html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB;
+            $html .= '<td class="document_value">' . $content . '</td>' . LB;
+            break;
+
+        case 'text':
+        default:
+            $html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB;
+            $content = nl2br(stripslashes($value));
+            $content = DOCUMENTS_linkifyUrls($content);
+            $html .= '<td class="document_value">' . $content . '</td>' . LB;
+            break;
+    }
+
+    $template->set_var($field['var_name'], PLG_replaceTags($content));
+    $html = '<tr>' . LB . $html . LB . '</tr>' . LB;
+
+    return PLG_replaceTags($html);
 }
 
 function DOCUMENTS_albumGallery($album) {
-    
-	global $MG_albums, $_TABLES, $_CONF, $_MG_CONF, $_DOCUMENTS_CONF, $_SCRIPTS;
 
-    require_once($_CONF['path'] . 'plugins/mediagallery/include/classMedia.php');
-	if(!is_numeric($album)) return;
+    global $_TABLES, $_CONF, $_MG_CONF, $_DOCUMENTS_CONF, $_SCRIPTS;
 
-    $album_gallery = '';
-	$album_gallery .= '<div id="mg_album_gallery">';
-	
-	//Fancybox			
+    if (!DOCUMENTS_hasMediaGallery() || !is_numeric($album)) {
+        return '';
+    }
+
+    $classMedia = $_CONF['path'] . 'plugins/mediagallery/include/classMedia.php';
+    if (!is_file($classMedia)) {
+        return '';
+    }
+    require_once $classMedia;
+
+    $album = (int) $album;
+    $album_gallery = '<div id="mg_album_gallery">';
     $fancybox = '<script type="text/javascript">jQuery(document).ready(function() {' . LB;
-    $fancybox .= 'jQuery(".various").fancybox({
-                    \'transitionIn\'	: \'none\',
-                    \'transitionOut\'	: \'none\'
-                });' . LB;
 
-    $sql = "SELECT * FROM {$_TABLES['mg_media']} AS m LEFT JOIN {$_TABLES['mg_media_albums']} AS ma ON m.media_id=ma.media_id WHERE ma.album_id=$album ORDER BY ma.media_order DESC";
-    $result = DB_query($sql,1);
+    $sql = "SELECT * FROM {$_TABLES['mg_media']} AS m "
+        . "LEFT JOIN {$_TABLES['mg_media_albums']} AS ma ON m.media_id=ma.media_id "
+        . "WHERE ma.album_id={$album} ORDER BY ma.media_order DESC";
+    $result = DB_query($sql, 1);
     $nRows = DB_numRows($result);
 
     for ($x = 0; $x < $nRows; $x++) {
+        $row = DB_fetchArray($result);
+        if (!is_array($row) || $row['media_mime_ext'] == '.bmp') {
+            continue;
+        }
+        $media = new Media($row, $row['album_id']);
+        $mfn = 'tn/' . $row['media_filename'][0] . '/' . $row['media_filename'];
+        $row['media_mime_ext'] = $media->getMediaExt($_MG_CONF['path_mediaobjects'] . $mfn);
+        $tn_size = 11;
+        $image = $_MG_CONF['mediaobjects_url'] . '/' . $media->getDefaultThumbnail($row, $tn_size);
+        $display_image = $_MG_CONF['mediaobjects_url'] . '/disp/' . $row['media_filename'][0] . '/' . $row['media_filename'] . $row['media_mime_ext'];
+        $title = htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8');
 
-	    $row = DB_fetchArray($result);
-        if ( $row['media_mime_ext'] == '.bmp' ) continue;
-		$media = new Media($row,$row['album_id']);
-		$mfn = 'tn/' . $row['media_filename'][0] . '/' . $row['media_filename'];
-		$row['media_mime_ext'] = $media->getMediaExt($_MG_CONF['path_mediaobjects'] . $mfn);
-        $tn_size = 11; // include:150x150
-		$image = $_MG_CONF['mediaobjects_url'] . '/' . $media->getDefaultThumbnail($row, $tn_size);
-		$display_image = $_MG_CONF['mediaobjects_url'] . '/disp/' . $row['media_filename'][0] . '/' . $row['media_filename'] . $row['media_mime_ext'];
+        $album_gallery .= '<a class="lightbox_' . $row['media_id'] . '" rel="group' . $album
+            . '" href="' . $display_image . '" title="' . $title . '">'
+            . '<img class="documents_photo_gallery" width="100" height="100" src="' . $image
+            . '" alt="' . $title . '" title="' . $title . '" /></a>';
 
-		$album_gallery .= '<a class="lightbox_' . $row['media_id'] . '" rel="group' . $album . '" href="' . $display_image . '" alt="' . $row['title'] . '" title="'. $row['title'] . '"><img class="documents_photo_gallery" width="100" height="100" src="' . $_DOCUMENTS_CONF['site_url'] . '/image.php?src='
-		. $image . '&w=100&h=100&q=90&zc=1" alt="' . $row['title'] . '" title="'. $row['title'] . '" /></a>';
-		
-		$fancybox .= '    jQuery("a.lightbox_' . $row['media_id'] . '").fancybox( {
-                hideOnContentClick : true
-            });' . LB;
+        $fancybox .= 'jQuery("a.lightbox_' . $row['media_id'] . '").fancybox({hideOnContentClick:true});' . LB;
     }
-	
-	$album_gallery .= '</div><div style="clear:both;">&nbsp;</div>';
-	$fancybox .= '		});</script>' . LB . LB;
-	
-	$_SCRIPTS->setJavaScriptLibrary('jquery'); 
-	$_SCRIPTS->setJavaScriptFile('documents_mousewheel', '/admin/plugins/documents/js/fancybox/jquery.mousewheel-3.0.4.pack.js', true);
-    $_SCRIPTS->setJavaScriptFile('documents_fancybox', '/admin/plugins/documents/js/fancybox/jquery.fancybox-1.3.4.pack.js', true,1000);
+
+    $album_gallery .= '</div><div style="clear:both;">&nbsp;</div>';
+    $fancybox .= '});</script>' . LB;
+
+    $_SCRIPTS->setJavaScriptLibrary('jquery');
+    $_SCRIPTS->setJavaScriptFile('documents_mousewheel', '/admin/plugins/documents/js/fancybox/jquery.mousewheel-3.0.4.pack.js', true);
+    $_SCRIPTS->setJavaScriptFile('documents_fancybox', '/admin/plugins/documents/js/fancybox/jquery.fancybox-1.3.4.pack.js', true, 1000);
     $_SCRIPTS->setCSSFile('documents_css_fancybox', '/admin/plugins/documents/js/fancybox/jquery.fancybox-1.3.4.css', false);
     $_SCRIPTS->setJavaScript($fancybox, false);
-	
+
     return $album_gallery;
 }
 
@@ -742,8 +711,9 @@ function DOCUMENTS_albumGallery($album) {
 function DOCUMENTS_hit ($doc)
 {
     global $_TABLES;
-    
-    DB_query("UPDATE {$_TABLES['documents_docs']} SET hits = hits + 1 WHERE doc_url = '$doc'");
+
+    $doc = addslashes((string) $doc);
+    DB_query("UPDATE {$_TABLES['documents_docs']} SET hits = hits + 1 WHERE doc_url = '{$doc}'");
 }
 
 /**
@@ -1032,13 +1002,14 @@ function DOCUMENTS_uploadImage ($image_name=array(), $input_name=array(), $field
 
 	// Set file permissions on file after it gets uploaded (number is in octal)
 	$upload->setPerms('0644');
-	
+
+	$filename = array();
 	$count = count($image_name);
 	$i = 0;
 
 	for ($z = 0; $z < $count; $z++) {
 	    
-		$curfile = $_FILES[$input_name[$z]];
+		$curfile = isset($_FILES[$input_name[$z]]) && is_array($_FILES[$input_name[$z]]) ? $_FILES[$input_name[$z]] : array();
 
 		if (!empty($curfile['name'])) {
 			$pos = strrpos($curfile['name'],'.') + 1;
@@ -1046,6 +1017,10 @@ function DOCUMENTS_uploadImage ($image_name=array(), $input_name=array(), $field
 			$filename[$i] = $image_name[$i] . '.' . $fextension;
 			$i++;
 		} 
+	}
+
+	if (empty($filename)) {
+		return true;
 	}
 
 	$upload->setFileNames($filename);
@@ -1107,9 +1082,9 @@ function DOCUMENTS_uploadImage ($image_name=array(), $input_name=array(), $field
 
 function DOCUMENTS_saveMarker ($mid, $mkid, $doc_url) {
 
-	global $_TABLES, $_DOCUMENTS_CONF, $_PLUGINS;
+	global $_TABLES, $_DOCUMENTS_CONF;
 	
-	if( !in_array('maps', $_PLUGINS) ) {
+	if (!DOCUMENTS_hasMaps()) {
 	    return;
 	}
 	
@@ -1259,10 +1234,11 @@ DOCUMENTS_filterVars($vars, $_REQUEST);
 DOCUMENTS_filterVars($vars, $_GET);
 
 $display = '';
+$content = '';
 
 // MAIN
 
-switch ($_REQUEST['mode']) {
+switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 
 	case 'view':
 	
@@ -1345,6 +1321,14 @@ switch ($_REQUEST['mode']) {
 		    }
 			
 			( empty($_REQUEST['cat_order']) ) ? $_REQUEST['cat_order'] = 0 : 0;
+
+			if (!DOCUMENTS_hasMaps()) {
+				if (!empty($_REQUEST['cid']) && is_numeric($_REQUEST['cid'])) {
+					$_REQUEST['map'] = DB_getItem($_TABLES['documents_cat'], 'map', 'cid=' . (int) $_REQUEST['cid']);
+				} else {
+					$_REQUEST['map'] = 0;
+				}
+			}
 
 			if ( (!empty($_REQUEST['cid'])) && (is_numeric($_REQUEST['cid'])) ) {
 				
@@ -1464,6 +1448,10 @@ switch ($_REQUEST['mode']) {
 			} else {
 						
 				$missingfields = DOCUMENTS_missingField($_REQUEST);
+				$fType = DOCUMENTS_requestValue($_REQUEST, 'f_type');
+				if (($fType === 'marker' && !DOCUMENTS_hasMaps()) || ($fType === 'album' && !DOCUMENTS_hasMediaGallery())) {
+					$missingfields[] = 'Optional field type is unavailable because its plugin is inactive.';
+				}
 				if ($missingfields != '') {
 					$display .= COM_startBlock($LANG_DOCUMENTS_1['error']);
 					$display .= $LANG_DOCUMENTS_1['missing_field'];
@@ -1931,7 +1919,7 @@ switch ($_REQUEST['mode']) {
 			//Delete all fields
 			DB_delete($_TABLES['documents_values'], 'doc_url', $_REQUEST['doc_url']);
 			
-			if( in_array('maps', $_PLUGINS) ) {
+			if (DOCUMENTS_hasMaps() && DOCUMENTS_requestValue($_REQUEST, 'mkid') !== '') {
     			//Delete marker
 			    DB_delete($_TABLES['maps_markers'], 'mkid', $_REQUEST['mkid']);
 			}
@@ -1962,8 +1950,16 @@ switch ($_REQUEST['mode']) {
 			// Todo check missing fields
 			
 			// For each field save value
-			
+			$image_names = array();
+			$input_names = array();
+			$image_fields = array();
+			$creation = isset($_REQUEST['doc_url']) && $_REQUEST['doc_url'] !== '' ? 0 : 1;
+
 			while ($A = DB_fetchArray($fields)) {
+				if (($A['f_type'] === 'marker' && !DOCUMENTS_hasMaps())
+				    || ($A['f_type'] === 'album' && !DOCUMENTS_hasMediaGallery())) {
+					continue;
+				}
 
 				// Todo clean values and security check
 				if (isset($_REQUEST['doc_url']) &&  $_REQUEST['doc_url']!= '') {
@@ -2000,7 +1996,7 @@ switch ($_REQUEST['mode']) {
 							   //Get map id
 							   $mid = DB_getItem($_TABLES['documents_cat'],'map',"cat_url='{$cat['cat_url']}'");
 							   //Create marker
-							   $A['fid'] = DOCUMENTS_saveMarker ($mid, $_REQUEST['mkid'], $_REQUEST['doc_url']);
+							   $value = DOCUMENTS_saveMarker($mid, DOCUMENTS_requestValue($_REQUEST, 'mkid'), $_REQUEST['doc_url']);
 							}
 							//TODO check missing perms
 							$sql = "v_value='{$value}', "
@@ -2020,7 +2016,7 @@ switch ($_REQUEST['mode']) {
 							   //Get map id
 							   $mid = DB_getItem($_TABLES['documents_cat'],'map',"cat_url='{$cat['cat_url']}'");
 							   //Create marker
-							   $value = DOCUMENTS_saveMarker ($mid, $_REQUEST['mkid'], $_REQUEST['doc_url']);
+							   $value = DOCUMENTS_saveMarker($mid, DOCUMENTS_requestValue($_REQUEST, 'mkid'), $_REQUEST['doc_url']);
 							}
 							
 							$sql = "v_value='{$value}'";
@@ -2087,7 +2083,7 @@ switch ($_REQUEST['mode']) {
 							   //Get map id
 							   $mid = DB_getItem($_TABLES['documents_cat'],'map',"cat_url='{$cat['cat_url']}'");
 							   //Create marker
-							   $value = DOCUMENTS_saveMarker ($mid, $_REQUEST['mkid'], DOC_URL);
+							   $value = DOCUMENTS_saveMarker($mid, DOCUMENTS_requestValue($_REQUEST, 'mkid'), DOC_URL);
 							} else {
 						        $value = addslashes($_REQUEST[$A['var_name']]);
 							}
@@ -2241,7 +2237,7 @@ $display .= COM_siteHeader('menu',  $page_title);
 $display .= DOCUMENTS_user_menu();
 
 // If any message
-$display .= DOCUMENTS_message($_REQUEST['msg']);
+$display .= DOCUMENTS_message(DOCUMENTS_requestValue($_REQUEST, 'msg'));
 
 $display .= $content;
 $display .= COM_siteFooter();
