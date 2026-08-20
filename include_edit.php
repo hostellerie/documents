@@ -524,7 +524,6 @@ function DOCUMENTS_editDoc($doc = array())
     $template->set_var('admin_options', $options);
     $template->set_var('required_field', $LANG_DOCUMENTS_1['required_field']);
     $template->set_var('validate_button', $LANG_DOCUMENTS_1['validate_button']);
-    $template->set_var('required_doc', $LANG_DOCUMENTS_1['required_doc']);
 
     return $template->parse('output', 'doc');
 }
