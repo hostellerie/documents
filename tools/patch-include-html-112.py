@@ -14,27 +14,21 @@ def replace_once(old, new, label):
 
 
 replace_once(
-    "\t\t\tif (is_numeric($_REQUEST['cat'])) {\n\t\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$_REQUEST['cat']}\";",
-    "\t\t\t$catId = (int) DOCUMENTS_requestValue($_REQUEST, 'cat', 0);\n\t\t\tif ($catId > 0) {\n\t\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$catId}\";",
-    'edit category id'
+    "\t\t\trequire_once ($_CONF['path']  . 'plugins/documents/include_edit.php');\n\t\t\t\n\t\t\t$missingfields = DOCUMENTS_missingFieldCat();",
+    "\t\t\trequire_once ($_CONF['path']  . 'plugins/documents/include_edit.php');\n\n\t\t\t$catDefaults = array(\n\t\t\t\t'cid' => 0, 'cat_name' => '', 'cat_url' => '', 'cat_order' => 0, 'css' => '',\n\t\t\t\t'map' => 0, 'template' => '', 'list_index' => 0, 'submitable' => 0,\n\t\t\t\t'cat_help' => '', 'custom_header' => '', 'custom_footer' => '',\n\t\t\t\t'owner_id' => 0, 'group_id' => 0, 'perm_owner' => '', 'perm_group' => '',\n\t\t\t\t'perm_members' => '', 'perm_anon' => ''\n\t\t\t);\n\t\t\tforeach ($catDefaults as $key => $default) {\n\t\t\t\tif (!isset($_REQUEST[$key])) {\n\t\t\t\t\t$_REQUEST[$key] = $default;\n\t\t\t\t}\n\t\t\t}\n\n\t\t\t$missingfields = DOCUMENTS_missingFieldCat();",
+    'category defaults'
 )
 replace_once(
-    "\t\t\tif (is_numeric($_REQUEST['field'])) {\n\t\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_fields']} WHERE fid = {$_REQUEST['field']}\";",
-    "\t\t\t$fieldId = (int) DOCUMENTS_requestValue($_REQUEST, 'field', 0);\n\t\t\tif ($fieldId > 0) {\n\t\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_fields']} WHERE fid = {$fieldId}\";",
-    'edit field id'
+    "\t\t\tif (is_array($_REQUEST['perm_owner']) OR is_array($_REQUEST['perm_group']) OR is_array($_REQUEST['perm_members']) OR is_array($_REQUEST['perm_anon'])) {",
+    "\t\t\tif (is_array($_REQUEST['perm_owner']) || is_array($_REQUEST['perm_group']) || is_array($_REQUEST['perm_members']) || is_array($_REQUEST['perm_anon'])) {",
+    'category permissions'
 )
 replace_once(
-    "\t\t\tif (is_numeric($_REQUEST['group'])) {\n\t\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_selects_group']} WHERE gid = {$_REQUEST['group']}\";",
-    "\t\t\t$groupId = (int) DOCUMENTS_requestValue($_REQUEST, 'group', 0);\n\t\t\tif ($groupId > 0) {\n\t\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_selects_group']} WHERE gid = {$groupId}\";",
-    'edit group id'
-)
-replace_once(
-    "\t\t\tif (is_numeric($_REQUEST['select'])) {\n\t\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_selects']} WHERE sid = {$_REQUEST['select']}\";",
-    "\t\t\t$selectId = (int) DOCUMENTS_requestValue($_REQUEST, 'select', 0);\n\t\t\tif ($selectId > 0) {\n\t\t\t\t$sql = \"SELECT * FROM {$_TABLES['documents_selects']} WHERE sid = {$selectId}\";",
-    'edit select id'
+    "\t\t\tif ( (!empty($_REQUEST['cid'])) && (is_numeric($_REQUEST['cid'])) ) {",
+    "\t\t\t$_REQUEST['cid'] = (int) $_REQUEST['cid'];\n\t\t\t$_REQUEST['cat_order'] = (int) $_REQUEST['cat_order'];\n\t\t\t$_REQUEST['map'] = (int) $_REQUEST['map'];\n\t\t\t$_REQUEST['list_index'] = (int) $_REQUEST['list_index'];\n\t\t\t$_REQUEST['submitable'] = (int) $_REQUEST['submitable'];\n\t\t\t$_REQUEST['owner_id'] = (int) $_REQUEST['owner_id'];\n\t\t\t$_REQUEST['group_id'] = (int) $_REQUEST['group_id'];\n\n\t\t\tif ($_REQUEST['cid'] > 0) {",
+    'category numerics'
 )
 
 if text == original:
     raise RuntimeError('No changes applied')
-
 path.write_text(text, encoding='utf-8')
