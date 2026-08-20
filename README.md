@@ -12,8 +12,45 @@ See [ROADMAP.md](ROADMAP.md) for the complete stabilization, architecture and fe
 
 - Geeklog **2.1.1 through 2.2.2**
 - PHP **5.6 through 8.1**
+- single-site and multisite Geeklog installations
 
 The code must remain syntactically compatible with PHP 5.6 throughout the 1.x modernization work unless this policy is explicitly changed in a future major release.
+
+## Persistent data and multisite
+
+Documents persistent data must not be stored inside a directory that Geeklog may treat as disposable cache/data content.
+
+The plugin derives its own persistent data directory from the current site's `$_CONF['path_data']`:
+
+```php
+function DOCUMENTS_dataDir()
+{
+    global $_CONF;
+
+    $base = isset($_CONF['path_data']) ? rtrim($_CONF['path_data'], "/\\") : '';
+    if ($base === '') {
+        return '';
+    }
+
+    return dirname($base) . DIRECTORY_SEPARATOR
+        . basename($base) . '-documents' . DIRECTORY_SEPARATOR;
+}
+```
+
+Examples:
+
+- `/home/site/data/` becomes `/home/site/data-documents/`
+- `/home/site/data-site2/` becomes `/home/site/data-site2-documents/`
+
+This makes the directory unique for each site in a multisite installation while keeping the same behavior in a normal single-site installation.
+
+Historical Documents versions used:
+
+```text
+<path_data>/data_documents/
+```
+
+The legacy path is still identified by the stabilization code so existing installations can be migrated safely. The actual idempotent file migration is planned for the 1.1.7 upgrade work. New code must use the site-specific Documents data directory and must not introduce a fixed global `site-documents` path.
 
 ## Optional integrations
 
@@ -46,15 +83,18 @@ When MediaGallery is missing or inactive, Documents must:
 The first stabilization release focuses on:
 
 - removal of unsolicited installation/upgrade telemetry;
-- stronger compatibility checks;
+- stronger Geeklog/PHP compatibility checks;
 - protection of administrative AJAX actions;
-- optional Maps and MediaGallery behavior;
-- legacy image-processing replacement planning;
-- input/output hardening without changing the historical data model.
+- multisite-safe persistent data path handling;
+- strict optional Maps and MediaGallery behavior;
+- removal of TimThumb and replacement with local-only image handling;
+- input/output hardening without changing the historical database model.
 
 ## Upgrade policy
 
 The 1.1.x series must preserve existing Documents installations and data. Major database restructuring is intentionally deferred until 1.3.0.
+
+The legacy `data_documents` directory must not be deleted manually before the migration step has been tested. During stabilization, it remains the source directory for upgrade migration compatibility.
 
 Before installing a development build on a production site, back up both the Geeklog database and the Documents image/data directories.
 
