@@ -88,6 +88,7 @@ $LANG_DOCUMENTS_1 = array(
 	'list_fields'     => 'List of the fields',
 	'field_name'      => 'Name of the field',
 	'field_order'     => 'Field order',
+	'existing_field' => 'Champs existants (ordre et nom)',
 	'var_name'        => 'Name of the variable',
 	'field_help'      => 'Help for submission form',
 	'type'            => 'Type',

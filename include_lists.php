@@ -146,7 +146,7 @@ function plugin_getListField_documents_categories($fieldname, $fieldvalue, $A, $
                     ";
 			*/
 			
-		    $sql = "SELECT DISTINCT doc.doc_url, doc.owner_id, doc_val.v_value as name, doc_cat.cat_name, doc_cat.cat_url, doc.modified, img_val.v_value, u.username, u.photo, u.email FROM {$_TABLES['documents_docs']} AS doc {$left_join} WHERE doc_cat.cid='{$A['cid']}' AND doc_field.f_order=10 AND doc.active=1"  . COM_getPermSQL( $type = 'AND', $_USER['uid'], 2, 'doc') . " ORDER BY doc.modified DESC";
+		    $sql = "SELECT DISTINCT doc.doc_url, doc.owner_id, doc_val.v_value as name, doc_cat.cat_name, doc_cat.cat_url, doc.modified, img_val.v_value, u.username, u.photo, u.email FROM {$_TABLES['documents_docs']} AS doc {$left_join} WHERE doc_cat.cid='{$A['cid']}' AND doc_field.f_order=10 AND doc.active=1"  . COM_getPermSQL('AND', $_USER['uid'], 2, 'doc') . " ORDER BY doc.modified DESC";
 			
 			$result = DB_query ($sql);
             $nb_result = DB_numRows($result);
@@ -157,7 +157,7 @@ function plugin_getListField_documents_categories($fieldname, $fieldvalue, $A, $
 			while ($B = DB_fetchArray($result, false)) {
 			    if ($it >= 6) break;
 				$B['name'] = stripslashes($B['name']);
-				$display_url = $_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url'] . '/' . $B['doc_url'];
+				$display_url = $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url']) . '&doc=' . rawurlencode($B['doc_url']);
 				(strlen($B['name'])>=30) ? $title = substr($B['name'],0,30).'...' : $title = $B['name'];
 				
 				if ($B['v_value'] != '') {
@@ -194,7 +194,7 @@ function plugin_getListField_documents_categories($fieldname, $fieldvalue, $A, $
                 $edit = ' ' . COM_createLink($icon_arr['edit'], $edit_url);
 			}
 			
-            $retval = '<h2 style="font-size:large;margin-top:10px; margin-left:8px;"><a href="' . $_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url'] . '">' . stripslashes($fieldvalue) . '</a>' . $cat_hidden . $edit . '</h2>';
+            $retval = '<h2 style="font-size:large;margin-top:10px; margin-left:8px;"><a href="' . $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url']) . '">' . stripslashes($fieldvalue) . '</a>' . $cat_hidden . $edit . '</h2>';
 			
 			
 			//images if any
@@ -203,7 +203,7 @@ function plugin_getListField_documents_categories($fieldname, $fieldvalue, $A, $
 			} else {
 			    $retval .= '<p>' . $doc_titles . '<div style="clear:both;"></div>';
 			}
-			$retval .= '</p><p class="document_read_more"><small><a href="' . $_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url'] . '">' . $LANG_DOCUMENTS_1['see_all_docs'] . ' (' . $nb_result . ')</a></small></p>';
+			$retval .= '</p><p class="document_read_more"><small><a href="' . $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url']) . '">' . $LANG_DOCUMENTS_1['see_all_docs'] . ' (' . $nb_result . ')</a></small></p>';
             break;
 			
 		case 'edit':
@@ -609,7 +609,7 @@ function plugin_getListField_documents_docs($fieldname, $fieldvalue, $A, $icon_a
                                 $A['perm_owner'], $A['perm_group'],
                                 $A['perm_members'], $A['perm_anon']);
 			
-			$display_url = $_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url'] . '/' . $A['doc_url'];
+			$display_url = $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url']) . '&doc=' . rawurlencode($A['doc_url']);
 			
 			if (SEC_hasRights('documents.admin')) {
 			    $edit_url = $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=edit&doc_url=' . $A['doc_url'] . '&cat=' . $A['cat_id'];
@@ -642,7 +642,7 @@ function plugin_getListField_documents_docs($fieldname, $fieldvalue, $A, $icon_a
 				$markerValue = isset($A['marker']) ? $A['marker'] : '';
 				if ($fieldvalue == $imageValue && $fieldvalue != '') {
 					//image
-					$doc_url = $_DOCUMENTS_CONF['site_url'] . '/' . $A['cat_url'] . '/' . $A['doc_url'];
+					$doc_url = $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url']) . '&doc=' . rawurlencode($A['doc_url']);
 					$image = '<img class="document_img" src="' . $_DOCUMENTS_CONF['site_url'] . '/image.php?src=' . rawurlencode(basename($fieldvalue)) .
 						'&amp;w=200&amp;h=200" align="top" alt="" />';
 						
