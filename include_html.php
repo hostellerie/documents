@@ -1618,7 +1618,11 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			require_once ($_CONF['path']  . 'plugins/documents/include_edit.php');
 			
-			if ($_REQUEST['group_name'] == '') {
+			$groupName = trim((string) DOCUMENTS_requestValue($_REQUEST, 'group_name', ''));
+			$groupHelp = (string) DOCUMENTS_requestValue($_REQUEST, 'group_help', '');
+			$saveGroupId = DOCUMENTS_requestInt($_REQUEST, 'gid', 0);
+
+			if ($groupName === '') {
 				$content = COM_startBlock($LANG_DOCUMENTS_1['error']);
 				$content .= $LANG_DOCUMENTS_1['missing_field'];
 				$content .= '<ul>';
@@ -1631,10 +1635,10 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			// Prepare strings for insertion
 			
-			$_REQUEST['group_name'] = addslashes($_REQUEST['group_name']);	
-			$_REQUEST['group_help'] = addslashes($_REQUEST['group_help']);	
+			$_REQUEST['group_name'] = addslashes($groupName);
+			$_REQUEST['group_help'] = addslashes($groupHelp);
 
-			if ( (!empty($_REQUEST['gid'])) && (is_numeric($_REQUEST['gid'])) ) {
+			if ($saveGroupId > 0) {
 				
 				//Edit mode 
 				
@@ -1642,7 +1646,7 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
                     .  "g_help  = '{$_REQUEST['group_help']}'		
 				 ";
 				$sql = "UPDATE {$_TABLES['documents_selects_group']} SET $sql "
-					 . "WHERE gid = {$_REQUEST['gid']}";
+					 . "WHERE gid = {$saveGroupId}";
 			} else {
 				
 				//Create mode				
@@ -1702,7 +1706,13 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			require_once ($_CONF['path']  . 'plugins/documents/include_edit.php');
 			
-			if ($_REQUEST['s_name'] == '') {
+			$selectName = trim((string) DOCUMENTS_requestValue($_REQUEST, 's_name', ''));
+			$selectValue = (string) DOCUMENTS_requestValue($_REQUEST, 's_value', '');
+			$selectGroupId = DOCUMENTS_requestInt($_REQUEST, 's_group', 0);
+			$selectOrder = DOCUMENTS_requestInt($_REQUEST, 's_order', 0);
+			$saveSelectId = DOCUMENTS_requestInt($_REQUEST, 'sid', 0);
+
+			if ($selectName === '') {
 				$content = COM_startBlock($LANG_DOCUMENTS_1['error']);
 				$content .= $LANG_DOCUMENTS_1['missing_field'];
 				$content .= '<ul>';
@@ -1715,10 +1725,12 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			// Prepare strings for insertion
 			
-			$_REQUEST['s_name'] = addslashes($_REQUEST['s_name']);	
-			$_REQUEST['s_value'] = addslashes($_REQUEST['s_value']);	
+			$_REQUEST['s_name'] = addslashes($selectName);
+			$_REQUEST['s_value'] = addslashes($selectValue);
+			$_REQUEST['s_group'] = $selectGroupId;
+			$_REQUEST['s_order'] = $selectOrder;
 
-			if ( (!empty($_REQUEST['sid'])) && (is_numeric($_REQUEST['sid'])) ) {
+			if ($saveSelectId > 0) {
 				
 				//Edit mode 
 				
@@ -1729,7 +1741,7 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 				 ";
 				 
 				$sql = "UPDATE {$_TABLES['documents_selects']} SET $sql "
-					 . "WHERE sid = {$_REQUEST['sid']}";
+					 . "WHERE sid = {$saveSelectId}";
 			} else {
 				
 				//Create mode				
