@@ -24,32 +24,30 @@
  * @package Documents
  */
 
+function DOCUMENTS_adminDebugShutdown()
+{
+    $error = error_get_last();
+    if (is_array($error)) {
+        $fatalTypes = array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR);
+        if (in_array($error['type'], $fatalTypes, true)) {
+            echo '<pre style="padding:1em;background:#fff;color:#900;border:1px solid #900;">';
+            echo "Documents admin fatal error\n";
+            echo 'Type: ' . (int) $error['type'] . "\n";
+            echo 'Message: ' . htmlspecialchars($error['message'], ENT_QUOTES, 'UTF-8') . "\n";
+            echo 'File: ' . htmlspecialchars($error['file'], ENT_QUOTES, 'UTF-8') . "\n";
+            echo 'Line: ' . (int) $error['line'] . "\n";
+            echo '</pre>';
+        }
+    }
+}
+
 $documentsDebug = isset($_GET['documents_debug']) && $_GET['documents_debug'] === '1';
 
 if ($documentsDebug) {
     error_reporting(E_ALL);
     @ini_set('display_errors', '1');
     @ini_set('display_startup_errors', '1');
-
     register_shutdown_function('DOCUMENTS_adminDebugShutdown');
-
-    function DOCUMENTS_adminDebugShutdown()
-    {
-        $error = error_get_last();
-        if (is_array($error)) {
-            $fatalTypes = array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR);
-            if (in_array($error['type'], $fatalTypes, true)) {
-                echo '<pre style="padding:1em;background:#fff;color:#900;border:1px solid #900;">';
-                echo "Documents admin fatal error\n";
-                echo 'Type: ' . (int) $error['type'] . "\n";
-                echo 'Message: ' . htmlspecialchars($error['message'], ENT_QUOTES, 'UTF-8') . "\n";
-                echo 'File: ' . htmlspecialchars($error['file'], ENT_QUOTES, 'UTF-8') . "\n";
-                echo 'Line: ' . (int) $error['line'] . "\n";
-                echo '</pre>';
-            }
-        }
-    }
-
     echo '<!-- Documents debug: before lib-common -->';
 }
 
