@@ -1283,8 +1283,9 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			// Get the category to edit and display the form
 			
-			if (is_numeric($_REQUEST['cat'])) {
-				$sql = "SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$_REQUEST['cat']}";
+			$catId = (int) DOCUMENTS_requestValue($_REQUEST, 'cat', 0);
+			if ($catId > 0) {
+				$sql = "SELECT * FROM {$_TABLES['documents_cat']} WHERE cid = {$catId}";
 				$res = DB_query($sql);
 				$cat = DB_fetchArray($res);
 			} else {
@@ -1413,8 +1414,9 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			// Get the field to edit and display the form
 			
-			if (is_numeric($_REQUEST['field'])) {
-				$sql = "SELECT * FROM {$_TABLES['documents_fields']} WHERE fid = {$_REQUEST['field']}";
+			$fieldId = (int) DOCUMENTS_requestValue($_REQUEST, 'field', 0);
+			if ($fieldId > 0) {
+				$sql = "SELECT * FROM {$_TABLES['documents_fields']} WHERE fid = {$fieldId}";
 				$res = DB_query($sql);
 				$field = DB_fetchArray($res);
 			} else {
@@ -1593,8 +1595,9 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			// Get the group to edit and display the form
 			
-			if (is_numeric($_REQUEST['group'])) {
-				$sql = "SELECT * FROM {$_TABLES['documents_selects_group']} WHERE gid = {$_REQUEST['group']}";
+			$groupId = (int) DOCUMENTS_requestValue($_REQUEST, 'group', 0);
+			if ($groupId > 0) {
+				$sql = "SELECT * FROM {$_TABLES['documents_selects_group']} WHERE gid = {$groupId}";
 				$res = DB_query($sql);
 				$group = DB_fetchArray($res);
 			} else {
@@ -1675,8 +1678,9 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			
 			// Get the select to edit and display the form
 			
-			if (is_numeric($_REQUEST['select'])) {
-				$sql = "SELECT * FROM {$_TABLES['documents_selects']} WHERE sid = {$_REQUEST['select']}";
+			$selectId = (int) DOCUMENTS_requestValue($_REQUEST, 'select', 0);
+			if ($selectId > 0) {
+				$sql = "SELECT * FROM {$_TABLES['documents_selects']} WHERE sid = {$selectId}";
 				$res = DB_query($sql);
 				$select = DB_fetchArray($res);
 			} else {
