@@ -2,13 +2,13 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.0                                                      |
+// | Documents Plugin 1.1.2                                                      |
 // +---------------------------------------------------------------------------+
 // | include_lists.php                                                         |
 // |                                                                           |
 // | Plugin administration page                                                |
 // +---------------------------------------------------------------------------+
-// | Copyright (C) 2012 by the following authors:                              |
+// | Copyright (C) 2012-2026 by the following authors:                              |
 // |                                                                           |
 // | Authors: Ben - ben AT geeklog DOT fr                                      |
 // +---------------------------------------------------------------------------+
@@ -103,7 +103,11 @@ function DOCUMENTS_listCategories($admin=0)
 function plugin_getListField_documents_categories($fieldname, $fieldvalue, $A, $icon_arr)
 {
 
-    global $_CONF, $_DOCUMENTS_CONF, $LANG_DOCUMENTS_1,$_TABLES;
+    global $_CONF, $_DOCUMENTS_CONF, $LANG_DOCUMENTS_1, $_TABLES, $_USER;
+
+    $retval = '';
+    $doc_titles = '';
+    $edit = '';
 	
 	switch($fieldname) {
 
@@ -302,13 +306,17 @@ function DOCUMENTS_listDocs($cat='')
     require_once $_CONF['path_system'] . 'lib-admin.php';
 
     $retval = '';
+    $morefields = '';
+    $leftjoin = '';
 
 	if ($cat == '') return $retval;
 	
 	$css = '/admin/plugins/documents/document.css';
     $_SCRIPTS->setCSSFile('documents_css', $css, true);
 	
-	define("CAT_URL", $cat);
+	if (!defined('CAT_URL')) {
+		define('CAT_URL', $cat);
+	}
     
 	// get cat infos from cat url
 	$sql = "SELECT
@@ -318,7 +326,10 @@ function DOCUMENTS_listDocs($cat='')
 			";
 			
 	$category = DB_fetchArray(DB_query($sql));
-	
+	if (!is_array($category) || empty($category['cid'])) {
+		return $retval;
+	}
+
 	//is cat submitable
 	$submitable = $category['submitable'];
 	$catname = $category['cat_name'];
@@ -517,7 +528,9 @@ function DOCUMENTS_listDocs($cat='')
 	$retval .= PLG_replaceTags($category['custom_header']);
 	
 	//Display map if category use map
-	if ($category['map'] != '' && $category['map'] > 0) $retval .= PLG_replaceTags("[maps:{$category['map']}]");
+	if (DOCUMENTS_hasMaps() && $category['map'] != '' && $category['map'] > 0) {
+		$retval .= PLG_replaceTags("[maps:{$category['map']}]");
+	}
 	
 	if (SEC_hasRights('documents.admin') == 1 && $submissions > 0) {	
 		if (DB_count($_TABLES['documents_docs'],'active',3) > 0) {
@@ -568,6 +581,10 @@ function plugin_getListField_documents_docs($fieldname, $fieldvalue, $A, $icon_a
 {
 
     global $_DOCUMENTS_CONF, $_CONF, $LANG_DOCUMENTS_1;
+
+    $retval = '';
+    $edit = '';
+    $inactive = '';
 
 	switch($fieldname) {
 
@@ -629,7 +646,11 @@ function plugin_getListField_documents_docs($fieldname, $fieldvalue, $A, $icon_a
 					$retval = COM_createLink($image, $doc_url);
 
 				} else if ($fieldvalue == $A['marker'] && $fieldvalue != '') {
-					$retval = PLG_replaceTags('<div style="width:450px;">[marker:' . $fieldvalue . ' width:400px]</div>');
+					if (DOCUMENTS_hasMaps()) {
+						$retval = PLG_replaceTags('<div style="width:450px;">[marker:' . $fieldvalue . ' width:400px]</div>');
+					} else {
+						$retval = '';
+					}
 				} else {
 					$retval = stripslashes($fieldvalue);
 				}
