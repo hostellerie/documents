@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.2                                                    |
+// | Documents Plugin 1.1.9                                                    |
 // +---------------------------------------------------------------------------+
 // | index.php                                                                 |
 // |                                                                           |
@@ -130,6 +130,68 @@ if ($documentsMode === 'view') {
     }
 }
 
+/*
+ * Resolve and authorize existing document edit/save routes before the legacy
+ * controller touches document values. This also binds the request category to
+ * the document's actual category so a forged cid/cat cannot cross categories.
+ */
+if (($documentsMode === 'edit' || $documentsMode === 'save') && $documentsDocUrl !== '') {
+    $documentsDocUrlSql = DB_escapeString($documentsDocUrl);
+    $documentsExistingResult = DB_query(
+        "SELECT active, owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+        . "FROM {$_TABLES['documents_docs']} WHERE doc_url='{$documentsDocUrlSql}' LIMIT 1"
+    );
+    $documentsExisting = DB_fetchArray($documentsExistingResult);
+
+    if (!is_array($documentsExisting) || !isset($documentsExisting['owner_id'])) {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
+
+    if ($documentsMode === 'save' && $documentsOperation === 'delete') {
+        if (!SEC_hasRights('documents.admin')) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+    } elseif (!DOCUMENTS_canEditDocument($documentsExisting)) {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
+
+    $documentsActualCategoryResult = DB_query(
+        "SELECT f.cat_id FROM {$_TABLES['documents_values']} AS v "
+        . "LEFT JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
+        . "WHERE v.doc_url='{$documentsDocUrlSql}' AND f.cat_id IS NOT NULL "
+        . "ORDER BY f.f_order ASC, f.fid ASC LIMIT 1"
+    );
+    $documentsActualCategory = DB_fetchArray($documentsActualCategoryResult);
+    $documentsActualCid = is_array($documentsActualCategory) && isset($documentsActualCategory['cat_id'])
+        ? (int) $documentsActualCategory['cat_id']
+        : 0;
+
+    if ($documentsActualCid <= 0) {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
+
+    if ($documentsMode === 'save') {
+        $documentsRequestedCid = DOCUMENTS_requestInt($_REQUEST, 'cid', 0);
+        if ($documentsOperation !== 'delete' && $documentsRequestedCid !== $documentsActualCid) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+    } else {
+        $documentsRequestedCid = DOCUMENTS_requestInt($_REQUEST, 'cat', 0);
+        if ($documentsRequestedCid !== $documentsActualCid) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+    }
+
+    $GLOBALS['DOCUMENTS_AUTHORIZED_EDIT_ROW'] = $documentsExisting;
+    $GLOBALS['DOCUMENTS_AUTHORIZED_EDIT_CID'] = $documentsActualCid;
+}
+
 if ($documentsMode === 'save_cat') {
     $_REQUEST['cat_url'] = DOCUMENTS_normalizeRouteSlug(
         DOCUMENTS_requestValue($_REQUEST, 'cat_url', '')
@@ -137,75 +199,41 @@ if ($documentsMode === 'save_cat') {
     $_POST['cat_url'] = $_REQUEST['cat_url'];
 }
 
-if ($documentsMode === 'save') {
-    if ($documentsDocUrl !== '') {
-        $documentsDocUrlSql = DB_escapeString($documentsDocUrl);
-        $documentsResult = DB_query(
-            "SELECT owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
-            . "FROM {$_TABLES['documents_docs']} WHERE doc_url='{$documentsDocUrlSql}' LIMIT 1"
-        );
-        $documentsRow = DB_fetchArray($documentsResult);
+if ($documentsMode === 'save' && $documentsDocUrl === '') {
+    if (COM_isAnonUser()) {
+        echo COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
+        exit;
+    }
 
-        if (!is_array($documentsRow) || !isset($documentsRow['owner_id'])) {
-            echo COM_refresh($_CONF['site_url'] . '/404.php');
-            exit;
-        }
+    $documentsCid = DOCUMENTS_requestInt($_REQUEST, 'cid', 0);
+    if ($documentsCid <= 0) {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
 
-        if ($documentsOperation === 'delete') {
-            if (!SEC_hasRights('documents.admin')) {
-                echo COM_refresh($_CONF['site_url'] . '/404.php');
-                exit;
-            }
-        } else {
-            $documentsAccess = SEC_hasAccess(
-                (int) $documentsRow['owner_id'],
-                (int) $documentsRow['group_id'],
-                (int) $documentsRow['perm_owner'],
-                (int) $documentsRow['perm_group'],
-                (int) $documentsRow['perm_members'],
-                (int) $documentsRow['perm_anon']
-            );
-            if ($documentsAccess < 3) {
-                echo COM_refresh($_CONF['site_url'] . '/404.php');
-                exit;
-            }
-        }
-    } else {
-        if (COM_isAnonUser()) {
-            echo COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
-            exit;
-        }
+    $documentsCategoryResult = DB_query(
+        "SELECT submitable, owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+        . "FROM {$_TABLES['documents_cat']} WHERE cid={$documentsCid} LIMIT 1"
+    );
+    $documentsCategory = DB_fetchArray($documentsCategoryResult);
+    if (!is_array($documentsCategory) || !isset($documentsCategory['submitable'])) {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
 
-        $documentsCid = DOCUMENTS_requestInt($_REQUEST, 'cid', 0);
-        if ($documentsCid <= 0) {
-            echo COM_refresh($_CONF['site_url'] . '/404.php');
-            exit;
-        }
-
-        $documentsCategoryResult = DB_query(
-            "SELECT submitable, owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
-            . "FROM {$_TABLES['documents_cat']} WHERE cid={$documentsCid} LIMIT 1"
-        );
-        $documentsCategory = DB_fetchArray($documentsCategoryResult);
-        if (!is_array($documentsCategory) || !isset($documentsCategory['submitable'])) {
-            echo COM_refresh($_CONF['site_url'] . '/404.php');
-            exit;
-        }
-
-        $documentsCategoryAccess = SEC_hasAccess(
-            (int) $documentsCategory['owner_id'],
-            (int) $documentsCategory['group_id'],
-            (int) $documentsCategory['perm_owner'],
-            (int) $documentsCategory['perm_group'],
-            (int) $documentsCategory['perm_members'],
-            (int) $documentsCategory['perm_anon']
-        );
-        if ($documentsCategoryAccess < 2
-            || ((int) $documentsCategory['submitable'] !== 1
-                && !SEC_hasRights('documents.admin'))) {
-            echo COM_refresh($_CONF['site_url'] . '/404.php');
-            exit;
-        }
+    $documentsCategoryAccess = SEC_hasAccess(
+        (int) $documentsCategory['owner_id'],
+        (int) $documentsCategory['group_id'],
+        (int) $documentsCategory['perm_owner'],
+        (int) $documentsCategory['perm_group'],
+        (int) $documentsCategory['perm_members'],
+        (int) $documentsCategory['perm_anon']
+    );
+    if ($documentsCategoryAccess < 2
+        || ((int) $documentsCategory['submitable'] !== 1
+            && !SEC_hasRights('documents.admin'))) {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
     }
 }
 
