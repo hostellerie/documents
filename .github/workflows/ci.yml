@@ -64,5 +64,6 @@ jobs:
           php tests/language_sync_test.php
           php tests/document_visibility_test.php
           php tests/document_edit_security_test.php
+          php tests/comment_security_test.php
           php tests/release_candidate_test.php
           php tests/metadata_consistency_test.php
