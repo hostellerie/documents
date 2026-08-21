@@ -122,7 +122,20 @@ $LANG_DOCUMENTS_1 = array(
     'read_more_marker'    => 'Afficher le document',
     'document_draft'      => 'Ce document est en mode brouillon. Son accès est réservé à son propriétaire.',
     'document_submit'     => 'Ce document n\'a pas encore été approuvé et n\'est donc pas disponible pour le moment.',
-    'new_comment'         => 'Nouveau commentaire sur'
+    'new_comment'         => 'Nouveau commentaire sur',
+    'integrity_audit_title'              => 'Audit d\'intégrité des données',
+    'integrity_audit_notice'             => 'Ce rapport est en lecture seule. Aucune donnée ni aucun fichier n\'est modifié.',
+    'integrity_check'                    => 'Contrôle',
+    'integrity_result'                   => 'Résultat',
+    'integrity_duplicate_category_slugs' => 'URLs de catégories en doublon',
+    'integrity_duplicate_document_slugs' => 'URLs de documents en doublon',
+    'integrity_documents_without_values' => 'Documents sans valeurs',
+    'integrity_values_without_document'  => 'Valeurs sans document',
+    'integrity_values_without_field'     => 'Valeurs sans champ',
+    'integrity_fields_without_category'  => 'Champs sans catégorie',
+    'integrity_missing_images'           => 'Fichiers image référencés mais absents du disque',
+    'integrity_unreferenced_images'      => 'Fichiers image non référencés par Documents',
+    'integrity_back_admin'               => 'Retour à l\'administration de Documents'
 );
 
 // Messages pour la mise à jour du plugin.
