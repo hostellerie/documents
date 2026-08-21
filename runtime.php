@@ -53,6 +53,57 @@ function DOCUMENTS_ensureImageDirectory()
 }
 
 /**
+ * Return the persistent preview cache directory.
+ *
+ * The cache lives below the Documents image directory so it remains specific
+ * to the current Geeklog site and is kept away from the original image files.
+ *
+ * @return string
+ */
+function DOCUMENTS_previewDirectory()
+{
+    global $_DOCUMENTS_CONF;
+
+    if (empty($_DOCUMENTS_CONF['path_images'])) {
+        return '';
+    }
+
+    return rtrim((string) $_DOCUMENTS_CONF['path_images'], "/\\")
+        . DIRECTORY_SEPARATOR . '_previews' . DIRECTORY_SEPARATOR;
+}
+
+/**
+ * Ensure the persistent preview cache directory exists and is writable.
+ *
+ * @return bool
+ */
+function DOCUMENTS_ensurePreviewDirectory()
+{
+    $path = DOCUMENTS_previewDirectory();
+    if ($path === '') {
+        return false;
+    }
+
+    if (!is_dir($path)) {
+        if (!@mkdir($path, 0755, true) && !is_dir($path)) {
+            if (function_exists('COM_errorLog')) {
+                COM_errorLog('Documents runtime: unable to create preview directory ' . $path);
+            }
+            return false;
+        }
+    }
+
+    if (!is_writable($path)) {
+        if (function_exists('COM_errorLog')) {
+            COM_errorLog('Documents runtime: preview directory is not writable ' . $path);
+        }
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Remove image files that belonged to a document after its DB row was deleted.
  *
  * The function is intended for a shutdown callback. It first verifies that the
