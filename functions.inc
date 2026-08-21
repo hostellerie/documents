@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.1                                                    |
+// | Documents Plugin 1.1.2                                                    |
 // +---------------------------------------------------------------------------+
 // | functions.inc                                                             |
 // |                                                                           |
@@ -291,6 +291,7 @@ function plugin_upgrade_documents()
         return 3002;
     }
 
+    /* Preserve the legacy schema upgrades required by pre-1.1.0 installs. */
     switch ($installed_version) {
         case '1.0':
             DB_query("ALTER TABLE {$_TABLES['documents_cat']} ADD map INT AFTER css");
@@ -301,15 +302,30 @@ function plugin_upgrade_documents()
         case '1.0.1':
         case '1.1.0':
         default:
-            $inst_parms = plugin_autoinstall_documents('documents');
-            $pi_gl_version = $inst_parms['info']['pi_gl_version'];
-            DB_query(
-                "UPDATE {$_TABLES['plugins']} SET pi_version = '"
-                . DB_escapeString($code_version) . "', pi_gl_version = '"
-                . DB_escapeString($pi_gl_version) . "' WHERE pi_name = 'documents'"
-            );
             break;
     }
+
+    /*
+     * Run stabilization upgrades before recording the new plugin version.
+     * If routing or persistent-data migration fails, Geeklog keeps the old
+     * version registered so the administrator can correct the filesystem and
+     * safely retry the idempotent upgrade.
+     */
+    if (!DOCUMENTS_runUpgradeSteps($installed_version)) {
+        COM_errorLog(
+            'Documents upgrade failed while upgrading from version '
+            . $installed_version . ' to ' . $code_version
+        );
+        return false;
+    }
+
+    $inst_parms = plugin_autoinstall_documents('documents');
+    $pi_gl_version = $inst_parms['info']['pi_gl_version'];
+    DB_query(
+        "UPDATE {$_TABLES['plugins']} SET pi_version = '"
+        . DB_escapeString($code_version) . "', pi_gl_version = '"
+        . DB_escapeString($pi_gl_version) . "' WHERE pi_name = 'documents'"
+    );
 
     return true;
 }
