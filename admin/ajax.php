@@ -1,6 +1,6 @@
 <?php
 // +--------------------------------------------------------------------------+
-// | Documents Plugin 1.1.1 - Geeklog CMS                                    |
+// | Documents Plugin 1.1.2 - Geeklog CMS                                    |
 // +--------------------------------------------------------------------------+
 // | ajax.php                                                                 |
 // +--------------------------------------------------------------------------+
@@ -13,9 +13,18 @@ require_once '../../../lib-common.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (!in_array('documents', $_PLUGINS) || !SEC_hasRights('documents.admin')) {
+if (!isset($_PLUGINS) || !is_array($_PLUGINS)
+    || !in_array('documents', $_PLUGINS, true)
+    || !SEC_hasRights('documents.admin')) {
     http_response_code(403);
     echo json_encode(array('error' => 'forbidden'));
+    exit;
+}
+
+if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    header('Allow: POST');
+    echo json_encode(array('error' => 'method_not_allowed'));
     exit;
 }
 
@@ -24,15 +33,15 @@ $vars = array(
     's_group' => 'number',
     'action'  => 'text'
 );
-DOCUMENTS_filterVars($vars, $_REQUEST);
+DOCUMENTS_filterVars($vars, $_POST);
 
 $_DOCUMENTS_CONF['ajax'] = true;
 
-$action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
+$action = isset($_POST['action']) ? (string) $_POST['action'] : '';
 
 switch ($action) {
     case 'change_field_cat':
-        $cat_id = isset($_REQUEST['cat_id']) ? (int) $_REQUEST['cat_id'] : 0;
+        $cat_id = isset($_POST['cat_id']) ? (int) $_POST['cat_id'] : 0;
         if ($cat_id < 1) {
             http_response_code(400);
             echo json_encode(array('error' => 'invalid_category'));
@@ -67,7 +76,7 @@ switch ($action) {
         break;
 
     case 'change_select_group':
-        $s_group = isset($_REQUEST['s_group']) ? (int) $_REQUEST['s_group'] : 0;
+        $s_group = isset($_POST['s_group']) ? (int) $_POST['s_group'] : 0;
         if ($s_group < 1) {
             http_response_code(400);
             echo json_encode(array('error' => 'invalid_select_group'));
