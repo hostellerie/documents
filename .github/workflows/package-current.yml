@@ -1,11 +1,6 @@
 name: Package Documents installable
 
 on:
-  push:
-    branches:
-      - modernize-1.1.9
-    paths:
-      - '.github/workflows/package-current.yml'
   workflow_dispatch:
 
 permissions:
