@@ -152,12 +152,6 @@ function DOCUMENTS_requestPermissions($source, $defaults = array())
 /**
  * Check whether the current user may reach a document route.
  *
- * Status rules are enforced before normal Geeklog row permissions:
- * - active documents follow their stored permissions;
- * - inactive documents are restricted to Documents administrators;
- * - drafts are restricted to their owner or a Documents administrator;
- * - submissions are restricted to their owner or a Documents administrator.
- *
  * @param array $document Document row
  * @param int   $minimumAccess Minimum SEC_hasAccess() level required
  * @return bool
@@ -211,9 +205,8 @@ function DOCUMENTS_canViewDocument($document, $minimumAccess = 2)
 /**
  * Check whether the current user may edit an existing document.
  *
- * Drafts and submissions are private workflow states. Even when a historical
- * row carries group write permissions, only its owner or a Documents admin may
- * edit it. Active/inactive rows keep the historical Geeklog write semantics.
+ * Drafts are owner/admin only. Submitted documents are frozen for their owner
+ * and remain editable only by Documents administrators until moderation.
  *
  * @param array $document Document row
  * @return bool
@@ -242,7 +235,11 @@ function DOCUMENTS_canEditDocument($document)
         return false;
     }
 
-    if ($status === DOCUMENTS_STATUS_DRAFT || $status === DOCUMENTS_STATUS_SUBMISSION) {
+    if ($status === DOCUMENTS_STATUS_SUBMISSION) {
+        return false;
+    }
+
+    if ($status === DOCUMENTS_STATUS_DRAFT) {
         $userId = isset($_USER['uid']) ? (int) $_USER['uid'] : 1;
         if ((int) $document['owner_id'] !== $userId) {
             return false;
@@ -262,10 +259,9 @@ function DOCUMENTS_canEditDocument($document)
 /**
  * Normalize a requested document workflow state on the server.
  *
- * Users without publish rights cannot self-publish a new submission or turn a
- * draft/submission into an active document by forging the active form value.
- * Publishers keep the historical active/draft workflow; administrators may use
- * all four states.
+ * Users without publish rights can create a draft or submit a new document,
+ * but cannot self-publish. While editing an existing draft they remain in draft
+ * state; submission moderation is handled by Documents administrators.
  *
  * @param int      $requestedStatus Requested state
  * @param int|null $currentStatus Current state for edits, null for creation
@@ -298,11 +294,12 @@ function DOCUMENTS_normalizeDocumentStatus($requestedStatus, $currentStatus = nu
     }
 
     $currentStatus = (int) $currentStatus;
-    if ($currentStatus === DOCUMENTS_STATUS_DRAFT
-        || $currentStatus === DOCUMENTS_STATUS_SUBMISSION) {
-        return ($requestedStatus === DOCUMENTS_STATUS_DRAFT)
-            ? DOCUMENTS_STATUS_DRAFT
-            : DOCUMENTS_STATUS_SUBMISSION;
+    if ($currentStatus === DOCUMENTS_STATUS_DRAFT) {
+        return DOCUMENTS_STATUS_DRAFT;
+    }
+
+    if ($currentStatus === DOCUMENTS_STATUS_SUBMISSION) {
+        return DOCUMENTS_STATUS_SUBMISSION;
     }
 
     if ($currentStatus === DOCUMENTS_STATUS_ACTIVE) {
