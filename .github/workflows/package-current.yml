@@ -1,0 +1,153 @@
+name: Package Documents current installable
+
+on:
+  push:
+    branches:
+      - modernize-1.1.8
+    paths:
+      - '.github/workflows/package-current.yml'
+      - '*.php'
+      - '*.inc'
+      - 'admin/**'
+      - 'language/**'
+      - 'public_html/**'
+      - 'sql/**'
+      - 'templates/**'
+      - 'tests/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          ref: modernize-1.1.8
+
+      - name: Verify source invariants
+        shell: bash
+        run: |
+          grep -q "function DOCUMENTS_writeHtaccess" rewrite.php
+          grep -q "DOCUMENTS_writeHtaccess(false)" public_html/index.php
+          grep -q "DOCUMENTS_writeHtaccess(true)" autoinstall.php
+          grep -q "function DOCUMENTS_dataDir" functions.inc
+          grep -q "function DOCUMENTS_migrateLegacyData" storage.php
+          grep -q "function plugin_upgrade_documents" functions.inc
+          grep -q "DOCUMENTS_updateConfig_1_1_8" autoinstall.php
+          grep -q "'pi_version'.*'1.1.8'" autoinstall.php
+          ! grep -q "THE_REQUEST" rewrite.php
+          ! grep -q "DOCUMENTS DEBUG N" include_html.php
+          ! grep -q "documents_debug" include_html.php
+          ! grep -q "DOCUMENTS OUTPUT SENTINEL" include_html.php
+          if find . -type f -name '.gitkeep' -not -path './.git/*' | grep -q .; then
+            echo 'Unexpected .gitkeep file found.'
+            exit 1
+          fi
+          git diff --exit-code
+
+      - name: Setup PHP 5.6
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '5.6'
+          coverage: none
+
+      - name: Lint PHP 5.6
+        shell: bash
+        run: |
+          find . -type f \( -name '*.php' -o -name '*.inc' \) \
+            -not -path './.git/*' \
+            -not -path './.github/*' \
+            -not -path './test-artifacts/*' \
+            -print0 | xargs -0 -n1 php -l
+
+      - name: Test storage migration PHP 5.6
+        shell: bash
+        run: php tests/storage_migration_test.php
+
+      - name: Test configuration upgrade PHP 5.6
+        shell: bash
+        run: php tests/config_upgrade_test.php
+
+      - name: Test language synchronization PHP 5.6
+        shell: bash
+        run: php tests/language_sync_test.php
+
+      - name: Setup PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: Lint PHP 8.1
+        shell: bash
+        run: |
+          find . -type f \( -name '*.php' -o -name '*.inc' \) \
+            -not -path './.git/*' \
+            -not -path './.github/*' \
+            -not -path './test-artifacts/*' \
+            -print0 | xargs -0 -n1 php -l
+
+      - name: Test storage migration PHP 8.1
+        shell: bash
+        run: php tests/storage_migration_test.php
+
+      - name: Test configuration upgrade PHP 8.1
+        shell: bash
+        run: php tests/config_upgrade_test.php
+
+      - name: Test language synchronization PHP 8.1
+        shell: bash
+        run: php tests/language_sync_test.php
+
+      - name: Verify source remained unchanged
+        shell: bash
+        run: git diff --exit-code
+
+      - name: Build installable ZIP
+        shell: bash
+        run: |
+          rm -rf build test-artifacts
+          mkdir -p build/documents test-artifacts
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='build' \
+            --exclude='test-artifacts' \
+            --exclude='tests' \
+            --exclude='.gitkeep' \
+            ./ build/documents/
+          cd build
+          zip -r ../test-artifacts/documents-1.1.8.zip documents >/dev/null
+          cd ..
+          if unzip -Z1 test-artifacts/documents-1.1.8.zip | grep -q '/\.gitkeep$'; then
+            echo 'Archive contains .gitkeep.'
+            exit 1
+          fi
+          printf 'Documents 1.1.8 installable package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nStorage migration idempotence: PHP 5.6 and 8.1 PASS\nConfiguration upgrade idempotence: PHP 5.6 and 8.1 PASS\nLanguage synchronization: PHP 5.6 and 8.1 PASS\nCustomized image limits preserved: PASS\nPersistent storage migration: enabled\nWorkflow source mutations: none\n.gitkeep files: none\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
+
+      - name: Upload installable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documents-1.1.8-installable
+          path: |
+            test-artifacts/documents-1.1.8.zip
+            test-artifacts/lint-report.txt
+          if-no-files-found: error
+
+      - name: Commit package report only
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- test-artifacts/documents-1.1.8.zip test-artifacts/lint-report.txt
+          if git diff --cached --quiet; then
+            echo 'Package already current.'
+          else
+            git commit -m 'Documents 1.1.8: rebuild installable package'
+            git push origin HEAD:modernize-1.1.8
+          fi
