@@ -122,7 +122,20 @@ $LANG_DOCUMENTS_1 = array(
     'read_more_marker'    => 'Display document',
     'document_draft'      => 'This document is in draft mode. Access is reserved to its owner.',
     'document_submit'     => 'This document has not yet been approved and is not currently available.',
-    'new_comment'         => 'New comment on'
+    'new_comment'         => 'New comment on',
+    'integrity_audit_title'              => 'Data integrity audit',
+    'integrity_audit_notice'             => 'This report is read-only. No data or files are modified.',
+    'integrity_check'                    => 'Check',
+    'integrity_result'                   => 'Result',
+    'integrity_duplicate_category_slugs' => 'Duplicate category slugs',
+    'integrity_duplicate_document_slugs' => 'Duplicate document slugs',
+    'integrity_documents_without_values' => 'Documents without values',
+    'integrity_values_without_document'  => 'Values without document',
+    'integrity_values_without_field'     => 'Values without field',
+    'integrity_fields_without_category'  => 'Fields without category',
+    'integrity_missing_images'           => 'Referenced image files missing on disk',
+    'integrity_unreferenced_images'      => 'Image files not referenced by Documents',
+    'integrity_back_admin'               => 'Back to Documents administration'
 );
 
 // Messages for the plugin upgrade.
