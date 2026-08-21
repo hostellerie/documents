@@ -158,9 +158,6 @@ function DOCUMENTS_requestPermissions($source, $defaults = array())
  * - drafts are restricted to their owner or a Documents administrator;
  * - submissions are restricted to their owner or a Documents administrator.
  *
- * The normal permission check still applies after the status check so a
- * malformed or overly restrictive row is not made readable accidentally.
- *
  * @param array $document Document row
  * @param int   $minimumAccess Minimum SEC_hasAccess() level required
  * @return bool
@@ -209,6 +206,57 @@ function DOCUMENTS_canViewDocument($document, $minimumAccess = 2)
     );
 
     return $access >= (int) $minimumAccess;
+}
+
+/**
+ * Check whether the current user may edit an existing document.
+ *
+ * Drafts and submissions are private workflow states. Even when a historical
+ * row carries group write permissions, only its owner or a Documents admin may
+ * edit it. Active/inactive rows keep the historical Geeklog write semantics.
+ *
+ * @param array $document Document row
+ * @return bool
+ */
+function DOCUMENTS_canEditDocument($document)
+{
+    global $_USER;
+
+    if (!is_array($document)
+        || !isset($document['active'])
+        || !isset($document['owner_id'])
+        || !isset($document['group_id'])
+        || !isset($document['perm_owner'])
+        || !isset($document['perm_group'])
+        || !isset($document['perm_members'])
+        || !isset($document['perm_anon'])) {
+        return false;
+    }
+
+    if (SEC_hasRights('documents.admin')) {
+        return true;
+    }
+
+    $status = (int) $document['active'];
+    if ($status < DOCUMENTS_STATUS_INACTIVE || $status > DOCUMENTS_STATUS_SUBMISSION) {
+        return false;
+    }
+
+    if ($status === DOCUMENTS_STATUS_DRAFT || $status === DOCUMENTS_STATUS_SUBMISSION) {
+        $userId = isset($_USER['uid']) ? (int) $_USER['uid'] : 1;
+        if ((int) $document['owner_id'] !== $userId) {
+            return false;
+        }
+    }
+
+    return SEC_hasAccess(
+        (int) $document['owner_id'],
+        (int) $document['group_id'],
+        (int) $document['perm_owner'],
+        (int) $document['perm_group'],
+        (int) $document['perm_members'],
+        (int) $document['perm_anon']
+    ) >= 3;
 }
 
 function DOCUMENTS_linkifyUrls($content)
