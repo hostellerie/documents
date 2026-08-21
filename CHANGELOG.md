@@ -1,5 +1,48 @@
 # Changelog
 
+## 1.1.8 — Configuration, language and cleanup
+
+Compatibility target:
+
+- Geeklog 2.1.1 through 2.2.2
+- PHP 5.6 through 8.1
+
+### Configuration
+
+- Moved image width, height and file-size limits into Geeklog configuration.
+- Added upgrade logic that inserts only missing configuration records.
+- Existing customized image limits are preserved during upgrade.
+- Added runtime fallback values for incomplete historical configurations.
+- Added an explicit 1.1.8 upgrade step in the stabilization upgrade chain.
+- Kept a compatibility alias for development builds that used the temporary `DOCUMENTS_updateConfig_1_1_2()` helper name.
+
+### Language synchronization
+
+- Synchronized English and French language keys.
+- Added the missing `default_permissions` configuration label in both languages.
+- Normalized configuration fieldset and selection labels.
+- Cleaned several obsolete or awkward English and French labels without changing their keys.
+- Normalized indentation in the maintained language files.
+- Removed the obsolete closing `?>` tags from the maintained language files.
+
+### Automated tests and packaging
+
+- Added `tests/config_upgrade_test.php` to verify configuration upgrade idempotence and preservation of customized image limits.
+- Added `tests/language_sync_test.php` to verify English/French language-key parity.
+- Storage migration, configuration upgrade and language synchronization tests run under PHP 5.6 and PHP 8.1.
+- Renamed the permanent packaging workflow to `.github/workflows/package-current.yml` so its filename is not tied to an old development version.
+- Packaging remains non-mutating for source files and commits only the generated ZIP and lint report.
+- Current development package: `documents-1.1.8.zip`.
+
+### Installation and migration carried forward from 1.1.7
+
+- The plugin upgrade chain runs persistent-data migration before recording the new plugin version.
+- Legacy `data_documents/` content is migrated recursively to the site-specific `<basename(path_data)>-documents/` directory.
+- Existing target files are never overwritten.
+- The legacy directory is never deleted automatically.
+- The migration is idempotent and includes a two-site multisite isolation test.
+- Fresh installation safely loads `functions.inc` before storage helpers are used when required by the post-install hook.
+
 ## 1.1.2 — PHP and logic stabilization in progress
 
 Compatibility target:
