@@ -117,28 +117,7 @@ if ($documentsMode === 'view') {
         );
         $documentsViewRow = DB_fetchArray($documentsViewResult);
 
-        if (!is_array($documentsViewRow) || !isset($documentsViewRow['owner_id'])) {
-            echo COM_refresh($_CONF['site_url'] . '/404.php');
-            exit;
-        }
-
-        $documentsViewAccess = SEC_hasAccess(
-            (int) $documentsViewRow['owner_id'],
-            (int) $documentsViewRow['group_id'],
-            (int) $documentsViewRow['perm_owner'],
-            (int) $documentsViewRow['perm_group'],
-            (int) $documentsViewRow['perm_members'],
-            (int) $documentsViewRow['perm_anon']
-        );
-        if ($documentsViewAccess < 2) {
-            echo COM_refresh($_CONF['site_url'] . '/404.php');
-            exit;
-        }
-
-        $documentsIsPrivilegedViewer = SEC_hasRights('documents.admin')
-            || SEC_hasRights('documents.publish')
-            || (!COM_isAnonUser() && (int) $_USER['uid'] === (int) $documentsViewRow['owner_id']);
-        if ((int) $documentsViewRow['active'] !== 1 && !$documentsIsPrivilegedViewer) {
+        if (!DOCUMENTS_canViewDocument($documentsViewRow, 2)) {
             echo COM_refresh($_CONF['site_url'] . '/404.php');
             exit;
         }
