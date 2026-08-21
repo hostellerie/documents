@@ -74,6 +74,8 @@ if ($mode === 'integrity') {
         . count($report['duplicate_category_slugs']) . '</td></tr>';
     $display .= '<tr><td>Duplicate document slugs</td><td>'
         . count($report['duplicate_document_slugs']) . '</td></tr>';
+    $display .= '<tr><td>Documents without values</td><td>'
+        . (int) $report['orphan_documents_without_values'] . '</td></tr>';
     $display .= '<tr><td>Values without document</td><td>'
         . (int) $report['orphan_values_without_document'] . '</td></tr>';
     $display .= '<tr><td>Values without field</td><td>'
@@ -88,18 +90,18 @@ if ($mode === 'integrity') {
 
     if (!empty($report['duplicate_category_slugs'])) {
         $display .= '<h3>Duplicate category slugs</h3><ul>';
-        foreach ($report['duplicate_category_slugs'] as $duplicate) {
-            $display .= '<li>' . htmlspecialchars($duplicate['slug'], ENT_QUOTES, 'UTF-8')
-                . ' (' . (int) $duplicate['count'] . ')</li>';
+        foreach ($report['duplicate_category_slugs'] as $item) {
+            $display .= '<li>' . htmlspecialchars($item['slug'], ENT_QUOTES, 'UTF-8')
+                . ' (' . (int) $item['count'] . ')</li>';
         }
         $display .= '</ul>';
     }
 
     if (!empty($report['duplicate_document_slugs'])) {
         $display .= '<h3>Duplicate document slugs</h3><ul>';
-        foreach ($report['duplicate_document_slugs'] as $duplicate) {
-            $display .= '<li>' . htmlspecialchars($duplicate['slug'], ENT_QUOTES, 'UTF-8')
-                . ' (' . (int) $duplicate['count'] . ')</li>';
+        foreach ($report['duplicate_document_slugs'] as $item) {
+            $display .= '<li>' . htmlspecialchars($item['slug'], ENT_QUOTES, 'UTF-8')
+                . ' (' . (int) $item['count'] . ')</li>';
         }
         $display .= '</ul>';
     }
