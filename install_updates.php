@@ -12,9 +12,9 @@
 /**
  * Add image-limit settings to an existing Documents configuration group.
  *
- * The Geeklog configuration API does not overwrite an existing value when
- * add() is called for a parameter that is already present, so this helper is
- * safe to run more than once.
+ * DOCUMENTS_addImageConfigItems() checks the currently loaded configuration
+ * and calls config::add() only for missing keys. Customized administrator
+ * values are therefore preserved and the upgrade remains idempotent.
  *
  * @return bool
  */
