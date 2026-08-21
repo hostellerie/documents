@@ -51,6 +51,22 @@ if ((string) DOCUMENTS_requestValue($_REQUEST, 'mode', '') === 'save_cat') {
     $_POST['cat_url'] = $_REQUEST['cat_url'];
 }
 
+// Capture current image references before an existing document is saved.
+// The shutdown callback runs even when include_html.php ends the request with
+// a redirect. It removes only files whose DB reference changed successfully.
+$documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
+$documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
+if ($documentsMode === 'save' && $documentsDocUrl !== '') {
+    $documentsImagesBeforeSave = DOCUMENTS_getDocumentImageReferences($documentsDocUrl);
+    if (!empty($documentsImagesBeforeSave)) {
+        register_shutdown_function(
+            'DOCUMENTS_cleanupReplacedImages',
+            $documentsDocUrl,
+            $documentsImagesBeforeSave
+        );
+    }
+}
+
 $requestPath = isset($_SERVER['REQUEST_URI'])
     ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH)
     : '';
