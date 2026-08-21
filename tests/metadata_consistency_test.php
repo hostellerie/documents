@@ -48,8 +48,11 @@ if (strpos($changelog, '## 1.1.9') === false) {
 }
 
 /*
- * Large historical files are still being cleaned up header-by-header. Keep an
- * explicit allow-list so no additional stale 1.1.2 header can appear unnoticed.
+ * Large historical runtime files are still being cleaned up header-by-header.
+ * Keep an explicit allow-list so no additional stale 1.1.2 source header can
+ * appear unnoticed. Test files are excluded: their assertions intentionally
+ * contain historical version strings and must not be mistaken for source
+ * metadata.
  */
 $allowedLegacyHeaders = array(
     'functions.inc',
@@ -77,7 +80,7 @@ foreach ($iterator as $fileInfo) {
     $path = substr($fileInfo->getPathname(), strlen($root) + 1);
     $path = str_replace(DIRECTORY_SEPARATOR, '/', $path);
 
-    if (strpos($path, 'test-artifacts/') === 0) {
+    if (strpos($path, 'test-artifacts/') === 0 || strpos($path, 'tests/') === 0) {
         continue;
     }
 
