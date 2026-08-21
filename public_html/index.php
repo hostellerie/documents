@@ -51,20 +51,34 @@ if ((string) DOCUMENTS_requestValue($_REQUEST, 'mode', '') === 'save_cat') {
     $_POST['cat_url'] = $_REQUEST['cat_url'];
 }
 
+$documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
+$documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
+$documentsOperation = (string) DOCUMENTS_requestValue($_REQUEST, 'op', '');
+
 // Capture current image references before an existing document is saved.
 // The shutdown callback runs even when include_html.php ends the request with
 // a redirect. It removes only files whose DB reference changed successfully.
-$documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
-$documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
-if ($documentsMode === 'save' && $documentsDocUrl !== '') {
-    $documentsImagesBeforeSave = DOCUMENTS_getDocumentImageReferences($documentsDocUrl);
+if ($documentsMode === 'save' && $documentsDocUrl !== '' && $documentsOperation !== 'delete') {
+    $documentsImagesBeforeSave = DOCUMENTS_documentImageReferences($documentsDocUrl);
     if (!empty($documentsImagesBeforeSave)) {
         register_shutdown_function(
             'DOCUMENTS_cleanupReplacedImages',
-            $documentsDocUrl,
-            $documentsImagesBeforeSave
+            $documentsImagesBeforeSave,
+            $documentsDocUrl
         );
     }
+}
+
+// A document deletion already removes its document/value rows in the legacy
+// save handler. Capture local resources first, then remove them only if the
+// document row is actually gone when the request finishes.
+if ($documentsMode === 'save' && $documentsDocUrl !== '' && $documentsOperation === 'delete') {
+    $documentsImagesBeforeDelete = DOCUMENTS_documentImageReferences($documentsDocUrl);
+    register_shutdown_function(
+        'DOCUMENTS_cleanupDeletedDocumentImages',
+        $documentsDocUrl,
+        $documentsImagesBeforeDelete
+    );
 }
 
 $requestPath = isset($_SERVER['REQUEST_URI'])
