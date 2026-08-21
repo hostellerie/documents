@@ -137,11 +137,6 @@ if ($documentsMode === 'save_cat') {
     $_POST['cat_url'] = $_REQUEST['cat_url'];
 }
 
-if ($documentsMode === 'save' && !SEC_checkToken()) {
-    http_response_code(403);
-    exit;
-}
-
 if ($documentsMode === 'save') {
     if ($documentsDocUrl !== '') {
         $documentsDocUrlSql = DB_escapeString($documentsDocUrl);
