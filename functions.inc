@@ -297,26 +297,17 @@ function plugin_upgrade_documents()
         return 3002;
     }
 
-    /* Preserve the legacy schema upgrades required by pre-1.1.0 installs. */
     switch ($installed_version) {
         case '1.0':
             DB_query("ALTER TABLE {$_TABLES['documents_cat']} ADD map INT AFTER css");
-            // Fall through.
         case '1.0.0':
             DB_query("ALTER TABLE {$_TABLES['documents_cat']} CHANGE COLUMN map map INT AFTER css");
-            // Fall through.
         case '1.0.1':
         case '1.1.0':
         default:
             break;
     }
 
-    /*
-     * Run stabilization upgrades before recording the new plugin version.
-     * If routing or persistent-data migration fails, Geeklog keeps the old
-     * version registered so the administrator can correct the filesystem and
-     * safely retry the idempotent upgrade.
-     */
     if (!DOCUMENTS_runUpgradeSteps($installed_version)) {
         COM_errorLog(
             'Documents upgrade failed while upgrading from version '
@@ -429,6 +420,27 @@ function plugin_savecomment_documents($title, $comment, $id, $pid, $postmode)
     $retval = '';
     $safeId = DB_escapeString($id);
 
+    $docResult = DB_query(
+        "SELECT active, owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+        . "FROM {$_TABLES['documents_docs']} WHERE doc_url = '{$safeId}' LIMIT 1"
+    );
+    $doc = DB_fetchArray($docResult);
+    $canComment = is_array($doc)
+        && isset($doc['active'])
+        && (int) $doc['active'] === 1
+        && SEC_hasAccess(
+            (int) $doc['owner_id'],
+            (int) $doc['group_id'],
+            (int) $doc['perm_owner'],
+            (int) $doc['perm_group'],
+            (int) $doc['perm_members'],
+            (int) $doc['perm_anon']
+        ) >= 2;
+
+    if (!$canComment) {
+        return COM_refresh($_CONF['site_url'] . '/index.php');
+    }
+
     $sql = "SELECT c.cat_url FROM {$_TABLES['documents_values']} AS v "
         . "LEFT JOIN {$_TABLES['documents_fields']} AS f ON f.fid = v.field_id "
         . "LEFT JOIN {$_TABLES['documents_cat']} AS c ON c.cid = f.cat_id "
@@ -533,12 +545,6 @@ function plugin_getcommenturlid_documents()
     );
 }
 
-/**
- * Filter submitted variables in place.
- *
- * @param array $vars
- * @param array $arr
- */
 function DOCUMENTS_filterVars($vars, &$arr)
 {
     foreach ($vars as $var => $type) {
@@ -594,10 +600,6 @@ function DOCUMENTS_menuCat()
     return $retval;
 }
 
-/**
- * Maps callback. This function is harmless when Maps is absent because it is
- * only called by Maps when that optional plugin is active.
- */
 function MAPS_ReadMore_documents()
 {
     global $LANG_DOCUMENTS_1;
