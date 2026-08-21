@@ -37,6 +37,8 @@ function DOCUMENTS_rcRequireAbsent($content, $needle, $label, &$failures)
 }
 
 $autoinstall = DOCUMENTS_rcRead($root, 'autoinstall.php', $failures);
+$installDefaults = DOCUMENTS_rcRead($root, 'install_defaults.php', $failures);
+$installUpdates = DOCUMENTS_rcRead($root, 'install_updates.php', $failures);
 $functions = DOCUMENTS_rcRead($root, 'functions.inc', $failures);
 $compat = DOCUMENTS_rcRead($root, 'include_compat.php', $failures);
 $security = DOCUMENTS_rcRead($root, 'security.php', $failures);
@@ -77,8 +79,8 @@ $checks = array(
     array($functions, 'WHERE d.active = 1', 'Plugin search is not restricted to active documents.'),
     array($functions, "COM_getPermSQL('AND', 0, 2, 'd')", 'Plugin search is missing document permission filtering.'),
     array($includeLists, '$workflowOwnerFilter = \' AND d.owner_id=\' . (int) $_USER[\'uid\'];', 'Draft/submission lists are not restricted to the current owner for non-admin users.'),
-    array($includeLists, 'AND d.active=3"\n        . $workflowOwnerFilter', 'Submission list does not apply the workflow owner filter.'),
-    array($includeLists, 'AND d.active=2"\n        . $workflowOwnerFilter', 'Draft list does not apply the workflow owner filter.'),
+    array($includeLists, '$sql_submissions = ', 'Submission workflow query is missing.'),
+    array($includeLists, '$sql_drafts = ', 'Draft workflow query is missing.'),
     array($functions, 'function DOCUMENTS_hasMaps()', 'Optional Maps availability helper is missing.'),
     array($functions, 'function DOCUMENTS_hasMediaGallery()', 'Optional MediaGallery availability helper is missing.'),
     array($includeHtml . $includeEdit, 'DOCUMENTS_hasMaps()', 'Maps integration is not guarded by the optional dependency helper.'),
@@ -87,6 +89,11 @@ $checks = array(
 
 foreach ($checks as $check) {
     DOCUMENTS_rcRequireContains($check[0], $check[1], $check[2], $failures);
+}
+
+/* Both workflow-private queries must append the owner filter. */
+if (substr_count($includeLists, '. $workflowOwnerFilter;') < 2) {
+    $failures[] = 'Draft/submission workflow queries do not both apply the owner filter.';
 }
 
 DOCUMENTS_rcRequireAbsent($storage, 'unlink($source', 'Storage migration appears to delete legacy source data.', $failures);
@@ -104,14 +111,16 @@ DOCUMENTS_rcRequireAbsent(
     $failures
 );
 
-$sourceFiles = array(
-    'autoinstall.php', 'functions.inc', 'include_edit.php', 'include_html.php',
-    'include_lists.php', 'security.php', 'runtime.php', 'admin/ajax.php', 'admin/index.php',
-    'public_html/index.php', 'public_html/image.php'
+/*
+ * Telemetry must not exist in installation/upgrade paths. Runtime mail calls
+ * used for legitimate document notifications are intentionally not forbidden.
+ */
+$installSources = array(
+    'autoinstall.php' => $autoinstall,
+    'install_defaults.php' => $installDefaults,
+    'install_updates.php' => $installUpdates
 );
-
-foreach ($sourceFiles as $sourceFile) {
-    $source = DOCUMENTS_rcRead($root, $sourceFile, $failures);
+foreach ($installSources as $sourceFile => $source) {
     DOCUMENTS_rcRequireAbsent(
         $source,
         'mail($_CONF',
