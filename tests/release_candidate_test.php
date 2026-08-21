@@ -91,6 +91,14 @@ foreach ($checks as $check) {
     DOCUMENTS_rcRequireContains($check[0], $check[1], $check[2], $failures);
 }
 
+/* Security helpers must have one runtime owner to avoid fatal redeclarations. */
+DOCUMENTS_rcRequireAbsent(
+    $compat,
+    'function DOCUMENTS_lockSecurityFields(',
+    'include_compat.php still duplicates DOCUMENTS_lockSecurityFields from security.php.',
+    $failures
+);
+
 /* Both workflow-private queries must append the owner filter. */
 if (substr_count($includeLists, '. $workflowOwnerFilter;') < 2) {
     $failures[] = 'Draft/submission workflow queries do not both apply the owner filter.';
