@@ -10,6 +10,22 @@
 #documents_display {
   margin-bottom:45px;
 }
+.documents-admin-nav {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:10px 0 20px;
+}
+.documents-admin-nav a {
+  display:inline-block;
+  padding:7px 10px;
+}
+.documents-admin-audit-table {
+  width:100%;
+}
+.documents-admin-back {
+  margin-top:20px;
+}
 .documents-form-fieldset {
   margin-top:10px;
 }
