@@ -259,6 +259,61 @@ function DOCUMENTS_canEditDocument($document)
     ) >= 3;
 }
 
+/**
+ * Normalize a requested document workflow state on the server.
+ *
+ * Users without publish rights cannot self-publish a new submission or turn a
+ * draft/submission into an active document by forging the active form value.
+ * Publishers keep the historical active/draft workflow; administrators may use
+ * all four states.
+ *
+ * @param int      $requestedStatus Requested state
+ * @param int|null $currentStatus Current state for edits, null for creation
+ * @return int
+ */
+function DOCUMENTS_normalizeDocumentStatus($requestedStatus, $currentStatus = null)
+{
+    $requestedStatus = (int) $requestedStatus;
+    $isAdmin = SEC_hasRights('documents.admin');
+    $isPublisher = SEC_hasRights('documents.publish');
+
+    if ($isAdmin) {
+        if ($requestedStatus < DOCUMENTS_STATUS_INACTIVE
+            || $requestedStatus > DOCUMENTS_STATUS_SUBMISSION) {
+            return DOCUMENTS_STATUS_ACTIVE;
+        }
+        return $requestedStatus;
+    }
+
+    if ($isPublisher) {
+        return ($requestedStatus === DOCUMENTS_STATUS_DRAFT)
+            ? DOCUMENTS_STATUS_DRAFT
+            : DOCUMENTS_STATUS_ACTIVE;
+    }
+
+    if ($currentStatus === null) {
+        return ($requestedStatus === DOCUMENTS_STATUS_DRAFT)
+            ? DOCUMENTS_STATUS_DRAFT
+            : DOCUMENTS_STATUS_SUBMISSION;
+    }
+
+    $currentStatus = (int) $currentStatus;
+    if ($currentStatus === DOCUMENTS_STATUS_DRAFT
+        || $currentStatus === DOCUMENTS_STATUS_SUBMISSION) {
+        return ($requestedStatus === DOCUMENTS_STATUS_DRAFT)
+            ? DOCUMENTS_STATUS_DRAFT
+            : DOCUMENTS_STATUS_SUBMISSION;
+    }
+
+    if ($currentStatus === DOCUMENTS_STATUS_ACTIVE) {
+        return ($requestedStatus === DOCUMENTS_STATUS_DRAFT)
+            ? DOCUMENTS_STATUS_DRAFT
+            : DOCUMENTS_STATUS_ACTIVE;
+    }
+
+    return $currentStatus;
+}
+
 function DOCUMENTS_linkifyUrls($content)
 {
     return preg_replace_callback(
