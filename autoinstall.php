@@ -70,8 +70,8 @@ function DOCUMENTS_runStorageMigration()
 /**
  * Run idempotent upgrade work for the stabilization series.
  *
- * This function is called only by the actual Geeklog plugin upgrade path.
- * Version checks remain read-only. Each step may safely be rerun.
+ * Each step may safely be rerun. Version checks never call this helper;
+ * plugin_upgrade_documents() is the only upgrade entry point.
  *
  * @param string $installedVersion Version currently registered in Geeklog
  * @return bool
@@ -113,34 +113,9 @@ function DOCUMENTS_runUpgradeSteps($installedVersion)
 
 function plugin_autoinstall_documents($pi_name)
 {
-    global $_CONF, $_TABLES;
-
     $pi_name         = 'documents';
     $pi_display_name = 'Documents';
     $pi_admin        = $pi_display_name . ' Admin';
-
-    /*
-     * plugin_chkVersion_documents() also calls this function. Keep ordinary
-     * version checks read-only. Persistent storage/routing changes run only
-     * when plugin_upgrade_documents() calls this function during an upgrade.
-     */
-    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-    $caller = isset($trace[1]['function']) ? $trace[1]['function'] : '';
-    if ($caller === 'plugin_upgrade_documents') {
-        $installedVersion = DB_getItem(
-            $_TABLES['plugins'],
-            'pi_version',
-            "pi_name = 'documents'"
-        );
-        if (!DOCUMENTS_runUpgradeSteps($installedVersion)) {
-            if (function_exists('COM_errorLog')) {
-                COM_errorLog(
-                    'Documents upgrade: stabilization upgrade steps failed from version '
-                    . $installedVersion
-                );
-            }
-        }
-    }
 
     $info = array(
         'pi_name'         => $pi_name,
