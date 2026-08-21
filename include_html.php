@@ -1808,13 +1808,8 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 	
 	case 'new' :
 	    
-		$documentsDebug = isset($_GET['documents_debug']) && $_GET['documents_debug'] == '1';
-		if ($documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N01 enter case new</pre>'; @ob_flush(); @flush(); }
-		COM_errorLog('DOCUMENTS DEBUG N01 enter case new');
 
 		require_once ($_CONF['path']  . 'plugins/documents/include_edit.php');
-		if ($documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N02 include_edit loaded</pre>'; @ob_flush(); @flush(); }
-		COM_errorLog('DOCUMENTS DEBUG N02 include_edit loaded');
 
 		// Check if submitable
 		
@@ -1824,24 +1819,14 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 			$content = SEC_loginRequiredForm();
 			break;
 		} else {
-			if ($documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N03 authenticated user</pre>'; @ob_flush(); @flush(); }
-			COM_errorLog('DOCUMENTS DEBUG N03 authenticated user');
 			$newCatUrl = addslashes((string) DOCUMENTS_requestValue($_REQUEST, 'cat', ''));
-			if ($documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N04 cat=' . htmlspecialchars($newCatUrl, ENT_QUOTES, 'UTF-8') . '</pre>'; @ob_flush(); @flush(); }
-			COM_errorLog('DOCUMENTS DEBUG N04 cat=' . $newCatUrl);
 			if ($newCatUrl === '') {
 				echo COM_refresh($_CONF['site_url'] . '/404.php');
 				exit();
 			}
 			$sql = "SELECT * FROM {$_TABLES['documents_cat']} WHERE cat_url = '{$newCatUrl}'";
-			if ($documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N05 before category query</pre>'; @ob_flush(); @flush(); }
-			COM_errorLog('DOCUMENTS DEBUG N05 before category query');
 			$res = DB_query($sql);
-			if ($documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N06 after category query</pre>'; @ob_flush(); @flush(); }
-			COM_errorLog('DOCUMENTS DEBUG N06 after category query');
 			$cat = DB_fetchArray($res);
-			if ($documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N07 category fetched cid=' . (isset($cat['cid']) ? (int) $cat['cid'] : 0) . '</pre>'; @ob_flush(); @flush(); }
-			COM_errorLog('DOCUMENTS DEBUG N07 category fetched cid=' . (isset($cat['cid']) ? (int) $cat['cid'] : 0));
 			if (!is_array($cat) || empty($cat['cid'])) {
 				echo COM_refresh($_CONF['site_url'] . '/404.php');
 				exit();
@@ -1872,11 +1857,7 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 		$doc['perm_anon'] = $cat['perm_anon'];
 		$doc['active'] = 1; //default
 		
-		if ($documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N08 before DOCUMENTS_editDoc()</pre>'; @ob_flush(); @flush(); }
-		COM_errorLog('DOCUMENTS DEBUG N08 before DOCUMENTS_editDoc()');
 		$content = DOCUMENTS_editDoc($doc);
-		if ($documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N09 after DOCUMENTS_editDoc() length=' . strlen((string) $content) . '</pre>'; @ob_flush(); @flush(); }
-		COM_errorLog('DOCUMENTS DEBUG N09 after DOCUMENTS_editDoc() length=' . strlen((string) $content));
 		
 		break;
 		
@@ -2335,32 +2316,17 @@ if (defined("DOCUMENT_TITLE")) {
      $page_title = $LANG_DOCUMENTS_1['plugin_name'];
 }
 
-if (isset($documentsDebug) && $documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N10 before user menu</pre>'; @ob_flush(); @flush(); }
-COM_errorLog('DOCUMENTS DEBUG N10 before user menu');
 $display .= DOCUMENTS_user_menu();
-if (isset($documentsDebug) && $documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N11 after user menu</pre>'; @ob_flush(); @flush(); }
-COM_errorLog('DOCUMENTS DEBUG N11 after user menu');
 
 // If any message
 $display .= DOCUMENTS_message(DOCUMENTS_requestValue($_REQUEST, 'msg'));
 
 $display .= $content;
-if (isset($documentsDebug) && $documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N12 before COM_createHTMLDocument</pre>'; @ob_flush(); @flush(); }
-COM_errorLog('DOCUMENTS DEBUG N12 before COM_createHTMLDocument');
 $display = COM_createHTMLDocument(
     $display,
     array('pagetitle' => $page_title)
 );
-if (isset($documentsDebug) && $documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N13 after COM_createHTMLDocument length=' . strlen((string) $display) . '</pre>'; @ob_flush(); @flush(); }
-COM_errorLog('DOCUMENTS DEBUG N13 after COM_createHTMLDocument length=' . strlen((string) $display));
 
-COM_errorLog('DOCUMENTS DEBUG N14 before COM_output length=' . strlen((string) $display));
 COM_output($display);
-COM_errorLog('DOCUMENTS DEBUG N15 after COM_output');
-if (isset($documentsDebug) && $documentsDebug) {
-    echo '<div style="position:fixed;top:0;left:0;z-index:999999;background:#ff0;color:#000;padding:10px">DOCUMENTS OUTPUT SENTINEL</div>';
-    @ob_flush();
-    @flush();
-}
 
 ?>
