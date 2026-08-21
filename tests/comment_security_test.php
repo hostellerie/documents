@@ -14,10 +14,11 @@ if (!is_file($functionsFile)) {
         $failures[] = 'Unable to read functions.inc.';
     } else {
         $functionPos = strpos($content, 'function plugin_savecomment_documents(');
-        $savePos = strpos($content, 'CMT_saveComment(', $functionPos === false ? 0 : $functionPos);
-        $activePos = strpos($content, "(int) $doc['active'] === 1", $functionPos === false ? 0 : $functionPos);
-        $accessPos = strpos($content, 'SEC_hasAccess(', $functionPos === false ? 0 : $functionPos);
-        $denyPos = strpos($content, 'if (!$canComment)', $functionPos === false ? 0 : $functionPos);
+        $start = ($functionPos === false) ? 0 : $functionPos;
+        $savePos = strpos($content, 'CMT_saveComment(', $start);
+        $activePos = strpos($content, "(int) \$doc['active'] === 1", $start);
+        $accessPos = strpos($content, 'SEC_hasAccess(', $start);
+        $denyPos = strpos($content, 'if (!$canComment)', $start);
 
         if ($functionPos === false) {
             $failures[] = 'plugin_savecomment_documents() is missing.';
@@ -25,13 +26,13 @@ if (!is_file($functionsFile)) {
         if ($savePos === false) {
             $failures[] = 'CMT_saveComment() call is missing.';
         }
-        if ($activePos === false || $activePos > $savePos) {
+        if ($activePos === false || ($savePos !== false && $activePos > $savePos)) {
             $failures[] = 'Comment save does not verify published status before CMT_saveComment().';
         }
-        if ($accessPos === false || $accessPos > $savePos) {
+        if ($accessPos === false || ($savePos !== false && $accessPos > $savePos)) {
             $failures[] = 'Comment save does not verify document read access before CMT_saveComment().';
         }
-        if ($denyPos === false || $denyPos > $savePos) {
+        if ($denyPos === false || ($savePos !== false && $denyPos > $savePos)) {
             $failures[] = 'Comment save does not reject unauthorized requests before CMT_saveComment().';
         }
     }
