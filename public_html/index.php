@@ -60,6 +60,51 @@ if (in_array($documentsMode, $documentsAdminModes, true)
     exit;
 }
 
+// Direct category URLs must obey the category's own permissions. Without this
+// preflight a restricted category could still reveal its name, custom header
+// or submission form even when its documents were individually protected.
+if ($documentsMode === 'view' || $documentsMode === 'new') {
+    $documentsCategorySlug = (string) DOCUMENTS_requestValue($_REQUEST, 'cat', '');
+    if ($documentsCategorySlug !== '') {
+        $documentsCategorySlugSql = DB_escapeString($documentsCategorySlug);
+        $documentsCategoryResult = DB_query(
+            "SELECT cid, submitable, owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+            . "FROM {$_TABLES['documents_cat']} WHERE cat_url='{$documentsCategorySlugSql}' LIMIT 1"
+        );
+        $documentsCategory = DB_fetchArray($documentsCategoryResult);
+
+        if (!is_array($documentsCategory) || empty($documentsCategory['cid'])) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+
+        $documentsCategoryAccess = SEC_hasAccess(
+            (int) $documentsCategory['owner_id'],
+            (int) $documentsCategory['group_id'],
+            (int) $documentsCategory['perm_owner'],
+            (int) $documentsCategory['perm_group'],
+            (int) $documentsCategory['perm_members'],
+            (int) $documentsCategory['perm_anon']
+        );
+        if ($documentsCategoryAccess < 2) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+
+        if ($documentsMode === 'new') {
+            if (COM_isAnonUser()) {
+                echo COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
+                exit;
+            }
+            if ((int) $documentsCategory['submitable'] !== 1
+                && !SEC_hasRights('documents.admin')) {
+                echo COM_refresh($_CONF['site_url'] . '/404.php');
+                exit;
+            }
+        }
+    }
+}
+
 if ($documentsMode === 'save_cat') {
     $_REQUEST['cat_url'] = DOCUMENTS_normalizeRouteSlug(
         DOCUMENTS_requestValue($_REQUEST, 'cat_url', '')
@@ -115,13 +160,27 @@ if ($documentsMode === 'save') {
             exit;
         }
 
-        $documentsSubmitable = DB_getItem(
-            $_TABLES['documents_cat'],
-            'submitable',
-            'cid=' . $documentsCid
+        $documentsCategoryResult = DB_query(
+            "SELECT submitable, owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+            . "FROM {$_TABLES['documents_cat']} WHERE cid={$documentsCid} LIMIT 1"
         );
-        if ($documentsSubmitable === ''
-            || ((int) $documentsSubmitable !== 1 && !SEC_hasRights('documents.admin'))) {
+        $documentsCategory = DB_fetchArray($documentsCategoryResult);
+        if (!is_array($documentsCategory) || !isset($documentsCategory['submitable'])) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+
+        $documentsCategoryAccess = SEC_hasAccess(
+            (int) $documentsCategory['owner_id'],
+            (int) $documentsCategory['group_id'],
+            (int) $documentsCategory['perm_owner'],
+            (int) $documentsCategory['perm_group'],
+            (int) $documentsCategory['perm_members'],
+            (int) $documentsCategory['perm_anon']
+        );
+        if ($documentsCategoryAccess < 2
+            || ((int) $documentsCategory['submitable'] !== 1
+                && !SEC_hasRights('documents.admin'))) {
             echo COM_refresh($_CONF['site_url'] . '/404.php');
             exit;
         }
