@@ -1,13 +1,26 @@
-name: Package current Documents 1.1.2 test build
+name: Package Documents 1.1.2 installable
 
 on:
+  push:
+    branches:
+      - modernize-1.1.2
+    paths:
+      - '.github/workflows/package-current-112.yml'
+      - '*.php'
+      - '*.inc'
+      - 'admin/**'
+      - 'language/**'
+      - 'public_html/**'
+      - 'sql/**'
+      - 'templates/**'
+      - 'install_defaults.php'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  package-current:
+  package:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,72 +28,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: modernize-1.1.2
-
-      - name: Apply document form runtime fix
-        shell: bash
-        run: |
-          python3 <<'PY'
-          from pathlib import Path
-
-          path = Path('include_edit.php')
-          text = path.read_text()
-          start = text.find('function DOCUMENTS_editDoc')
-          end = text.find('function DOCUMENTS_buildRawForm')
-          if start < 0 or end < 0 or end <= start:
-              raise SystemExit('Unable to locate DOCUMENTS_editDoc()')
-
-          before = text[:start]
-          block = text[start:end]
-          after = text[end:]
-
-          shared_files = "    $template->set_file(array(\n        'doc' => 'doc_form.thtml',\n        'access' => 'access_permissions.thtml'\n    ));"
-          block = block.replace(shared_files, "    $template->set_file(array('doc' => 'doc_form.thtml'));", 1)
-
-          old_lines = [
-              "        $template->set_var('lang_accessrights', $LANG_ACCESS['accessrights']);",
-              "        $template->set_var('lang_owner', $LANG_ACCESS['owner']);",
-              "        $template->set_var('owner_select', $ownerSelect);",
-              "        $template->set_var('owner', COM_getDisplayName((int) $doc['owner_id']));",
-              "        $template->set_var('lang_group', $LANG_ACCESS['group']);",
-              "        $template->set_var('group_dropdown', SEC_getGroupDropdown((int) $doc['group_id'], 3));",
-              "        $template->set_var(",
-              "            'permissions_editor',",
-              "            SEC_getPermissionsHTML(",
-              "                $doc['perm_owner'],",
-              "                $doc['perm_group'],",
-              "                $doc['perm_members'],",
-              "                $doc['perm_anon']",
-              "            )",
-              "        );",
-              "        $template->set_var('lang_permissions', $LANG_ACCESS['permissions']);",
-              "        $template->set_var('lang_perm_key', $LANG_ACCESS['permissionskey']);",
-              "        $template->set_var('permissions_msg', $LANG_ACCESS['permmsg']);",
-              "        $template->set_var('lang_permissions_msg', $LANG_ACCESS['permmsg']);",
-              "        $template->parse('access_perms', 'access');",
-              "        $accessPerms = $template->finish($template->get_var('access_perms'));",
-          ]
-          new_lines = [line.replace('$template->', '$accessTemplate->') for line in old_lines]
-          new_lines.insert(0, "        $accessTemplate = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');")
-          new_lines.insert(1, "        $accessTemplate->set_file(array('access' => 'access_permissions.thtml'));")
-          old_access = '\n'.join(old_lines)
-          new_access = '\n'.join(new_lines)
-          if old_access in block:
-              block = block.replace(old_access, new_access, 1)
-
-          final_old = "    $template->parse('output', 'doc');\n    $retval = $template->finish($template->get_var('output'));\n\n    return $retval;"
-          final_new = "    $template->parse('output', 'doc');\n    $retval = $template->finish($template->get_var('output'));\n    if (trim((string) $retval) === '') {\n        COM_errorLog('Documents: doc_form.thtml rendered an empty result for category ' . (int) $doc['cid']);\n        return '<div class=\"pluginAlert\">Documents: the document form template returned no output.</div>';\n    }\n\n    return $retval;"
-          if final_old in block:
-              block = block.replace(final_old, final_new, 1)
-
-          if "'access' => 'access_permissions.thtml'" in block:
-              raise SystemExit('Document form still shares access template')
-          if "$accessTemplate->set_file(array('access' => 'access_permissions.thtml'));" not in block:
-              raise SystemExit('Dedicated access template renderer missing')
-          if 'document form template returned no output' not in block:
-              raise SystemExit('Empty template guard missing')
-
-          path.write_text(before + block + after)
-          PY
 
       - name: Setup PHP 5.6
         uses: shivammathur/setup-php@v2
@@ -91,7 +38,11 @@ jobs:
       - name: Lint PHP 5.6
         shell: bash
         run: |
-          find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './test-artifacts/*' -print0 | xargs -0 -n1 php -l
+          find . -type f \( -name '*.php' -o -name '*.inc' \) \
+            -not -path './.git/*' \
+            -not -path './.github/*' \
+            -not -path './test-artifacts/*' \
+            -print0 | xargs -0 -n1 php -l
 
       - name: Setup PHP 8.1
         uses: shivammathur/setup-php@v2
@@ -102,28 +53,56 @@ jobs:
       - name: Lint PHP 8.1
         shell: bash
         run: |
-          find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './test-artifacts/*' -print0 | xargs -0 -n1 php -l
+          find . -type f \( -name '*.php' -o -name '*.inc' \) \
+            -not -path './.git/*' \
+            -not -path './.github/*' \
+            -not -path './test-artifacts/*' \
+            -print0 | xargs -0 -n1 php -l
 
-      - name: Build current installable ZIP
+      - name: Verify 1.1.2 runtime fixes
+        shell: bash
+        run: |
+          grep -q "function DOCUMENTS_writeHtaccess" rewrite.php
+          grep -q "DOCUMENTS_writeHtaccess(false)" public_html/index.php
+          grep -q "DOCUMENTS_writeHtaccess(true)" autoinstall.php
+          grep -q "function DOCUMENTS_user_menu" include_html.php
+          grep -q "function DOCUMENTS_uploadImage" include_html.php
+          ! grep -q "DOCUMENTS DEBUG" public_html/index.php
+
+      - name: Build installable ZIP
         shell: bash
         run: |
           rm -rf build test-artifacts
           mkdir -p build/documents test-artifacts
-          rsync -a --exclude='.git' --exclude='.github' --exclude='build' --exclude='test-artifacts' ./ build/documents/
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='build' \
+            --exclude='test-artifacts' \
+            ./ build/documents/
           cd build
-          zip -r ../test-artifacts/documents-1.1.2-test.zip documents >/dev/null
+          zip -r ../test-artifacts/documents-1.1.2.zip documents >/dev/null
           cd ..
-          printf 'Documents 1.1.2 current test package\nSource commit: %s\nDocument form fix: isolated access template + empty-output guard\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
+          printf 'Documents 1.1.2 installable package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nPretty URLs: managed .htaccess generation enabled\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
 
-      - name: Commit source fix and current test package
+      - name: Upload installable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documents-1.1.2-installable
+          path: |
+            test-artifacts/documents-1.1.2.zip
+            test-artifacts/lint-report.txt
+          if-no-files-found: error
+
+      - name: Commit current package to branch
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- include_edit.php test-artifacts/lint-report.txt test-artifacts/documents-1.1.2-test.zip
+          git add -- test-artifacts/documents-1.1.2.zip test-artifacts/lint-report.txt
           if git diff --cached --quiet; then
             echo 'Package already current.'
           else
-            git commit -m 'Documents 1.1.2: apply document form fix and rebuild package'
+            git commit -m 'Documents 1.1.2: refresh installable archive'
             git push origin HEAD:modernize-1.1.2
           fi
