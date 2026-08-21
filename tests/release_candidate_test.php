@@ -39,6 +39,8 @@ function DOCUMENTS_rcRequireAbsent($content, $needle, $label, &$failures)
 $autoinstall = DOCUMENTS_rcRead($root, 'autoinstall.php', $failures);
 $functions = DOCUMENTS_rcRead($root, 'functions.inc', $failures);
 $compat = DOCUMENTS_rcRead($root, 'include_compat.php', $failures);
+$security = DOCUMENTS_rcRead($root, 'security.php', $failures);
+$runtime = DOCUMENTS_rcRead($root, 'runtime.php', $failures);
 $storage = DOCUMENTS_rcRead($root, 'storage.php', $failures);
 $publicIndex = DOCUMENTS_rcRead($root, 'public_html/index.php', $failures);
 $adminAjax = DOCUMENTS_rcRead($root, 'admin/ajax.php', $failures);
@@ -61,7 +63,10 @@ $checks = array(
     array($compat, 'function DOCUMENTS_canViewDocument(', 'Central document visibility guard is missing.'),
     array($compat, 'function DOCUMENTS_canEditDocument(', 'Central document edit guard is missing.'),
     array($compat, 'function DOCUMENTS_normalizeDocumentStatus(', 'Server-side workflow state normalizer is missing.'),
-    array($compat, 'function DOCUMENTS_lockSecurityFields(', 'Server-side ownership/permission lock helper is missing.'),
+    array($security, 'function DOCUMENTS_lockSecurityFields(', 'Server-side ownership/permission lock helper is missing.'),
+    array($security, 'function DOCUMENTS_normalizeFieldInput(', 'Dynamic scalar field normalizer is missing.'),
+    array($security, 'function DOCUMENTS_prepareDocumentFieldRequest(', 'Dynamic field request normalizer is missing.'),
+    array($runtime, 'security.php', 'Runtime does not load the security helper module.'),
     array($publicIndex, 'DOCUMENTS_canViewDocument($documentsViewRow, 2)', 'Public document routes do not use the central visibility guard.'),
     array($publicIndex, 'DOCUMENTS_canEditDocument($documentsExisting)', 'Edit/save routes do not use the central edit guard.'),
     array($publicIndex, '$documentsRequestedCid !== $documentsActualCid', 'Edit/save routes do not bind the submitted category to the real document category.'),
@@ -101,7 +106,7 @@ DOCUMENTS_rcRequireAbsent(
 
 $sourceFiles = array(
     'autoinstall.php', 'functions.inc', 'include_edit.php', 'include_html.php',
-    'include_lists.php', 'admin/ajax.php', 'admin/index.php',
+    'include_lists.php', 'security.php', 'runtime.php', 'admin/ajax.php', 'admin/index.php',
     'public_html/index.php', 'public_html/image.php'
 );
 
