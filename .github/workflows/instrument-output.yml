@@ -1,0 +1,45 @@
+name: Instrument Documents output
+
+on:
+  push:
+    branches:
+      - modernize-1.1.2
+    paths:
+      - '.github/workflows/instrument-output.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  instrument:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: modernize-1.1.2
+
+      - name: Add output diagnostics
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('include_html.php')
+          s = p.read_text()
+          old = "COM_output($display);"
+          new = "COM_errorLog('DOCUMENTS DEBUG N14 before COM_output length=' . strlen((string) $display));\nCOM_output($display);\nCOM_errorLog('DOCUMENTS DEBUG N15 after COM_output');\nif (isset($documentsDebug) && $documentsDebug) {\n    echo '<div style=\"position:fixed;top:0;left:0;z-index:999999;background:#ff0;color:#000;padding:10px\">DOCUMENTS OUTPUT SENTINEL</div>';\n    @ob_flush();\n    @flush();\n}"
+          if old not in s:
+              raise SystemExit('COM_output anchor not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
+      - name: Lint
+        run: php -l include_html.php
+
+      - name: Commit diagnostics
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add include_html.php
+          git commit -m 'Documents 1.1.2: add temporary output diagnostics'
+          git push origin HEAD:modernize-1.1.2
