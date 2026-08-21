@@ -1,0 +1,53 @@
+name: Fix Documents explicit redirects
+
+on:
+  push:
+    branches:
+      - modernize-1.1.2
+    paths:
+      - '.github/workflows/fix-document-redirects.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: modernize-1.1.2
+
+      - name: Replace pretty redirects with explicit URLs
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('include_html.php')
+          s = p.read_text()
+
+          old1 = "echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/' . $cat['cat_url'] . '/' . DOC_URL);"
+          new1 = "echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($cat['cat_url']) . '&doc=' . rawurlencode(DOC_URL));"
+          old2 = "echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/' . $cat['cat_url'] . '/' . $_REQUEST['doc_url']);"
+          new2 = "echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($cat['cat_url']) . '&doc=' . rawurlencode((string) $_REQUEST['doc_url']));"
+
+          if old1 not in s:
+              raise SystemExit('creation redirect anchor not found')
+          if old2 not in s:
+              raise SystemExit('edition redirect anchor not found')
+
+          s = s.replace(old1, new1, 1)
+          s = s.replace(old2, new2, 1)
+          p.write_text(s)
+          PY
+
+      - name: Lint
+        run: php -l include_html.php
+
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- include_html.php
+          git commit -m 'Documents 1.1.2: use explicit document redirects'
+          git push origin HEAD:modernize-1.1.2
