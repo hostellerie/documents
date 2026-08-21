@@ -180,6 +180,14 @@ if (($documentsMode === 'edit' || $documentsMode === 'save') && $documentsDocUrl
             echo COM_refresh($_CONF['site_url'] . '/404.php');
             exit;
         }
+
+        if ($documentsOperation !== 'delete') {
+            $_REQUEST['active'] = DOCUMENTS_normalizeDocumentStatus(
+                DOCUMENTS_requestInt($_REQUEST, 'active', DOCUMENTS_STATUS_ACTIVE),
+                (int) $documentsExisting['active']
+            );
+            $_POST['active'] = $_REQUEST['active'];
+        }
     } else {
         $documentsRequestedCid = DOCUMENTS_requestInt($_REQUEST, 'cat', 0);
         if ($documentsRequestedCid !== $documentsActualCid) {
@@ -234,6 +242,14 @@ if ($documentsMode === 'save' && $documentsDocUrl === '') {
             && !SEC_hasRights('documents.admin'))) {
         echo COM_refresh($_CONF['site_url'] . '/404.php');
         exit;
+    }
+
+    if ($documentsOperation !== 'delete') {
+        $_REQUEST['active'] = DOCUMENTS_normalizeDocumentStatus(
+            DOCUMENTS_requestInt($_REQUEST, 'active', DOCUMENTS_STATUS_SUBMISSION),
+            null
+        );
+        $_POST['active'] = $_REQUEST['active'];
     }
 }
 
