@@ -65,16 +65,6 @@ function DOCUMENTS_documentUrlExists($docUrl)
     return DB_getItem($_TABLES['documents_docs'], 'did', "doc_url='{$docUrlSql}'") !== '';
 }
 
-/**
- * Generate a stable document URL and guarantee that it is unused.
- *
- * Historical Documents URLs are prefixed with a numeric identifier. Keep that
- * format for compatibility, but verify the final candidate instead of assuming
- * MAX(did)+1 can never collide.
- *
- * @param string $title Document title or first field value
- * @return string
- */
 function DOCUMENTS_uniqueDocumentUrl($title)
 {
     global $_TABLES;
@@ -161,12 +151,6 @@ function DOCUMENTS_documentImageReferences($docUrl)
     return $images;
 }
 
-/**
- * Return image files referenced by one field before it is deleted.
- *
- * @param int $fieldId Field id
- * @return array
- */
 function DOCUMENTS_fieldImageReferences($fieldId)
 {
     global $_TABLES;
@@ -232,14 +216,40 @@ function DOCUMENTS_cleanupReplacedImages($before, $docUrl)
     return $removed;
 }
 
-/**
- * Remove files captured before a field deletion, but only if the field and all
- * its values were actually removed from the database.
- *
- * @param int $fieldId Field id
- * @param array $filenames Captured image filenames
- * @return int
- */
+function DOCUMENTS_cleanupDeletedDocumentImages($docUrl, $images)
+{
+    global $_TABLES, $_DOCUMENTS_CONF;
+
+    $docUrl = (string) $docUrl;
+    if ($docUrl === '' || !is_array($images) || empty($images)
+        || empty($_DOCUMENTS_CONF['path_images'])) {
+        return 0;
+    }
+
+    $docUrlSql = DB_escapeString($docUrl);
+    if (DB_getItem($_TABLES['documents_docs'], 'did', "doc_url='{$docUrlSql}'") !== '') {
+        return 0;
+    }
+    if ((int) DB_count($_TABLES['documents_values'], 'doc_url', $docUrl) > 0) {
+        return 0;
+    }
+
+    $base = rtrim((string) $_DOCUMENTS_CONF['path_images'], "/\\") . DIRECTORY_SEPARATOR;
+    $removed = 0;
+    foreach ($images as $filename) {
+        $filename = basename((string) $filename);
+        if ($filename === '') {
+            continue;
+        }
+        $path = $base . $filename;
+        if (is_file($path) && @unlink($path)) {
+            $removed++;
+        }
+    }
+
+    return $removed;
+}
+
 function DOCUMENTS_cleanupDeletedFieldImages($fieldId, $filenames)
 {
     global $_TABLES, $_DOCUMENTS_CONF;
