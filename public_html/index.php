@@ -45,6 +45,16 @@ $documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
 $documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
 $documentsOperation = (string) DOCUMENTS_requestValue($_REQUEST, 'op', '');
 
+// All state-changing handlers are POST-only. This prevents bookmarked or
+// crafted GET URLs from triggering mutations even before CSRF validation.
+$documentsWriteModes = array('save', 'save_cat', 'save_field', 'save_group', 'save_select');
+if (in_array($documentsMode, $documentsWriteModes, true)) {
+    if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
+}
+
 // Category/field/select administration is private to Documents Admin. Keep
 // this guard in front of the legacy controller so direct URLs cannot expose or
 // mutate the plugin schema when a local handler misses a permission check.
