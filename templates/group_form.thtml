@@ -1,22 +1,22 @@
 <form action="{doc_url}/index.php?mode=save_group" method="POST">
 {gid}
-    <fieldset style="margin-top: 10px;">
-	    <legend><b>{group_informations}</b></legend>
+    <fieldset class="documents-form-fieldset">
+        <legend><b>{group_informations}</b></legend>
 
-	        <div>
-    	        <p><label>{group_label}<font color="red"> *</font></label>
-			    <input type="text" name="group_name" value="{group_name}" size="80" maxlength="255" {xhtml}></p>
-	        </div>
-			
-			<div>
-    	        <p><label>{help_label}</label>
-			    <input type="text" name="group_help" value="{help}" size="80" maxlength="255" {xhtml}></p>
-	        </div>
+        <div>
+            <p><label>{group_label}<span class="documents-required-mark"> *</span></label>
+                <input type="text" name="group_name" value="{group_name}" size="80" maxlength="255" {xhtml}></p>
+        </div>
+
+        <div>
+            <p><label>{help_label}</label>
+                <input type="text" name="group_help" value="{help}" size="80" maxlength="255" {xhtml}></p>
+        </div>
 
     </fieldset>
-	
-    <p><strong><font color="red">*</font><em> {required_field}</em></strong></p>
-	{admin_options}
+
+    <p class="documents-required-note"><span class="documents-required-mark">*</span><em> {required_field}</em></p>
+    {admin_options}
     <input type="submit" name="submit" value="{validate_button}" {xhtml}>
     <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
 
