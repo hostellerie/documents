@@ -37,4 +37,23 @@ DOCUMENTS_writeHtaccess(false);
 require_once $_CONF['path'] . 'plugins/documents/include_compat.php';
 DOCUMENTS_initializeRequestDefaults($_REQUEST);
 
+$requestPath = isset($_SERVER['REQUEST_URI'])
+    ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH)
+    : '';
+if (is_string($requestPath) && preg_match('#/index\.php$#', $requestPath)) {
+    $mode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
+    $catUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'cat', '');
+    $docUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc', '');
+
+    if ($mode === 'view' && $catUrl !== '') {
+        $canonical = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
+            . '/' . rawurlencode($catUrl);
+        if ($docUrl !== '') {
+            $canonical .= '/' . rawurlencode($docUrl);
+        }
+        header('Location: ' . $canonical, true, 301);
+        exit;
+    }
+}
+
 require_once $_CONF['path'] . 'plugins/documents/include_html.php';
