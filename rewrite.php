@@ -50,13 +50,28 @@ if (!function_exists('DOCUMENTS_writeHtaccess')) {
             return true;
         }
 
+        $siteUrl = isset($_DOCUMENTS_CONF['site_url'])
+            ? rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
+            : '';
+        $urlBase = $siteUrl !== '' ? parse_url($siteUrl, PHP_URL_PATH) : '';
+        if (!is_string($urlBase) || $urlBase === '') {
+            $folder = isset($_DOCUMENTS_CONF['documents_folder'])
+                ? trim($_DOCUMENTS_CONF['documents_folder'], "/\\")
+                : 'documents';
+            $urlBase = '/' . $folder;
+        }
+        if ($urlBase[0] !== '/') {
+            $urlBase = '/' . $urlBase;
+        }
+        $urlBase = rtrim($urlBase, '/');
+
         $rules = "RewriteEngine On\n\n"
             // Canonicalize explicit document URLs to the historical pretty URL.
-            . "RewriteCond %{THE_REQUEST} \\s/+documents/index\\.php\\?mode=view&cat=([^&\\s]+)&doc=([^&\\s]+) [NC]\n"
-            . "RewriteRule ^index\\.php$ %1/%2? [R=301,L,NE]\n\n"
+            . "RewriteCond %{THE_REQUEST} \\s[^?\\s]*index\\.php\\?mode=view&cat=([^&\\s]+)&doc=([^&\\s]+) [NC]\n"
+            . "RewriteRule ^index\\.php$ " . $urlBase . "/%1/%2? [R=301,L,NE]\n\n"
             // Canonicalize explicit category URLs.
-            . "RewriteCond %{THE_REQUEST} \\s/+documents/index\\.php\\?mode=view&cat=([^&\\s]+) [NC]\n"
-            . "RewriteRule ^index\\.php$ %1? [R=301,L,NE]\n\n"
+            . "RewriteCond %{THE_REQUEST} \\s[^?\\s]*index\\.php\\?mode=view&cat=([^&\\s]+) [NC]\n"
+            . "RewriteRule ^index\\.php$ " . $urlBase . "/%1? [R=301,L,NE]\n\n"
             // Pretty document URL -> internal request.
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
