@@ -1,5 +1,5 @@
 Documents 1.1.2 installable package
-Source commit: 3d745caf3891cb8327ca2331ce96ae2586a06be4
+Source commit: 31be8f69371a244271a0e90d8169337019e29336
 PHP lint: 5.6 and 8.1
 Canonical redirects: PHP 301
 Pretty URLs: .htaccess internal rewriting only
