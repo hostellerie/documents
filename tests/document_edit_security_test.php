@@ -20,6 +20,7 @@ function SEC_hasAccess($owner, $group, $permOwner, $permGroup, $permMembers, $pe
 }
 
 require_once dirname(__DIR__) . '/include_compat.php';
+require_once dirname(__DIR__) . '/security.php';
 
 $failures = array();
 
