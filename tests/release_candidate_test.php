@@ -46,6 +46,12 @@ $includeEdit = DOCUMENTS_rcRead($root, 'include_edit.php', $failures);
 
 DOCUMENTS_rcRequireContains(
     $autoinstall,
+    "'pi_version'      => '1.1.9'",
+    'Plugin metadata is not set to 1.1.9.',
+    $failures
+);
+DOCUMENTS_rcRequireContains(
+    $autoinstall,
     "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')",
     'Minimum Geeklog version is not 2.1.1.',
     $failures
@@ -144,6 +150,12 @@ if (is_file($root . '/admin/timthumb.php')) {
 if (is_file($root . '/public_html/timthumb-config.php')) {
     $failures[] = 'Legacy public TimThumb configuration is still present.';
 }
+DOCUMENTS_rcRequireAbsent(
+    strtolower($publicIndex . $includeHtml . $includeEdit),
+    'timthumb.php',
+    'A runtime reference to timthumb.php remains.',
+    $failures
+);
 
 $sourceFiles = array(
     'autoinstall.php',
@@ -159,12 +171,6 @@ $sourceFiles = array(
 
 foreach ($sourceFiles as $sourceFile) {
     $source = DOCUMENTS_rcRead($root, $sourceFile, $failures);
-    DOCUMENTS_rcRequireAbsent(
-        strtolower($source),
-        'timthumb',
-        'Legacy TimThumb reference remains in ' . $sourceFile . '.',
-        $failures
-    );
     DOCUMENTS_rcRequireAbsent(
         $source,
         'mail($_CONF',
