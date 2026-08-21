@@ -70,6 +70,10 @@ if ($mode === 'integrity') {
     $display .= '<p>This report is read-only. No data or files are modified.</p>';
     $display .= '<table class="admin-list" style="width:100%">';
     $display .= '<thead><tr><th>Check</th><th>Result</th></tr></thead><tbody>';
+    $display .= '<tr><td>Duplicate category slugs</td><td>'
+        . count($report['duplicate_category_slugs']) . '</td></tr>';
+    $display .= '<tr><td>Duplicate document slugs</td><td>'
+        . count($report['duplicate_document_slugs']) . '</td></tr>';
     $display .= '<tr><td>Values without document</td><td>'
         . (int) $report['orphan_values_without_document'] . '</td></tr>';
     $display .= '<tr><td>Values without field</td><td>'
@@ -81,6 +85,24 @@ if ($mode === 'integrity') {
     $display .= '<tr><td>Image files not referenced by Documents</td><td>'
         . count($report['unreferenced_image_files']) . '</td></tr>';
     $display .= '</tbody></table>';
+
+    if (!empty($report['duplicate_category_slugs'])) {
+        $display .= '<h3>Duplicate category slugs</h3><ul>';
+        foreach ($report['duplicate_category_slugs'] as $duplicate) {
+            $display .= '<li>' . htmlspecialchars($duplicate['slug'], ENT_QUOTES, 'UTF-8')
+                . ' (' . (int) $duplicate['count'] . ')</li>';
+        }
+        $display .= '</ul>';
+    }
+
+    if (!empty($report['duplicate_document_slugs'])) {
+        $display .= '<h3>Duplicate document slugs</h3><ul>';
+        foreach ($report['duplicate_document_slugs'] as $duplicate) {
+            $display .= '<li>' . htmlspecialchars($duplicate['slug'], ENT_QUOTES, 'UTF-8')
+                . ' (' . (int) $duplicate['count'] . ')</li>';
+        }
+        $display .= '</ul>';
+    }
 
     if (!empty($report['missing_image_files'])) {
         $display .= '<h3>Missing image files</h3><ul>';
