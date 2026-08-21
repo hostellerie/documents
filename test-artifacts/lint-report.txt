@@ -1,5 +1,6 @@
 Documents 1.1.2 installable package
-Source commit: 677cd7dc54c9bd74a2a93c722874f33c78666293
+Source commit: 0e41d2a8d18be670cc6663f2fb5da20d000529e5
 PHP lint: 5.6 and 8.1
 Pretty URLs: managed .htaccess generation enabled
+.gitkeep files: none
 RESULT: PASS
