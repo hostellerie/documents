@@ -1,0 +1,58 @@
+name: Fix Documents upload signature
+
+on:
+  push:
+    branches:
+      - modernize-1.1.2
+    paths:
+      - '.github/workflows/fix-upload-signature.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-signature:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: modernize-1.1.2
+
+      - name: Fix PHP 8.1 upload signature
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('include_html.php')
+          text = path.read_text()
+          old = "function DOCUMENTS_uploadImage ($image_name=array(), $input_name=array(), $fields=array(), $creation) {"
+          new = "function DOCUMENTS_uploadImage($image_name = array(), $input_name = array(), $fields = array(), $creation = 0) {"
+          if old not in text and new not in text:
+              raise SystemExit('DOCUMENTS_uploadImage signature not found')
+          if old in text:
+              text = text.replace(old, new, 1)
+              path.write_text(text)
+          PY
+
+      - name: Lint include_html.php
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: Validate and commit
+        shell: bash
+        run: |
+          php -l include_html.php
+          grep -F "function DOCUMENTS_uploadImage(\$image_name = array(), \$input_name = array(), \$fields = array(), \$creation = 0)" include_html.php
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add include_html.php
+          if git diff --cached --quiet; then
+            echo 'Signature already fixed.'
+          else
+            git commit -m 'Documents 1.1.2: fix PHP 8.1 upload signature'
+            git push origin HEAD:modernize-1.1.2
+          fi
