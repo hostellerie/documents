@@ -205,11 +205,10 @@ $previewPath = '';
 $extension = DOCUMENTS_previewExtension($mime);
 if ($extension !== '' && DOCUMENTS_ensurePreviewDirectory()) {
     $mtime = @filemtime($sourcePath);
-    $cacheKey = md5(
-        $relative . '|'
-        . (string) $mtime . '|'
-        . $targetWidth . 'x' . $targetHeight
-    );
+    $sourceKey = sha1($relative);
+    $cacheKey = $sourceKey . '-'
+        . (string) $mtime . '-'
+        . $targetWidth . 'x' . $targetHeight;
     $previewPath = DOCUMENTS_previewDirectory() . $cacheKey . $extension;
 
     if (is_file($previewPath) && is_readable($previewPath)) {
