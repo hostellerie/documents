@@ -2,12 +2,19 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.8                                                    |
+// | Documents Plugin 1.1.9                                                    |
 // +---------------------------------------------------------------------------+
 // | runtime.php                                                               |
 // |                                                                           |
 // | Runtime environment checks and self-repair helpers.                       |
 // +---------------------------------------------------------------------------+
+
+if (isset($_CONF['path'])) {
+    $documentsSecurityFile = $_CONF['path'] . 'plugins/documents/security.php';
+    if (is_file($documentsSecurityFile)) {
+        require_once $documentsSecurityFile;
+    }
+}
 
 /**
  * Ensure the configured Documents image upload directory exists and is usable.
