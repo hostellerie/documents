@@ -6,7 +6,7 @@
 // +---------------------------------------------------------------------------+
 // | integrity.php                                                             |
 // |                                                                           |
-// | Data-integrity helpers for slugs, relations and local image references.   |
+// | Data-integrity and access helpers for Documents.                          |
 // +---------------------------------------------------------------------------+
 
 function DOCUMENTS_normalizeRouteSlug($value)
@@ -85,6 +85,51 @@ function DOCUMENTS_uniqueDocumentUrl($title)
     } while (DOCUMENTS_documentUrlExists($candidate));
 
     return $candidate;
+}
+
+/**
+ * Check whether the current user may see a document row.
+ *
+ * Published documents require normal read access. Drafts, submissions and
+ * inactive documents additionally require ownership, Documents Admin or
+ * Documents Publish rights.
+ *
+ * @param array $doc Documents row with active/owner/permission columns
+ * @param int $minimumAccess Minimum Geeklog access level
+ * @return bool
+ */
+function DOCUMENTS_canViewDocument($doc, $minimumAccess = 2)
+{
+    global $_USER;
+
+    if (!is_array($doc) || !isset($doc['owner_id'])) {
+        return false;
+    }
+
+    $access = SEC_hasAccess(
+        (int) $doc['owner_id'],
+        isset($doc['group_id']) ? (int) $doc['group_id'] : 0,
+        isset($doc['perm_owner']) ? (int) $doc['perm_owner'] : 0,
+        isset($doc['perm_group']) ? (int) $doc['perm_group'] : 0,
+        isset($doc['perm_members']) ? (int) $doc['perm_members'] : 0,
+        isset($doc['perm_anon']) ? (int) $doc['perm_anon'] : 0
+    );
+    if ($access < (int) $minimumAccess) {
+        return false;
+    }
+
+    $active = isset($doc['active']) ? (int) $doc['active'] : 1;
+    if ($active === 1) {
+        return true;
+    }
+
+    if (SEC_hasRights('documents.admin') || SEC_hasRights('documents.publish')) {
+        return true;
+    }
+
+    return !COM_isAnonUser()
+        && isset($_USER['uid'])
+        && (int) $_USER['uid'] === (int) $doc['owner_id'];
 }
 
 function DOCUMENTS_integrityCount($sql)
