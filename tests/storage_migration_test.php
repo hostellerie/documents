@@ -4,6 +4,7 @@
 
 $root = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'documents-storage-test-' . uniqid('', true);
 $GLOBALS['documents_test_root'] = $root;
+$_CONF = array();
 
 function DOCUMENTS_legacyDataDir()
 {
@@ -47,11 +48,14 @@ function documents_test_remove_tree($path)
 
 function documents_test_select_site($root, $dataName)
 {
+    global $_CONF;
+
     $data = $root . DIRECTORY_SEPARATOR . $dataName;
-    $GLOBALS['documents_test_legacy'] = $data . DIRECTORY_SEPARATOR
+    $_CONF['path_data'] = $data . DIRECTORY_SEPARATOR;
+    $GLOBALS['documents_test_legacy'] = $_CONF['path_data']
         . 'data_documents' . DIRECTORY_SEPARATOR;
-    $GLOBALS['documents_test_target'] = $root . DIRECTORY_SEPARATOR
-        . $dataName . '-documents' . DIRECTORY_SEPARATOR;
+    $GLOBALS['documents_test_target'] = dirname($data) . DIRECTORY_SEPARATOR
+        . basename($data) . '-documents' . DIRECTORY_SEPARATOR;
 }
 
 require dirname(__DIR__) . DIRECTORY_SEPARATOR . 'storage.php';
@@ -80,8 +84,8 @@ $first = DOCUMENTS_migrateLegacyData();
 if (!is_array($first) || !empty($first['errors'])) {
     documents_test_fail('Site A first migration reported errors.');
 }
-if (empty($first['source_exists']) || empty($first['target_ready'])) {
-    documents_test_fail('Site A migration did not detect source/target correctly.');
+if (empty($first['source_exists']) || empty($first['target_ready']) || empty($first['target_safe'])) {
+    documents_test_fail('Site A migration did not detect source/target safely.');
 }
 if (!is_file($targetA . 'legacy.txt')
     || file_get_contents($targetA . 'legacy.txt') !== 'site-a-legacy') {
@@ -126,8 +130,8 @@ if (!mkdir($legacyB, 0755, true)) {
 file_put_contents($legacyB . 'legacy.txt', 'site-b-legacy');
 
 $siteB = DOCUMENTS_migrateLegacyData();
-if (!is_array($siteB) || !empty($siteB['errors'])) {
-    documents_test_fail('Site B migration reported errors.');
+if (!is_array($siteB) || !empty($siteB['errors']) || empty($siteB['target_safe'])) {
+    documents_test_fail('Site B migration reported errors or unsafe target.');
 }
 if (!is_file($targetB . 'legacy.txt')
     || file_get_contents($targetB . 'legacy.txt') !== 'site-b-legacy') {
@@ -143,8 +147,9 @@ if (is_file($targetB . 'preserve.txt')) {
 /* Switch back to site A and ensure site B remains untouched. */
 documents_test_select_site($root, 'data-site-a');
 $siteAThird = DOCUMENTS_migrateLegacyData();
-if (!empty($siteAThird['errors']) || (int) $siteAThird['copied'] !== 0) {
-    documents_test_fail('Site A rerun after site B was not idempotent.');
+if (!empty($siteAThird['errors']) || empty($siteAThird['target_safe'])
+    || (int) $siteAThird['copied'] !== 0) {
+    documents_test_fail('Site A rerun after site B was not idempotent and safe.');
 }
 if (file_get_contents($targetB . 'legacy.txt') !== 'site-b-legacy') {
     documents_test_fail('Site A rerun altered site B target data.');
