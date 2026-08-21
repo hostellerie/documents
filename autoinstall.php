@@ -31,6 +31,26 @@
  * @package Documents
  */
 
+function DOCUMENTS_runStorageMigration()
+{
+    global $_CONF;
+
+    require_once $_CONF['path'] . 'plugins/documents/storage.php';
+    $migration = DOCUMENTS_migrateLegacyData();
+
+    if (!empty($migration['errors'])) {
+        if (function_exists('COM_errorLog')) {
+            COM_errorLog(
+                'Documents storage migration completed with '
+                . (int) $migration['errors'] . ' error(s).'
+            );
+        }
+        return false;
+    }
+
+    return true;
+}
+
 function plugin_autoinstall_documents($pi_name)
 {
     global $_CONF;
@@ -41,6 +61,17 @@ function plugin_autoinstall_documents($pi_name)
 
     require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
     DOCUMENTS_writeHtaccess(true);
+
+    /*
+     * plugin_chkVersion_documents() also calls this function. Only run the
+     * storage migration when this invocation comes directly from the real
+     * upgrade routine, never during a read-only version check.
+     */
+    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+    $caller = isset($trace[1]['function']) ? $trace[1]['function'] : '';
+    if ($caller === 'plugin_upgrade_documents') {
+        DOCUMENTS_runStorageMigration();
+    }
 
     $info = array(
         'pi_name'         => $pi_name,
@@ -128,17 +159,5 @@ function plugin_postinstall_documents($pi_name)
     require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
     DOCUMENTS_writeHtaccess(true);
 
-    require_once $_CONF['path'] . 'plugins/documents/storage.php';
-    $migration = DOCUMENTS_migrateLegacyData();
-    if (!empty($migration['errors'])) {
-        if (function_exists('COM_errorLog')) {
-            COM_errorLog(
-                'Documents storage migration completed with '
-                . (int) $migration['errors'] . ' error(s).'
-            );
-        }
-        return false;
-    }
-
-    return true;
+    return DOCUMENTS_runStorageMigration();
 }
