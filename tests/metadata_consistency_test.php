@@ -57,9 +57,7 @@ if (strpos($changelog, '## 1.1.9') === false) {
 $allowedLegacyHeaders = array(
     'functions.inc',
     'include_edit.php',
-    'include_html.php',
-    'integrity.php',
-    'public_html/image.php'
+    'include_html.php'
 );
 sort($allowedLegacyHeaders);
 
