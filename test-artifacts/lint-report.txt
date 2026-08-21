@@ -1,9 +1,11 @@
 Documents 1.1.2 installable package
-Source commit: b166011f92abb232ed06cd5376a742625bb90839
+Source commit: d6f14bf59dc78e66db6e545c4a830e296ac5437f
 PHP lint: 5.6 and 8.1
 Canonical redirects: PHP 301
 Pretty URLs: .htaccess internal rewriting only
 WebP uploads: enabled
+Persistent storage migration: enabled
+Workflow source mutations: none
 Temporary debug logs: removed
 .gitkeep files: none
 RESULT: PASS
