@@ -33,9 +33,14 @@
 
 function plugin_autoinstall_documents($pi_name)
 {
+    global $_CONF;
+
     $pi_name         = 'documents';
     $pi_display_name = 'Documents';
     $pi_admin        = $pi_display_name . ' Admin';
+
+    require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
+    DOCUMENTS_writeHtaccess(true);
 
     $info = array(
         'pi_name'         => $pi_name,
@@ -120,28 +125,8 @@ function plugin_postinstall_documents($pi_name)
 {
     global $_CONF;
 
-    $publicDir = rtrim($_CONF['path_html'], "/\\") . DIRECTORY_SEPARATOR
-               . $pi_name . DIRECTORY_SEPARATOR;
-    $target = $publicDir . '.htaccess';
-
-    if (is_file($target)) {
-        return true;
-    }
-
-    if (!is_dir($publicDir)) {
-        COM_errorLog('Documents postinstall: public directory not found at ' . $publicDir);
-        return true;
-    }
-
-    $rules = "RewriteEngine on\n"
-           . "RewriteCond %{REQUEST_FILENAME} !-f\n"
-           . "RewriteCond %{REQUEST_FILENAME} !-d\n"
-           . "RewriteRule ^([^/]*)\\/?$ index.php?mode=view&cat=$1\n"
-           . "RewriteRule ^([^/]*)/([^/]+)$ index.php?mode=view&cat=$1&doc=$2 [L]\n";
-
-    if (@file_put_contents($target, $rules) === false) {
-        COM_errorLog('Documents postinstall: unable to create ' . $target);
-    }
+    require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
+    DOCUMENTS_writeHtaccess(true);
 
     return true;
 }
