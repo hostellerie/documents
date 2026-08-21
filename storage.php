@@ -10,12 +10,61 @@
 // +---------------------------------------------------------------------------+
 
 /**
+ * Validate that the Documents target directory is the site-specific sibling
+ * derived from the current site's path_data.
+ *
+ * This prevents a configuration mistake from making two multisite instances
+ * share a Documents data directory or from migrating data back into the legacy
+ * data_documents directory.
+ *
+ * @return bool
+ */
+function DOCUMENTS_storagePathIsSafe()
+{
+    global $_CONF;
+
+    $base = isset($_CONF['path_data']) ? rtrim($_CONF['path_data'], "/\\") : '';
+    $target = rtrim((string) DOCUMENTS_dataDir(), "/\\");
+    $legacy = rtrim((string) DOCUMENTS_legacyDataDir(), "/\\");
+
+    if ($base === '' || $target === '') {
+        return false;
+    }
+
+    $expected = dirname($base) . DIRECTORY_SEPARATOR
+        . basename($base) . '-documents';
+
+    if ($target !== $expected) {
+        if (function_exists('COM_errorLog')) {
+            COM_errorLog(
+                'Documents storage: rejected unexpected target directory ' . $target
+                . '; expected ' . $expected
+            );
+        }
+        return false;
+    }
+
+    if ($legacy !== '' && $target === $legacy) {
+        if (function_exists('COM_errorLog')) {
+            COM_errorLog('Documents storage: target directory matches legacy directory.');
+        }
+        return false;
+    }
+
+    return true;
+}
+
+/**
  * Ensure the site-specific persistent Documents data directory exists.
  *
  * @return bool
  */
 function DOCUMENTS_ensureDataDirectory()
 {
+    if (!DOCUMENTS_storagePathIsSafe()) {
+        return false;
+    }
+
     $target = DOCUMENTS_dataDir();
     if ($target === '') {
         return false;
@@ -30,7 +79,14 @@ function DOCUMENTS_ensureDataDirectory()
         }
     }
 
-    return is_writable($target);
+    if (!is_writable($target)) {
+        if (function_exists('COM_errorLog')) {
+            COM_errorLog('Documents storage: data directory is not writable ' . $target);
+        }
+        return false;
+    }
+
+    return true;
 }
 
 /**
@@ -117,6 +173,7 @@ function DOCUMENTS_migrateLegacyData()
     $report = array(
         'source_exists' => false,
         'target_ready' => false,
+        'target_safe' => false,
         'copied' => 0,
         'skipped' => 0,
         'errors' => 0
@@ -124,6 +181,12 @@ function DOCUMENTS_migrateLegacyData()
 
     $source = DOCUMENTS_legacyDataDir();
     $target = DOCUMENTS_dataDir();
+
+    if (!DOCUMENTS_storagePathIsSafe()) {
+        $report['errors']++;
+        return $report;
+    }
+    $report['target_safe'] = true;
 
     if ($target === '' || !DOCUMENTS_ensureDataDirectory()) {
         $report['errors']++;
