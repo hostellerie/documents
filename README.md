@@ -6,6 +6,8 @@ Documents is a configurable structured-content plugin for Geeklog. A category de
 
 The current development line is **1.1.x**, focused on stabilizing the historical 1.1.0 codebase before the 1.2.0 stable release.
 
+The current stabilization milestone is **1.1.8**, covering configuration, language synchronization and cleanup after the 1.1.7 persistent-data migration work.
+
 See [ROADMAP.md](ROADMAP.md) for the complete stabilization, architecture and feature roadmap.
 
 ## Compatibility target
@@ -82,6 +84,27 @@ The legacy directory remains available as a temporary read fallback during the s
 
 Do not manually remove `data_documents/` until the upgraded site has been checked and all expected custom templates or other persistent Documents files are present in the new directory.
 
+## Configuration
+
+Documents uses Geeklog's configuration system for administrator-adjustable settings.
+
+Current settings include:
+
+- public Documents folder;
+- main header and footer content;
+- maximum image width;
+- maximum image height;
+- maximum image file size;
+- default item permissions.
+
+The image limits introduced in the 1.1.8 stabilization work default to:
+
+- width: **3000 px**;
+- height: **3000 px**;
+- file size: **4,194,304 bytes**.
+
+During upgrades, existing customized values are preserved. Missing records are added without resetting existing configuration entries.
+
 ## Optional integrations
 
 ### Maps
@@ -108,6 +131,20 @@ When MediaGallery is missing or inactive, Documents must:
 - not render album-related controls;
 - continue to operate normally for all other field types.
 
+## Automated checks
+
+The permanent packaging workflow runs the following checks under PHP **5.6** and **8.1**:
+
+- PHP syntax validation;
+- persistent storage migration tests;
+- multisite storage isolation and migration idempotence;
+- configuration-upgrade idempotence;
+- preservation of customized image limits;
+- English/French language-key synchronization;
+- verification that packaging does not mutate source files.
+
+The generated development archive is `documents-1.1.8.zip` while this milestone is active.
+
 ## Stabilization work
 
 The 1.1.x stabilization line includes:
@@ -121,7 +158,9 @@ The 1.1.x stabilization line includes:
 - JPEG, PNG, GIF and WebP upload handling;
 - persistent image previews;
 - data-integrity checks and safer deletion handling;
-- input/output hardening without changing the historical database model.
+- input/output hardening without changing the historical database model;
+- administrator-configurable image limits;
+- synchronized English and French configuration labels.
 
 ## Upgrade policy
 
