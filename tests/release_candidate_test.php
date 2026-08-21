@@ -46,146 +46,39 @@ $includeHtml = DOCUMENTS_rcRead($root, 'include_html.php', $failures);
 $includeEdit = DOCUMENTS_rcRead($root, 'include_edit.php', $failures);
 $includeLists = DOCUMENTS_rcRead($root, 'include_lists.php', $failures);
 
-DOCUMENTS_rcRequireContains(
-    $autoinstall,
-    "'pi_version'      => '1.1.9'",
-    'Plugin metadata is not set to 1.1.9.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $autoinstall,
-    "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')",
-    'Minimum Geeklog version is not 2.1.1.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $autoinstall,
-    "define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3')",
-    'Maximum Geeklog range does not stop before 2.2.3.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $autoinstall,
-    "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')",
-    'Minimum PHP version is not 5.6.0.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $autoinstall,
-    "define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0')",
-    'Maximum PHP range does not stop before 8.2.0.',
-    $failures
+$checks = array(
+    array($autoinstall, "'pi_version'      => '1.1.9'", 'Plugin metadata is not set to 1.1.9.'),
+    array($autoinstall, "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')", 'Minimum Geeklog version is not 2.1.1.'),
+    array($autoinstall, "define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3')", 'Maximum Geeklog range does not stop before 2.2.3.'),
+    array($autoinstall, "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')", 'Minimum PHP version is not 5.6.0.'),
+    array($autoinstall, "define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0')", 'Maximum PHP range does not stop before 8.2.0.'),
+    array($functions, 'function DOCUMENTS_dataDir()', 'Multisite-safe data directory helper is missing.'),
+    array($functions, "basename(\$base) . '-documents'", 'Documents data directory is not derived from path_data.'),
+    array($storage, 'function DOCUMENTS_migrateLegacyData()', 'Legacy persistent-data migration helper is missing.'),
+    array($storage, 'if (file_exists($targetPath))', 'Migration no-overwrite guard is missing.'),
+    array($publicIndex, 'SEC_checkToken()', 'Mutating public/admin controller routes are missing CSRF validation.'),
+    array($adminAjax, "SEC_hasRights('documents.admin')", 'Admin AJAX endpoint is missing documents.admin protection.'),
+    array($compat, 'function DOCUMENTS_canViewDocument(', 'Central document visibility guard is missing.'),
+    array($publicIndex, 'DOCUMENTS_canViewDocument($documentsViewRow, 2)', 'Public document routes do not use the central visibility guard.'),
+    array($functions, 'WHERE d.active = 1', 'Plugin search is not restricted to active documents.'),
+    array($functions, "COM_getPermSQL('AND', 0, 2, 'd')", 'Plugin search is missing document permission filtering.'),
+    array($includeLists, '$workflowOwnerFilter = \' AND d.owner_id=\' . (int) $_USER[\'uid\'];', 'Draft/submission lists are not restricted to the current owner for non-admin users.'),
+    array($includeLists, 'AND d.active=3"\n        . $workflowOwnerFilter', 'Submission list does not apply the workflow owner filter.'),
+    array($includeLists, 'AND d.active=2"\n        . $workflowOwnerFilter', 'Draft list does not apply the workflow owner filter.'),
+    array($functions, 'function DOCUMENTS_hasMaps()', 'Optional Maps availability helper is missing.'),
+    array($functions, 'function DOCUMENTS_hasMediaGallery()', 'Optional MediaGallery availability helper is missing.'),
+    array($includeHtml . $includeEdit, 'DOCUMENTS_hasMaps()', 'Maps integration is not guarded by the optional dependency helper.'),
+    array($includeHtml . $includeEdit, 'DOCUMENTS_hasMediaGallery()', 'MediaGallery integration is not guarded by the optional dependency helper.')
 );
 
-DOCUMENTS_rcRequireContains(
-    $functions,
-    'function DOCUMENTS_dataDir()',
-    'Multisite-safe data directory helper is missing.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $functions,
-    "basename(\$base) . '-documents'",
-    'Documents data directory is not derived from path_data.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $storage,
-    'function DOCUMENTS_migrateLegacyData()',
-    'Legacy persistent-data migration helper is missing.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $storage,
-    'if (file_exists($targetPath))',
-    'Migration no-overwrite guard is missing.',
-    $failures
-);
+foreach ($checks as $check) {
+    DOCUMENTS_rcRequireContains($check[0], $check[1], $check[2], $failures);
+}
+
 DOCUMENTS_rcRequireAbsent(
     $storage,
     'unlink($source',
     'Storage migration appears to delete legacy source data.',
-    $failures
-);
-
-DOCUMENTS_rcRequireContains(
-    $publicIndex,
-    'SEC_checkToken()',
-    'Mutating public/admin controller routes are missing CSRF validation.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $adminAjax,
-    "SEC_hasRights('documents.admin')",
-    'Admin AJAX endpoint is missing documents.admin protection.',
-    $failures
-);
-
-DOCUMENTS_rcRequireContains(
-    $compat,
-    'function DOCUMENTS_canViewDocument(',
-    'Central document visibility guard is missing.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $publicIndex,
-    'DOCUMENTS_canViewDocument($documentsViewRow, 2)',
-    'Public document routes do not use the central visibility guard.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $functions,
-    'WHERE d.active = 1',
-    'Plugin search is not restricted to active documents.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $functions,
-    "COM_getPermSQL('AND', 0, 2, 'd')",
-    'Plugin search is missing document permission filtering.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $includeLists,
-    "$workflowOwnerFilter = ' AND d.owner_id=' . (int) $_USER['uid'];",
-    'Draft/submission lists are not restricted to the current owner for non-admin users.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $includeLists,
-    'AND d.active=3"\n        . $workflowOwnerFilter',
-    'Submission list does not apply the workflow owner filter.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $includeLists,
-    'AND d.active=2"\n        . $workflowOwnerFilter',
-    'Draft list does not apply the workflow owner filter.',
-    $failures
-);
-
-DOCUMENTS_rcRequireContains(
-    $functions,
-    'function DOCUMENTS_hasMaps()',
-    'Optional Maps availability helper is missing.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $functions,
-    'function DOCUMENTS_hasMediaGallery()',
-    'Optional MediaGallery availability helper is missing.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $includeHtml . $includeEdit,
-    'DOCUMENTS_hasMaps()',
-    'Maps integration is not guarded by the optional dependency helper.',
-    $failures
-);
-DOCUMENTS_rcRequireContains(
-    $includeHtml . $includeEdit,
-    'DOCUMENTS_hasMediaGallery()',
-    'MediaGallery integration is not guarded by the optional dependency helper.',
     $failures
 );
 
