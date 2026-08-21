@@ -2,15 +2,16 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.0                                                      |
+// | Documents Plugin 1.1.2                                                    |
 // +---------------------------------------------------------------------------+
 // | english.php                                                               |
 // |                                                                           |
 // | English language file                                                     |
 // +---------------------------------------------------------------------------+
-// | Copyright (C) 2012 by the following authors:                              |
+// | Copyright (C) 2012-2026 by the following authors:                         |
 // |                                                                           |
 // | Authors: Ben - ben AT geeklog DOT fr                                      |
+// |          Documents plugin contributors                                    |
 // +---------------------------------------------------------------------------+
 // | Created with the Geeklog Plugin Toolkit.                                  |
 // +---------------------------------------------------------------------------+
@@ -152,9 +153,12 @@ $LANG_configsections['documents'] = array(
 );
 
 $LANG_confignames['documents'] = array(
-    'documents_folder'      => 'Document folder',
+    'documents_folder'      => 'Documents folder',
     'documents_main_header' => 'Documents main header',
     'documents_main_footer' => 'Documents main footer',
+    'max_image_width'       => 'Maximum image width (pixels)',
+    'max_image_height'      => 'Maximum image height (pixels)',
+    'max_image_size'        => 'Maximum image file size (bytes)',
 );
 
 $LANG_configsubgroups['documents'] = array(
@@ -166,8 +170,9 @@ $LANG_tab['documents'] = array(
 );
 
 $LANG_fs['documents'] = array(
-    'fs_main' => 'Documents Main Settings',
-	'fs_permissions'     => 'Default Permissions',
+    'fs_main'        => 'Documents Main Settings',
+    'fs_images'      => 'Images',
+	'fs_permissions' => 'Default Permissions',
 );
 
 $LANG_configselects['documents'] = array(
