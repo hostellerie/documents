@@ -38,6 +38,7 @@ function DOCUMENTS_rcRequireAbsent($content, $needle, $label, &$failures)
 
 $autoinstall = DOCUMENTS_rcRead($root, 'autoinstall.php', $failures);
 $functions = DOCUMENTS_rcRead($root, 'functions.inc', $failures);
+$compat = DOCUMENTS_rcRead($root, 'include_compat.php', $failures);
 $storage = DOCUMENTS_rcRead($root, 'storage.php', $failures);
 $publicIndex = DOCUMENTS_rcRead($root, 'public_html/index.php', $failures);
 $adminAjax = DOCUMENTS_rcRead($root, 'admin/ajax.php', $failures);
@@ -120,6 +121,31 @@ DOCUMENTS_rcRequireContains(
 );
 
 DOCUMENTS_rcRequireContains(
+    $compat,
+    'function DOCUMENTS_canViewDocument(',
+    'Central document visibility guard is missing.',
+    $failures
+);
+DOCUMENTS_rcRequireContains(
+    $publicIndex,
+    'DOCUMENTS_canViewDocument($documentsViewRow, 2)',
+    'Public document routes do not use the central visibility guard.',
+    $failures
+);
+DOCUMENTS_rcRequireContains(
+    $functions,
+    'WHERE d.active = 1',
+    'Plugin search is not restricted to active documents.',
+    $failures
+);
+DOCUMENTS_rcRequireContains(
+    $functions,
+    "COM_getPermSQL('AND', 0, 2, 'd')",
+    'Plugin search is missing document permission filtering.',
+    $failures
+);
+
+DOCUMENTS_rcRequireContains(
     $functions,
     'function DOCUMENTS_hasMaps()',
     'Optional Maps availability helper is missing.',
@@ -182,7 +208,9 @@ foreach ($sourceFiles as $sourceFile) {
 $requiredTests = array(
     'tests/storage_migration_test.php',
     'tests/config_upgrade_test.php',
-    'tests/language_sync_test.php'
+    'tests/language_sync_test.php',
+    'tests/document_visibility_test.php',
+    'tests/metadata_consistency_test.php'
 );
 foreach ($requiredTests as $requiredTest) {
     if (!is_file($root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $requiredTest))) {
