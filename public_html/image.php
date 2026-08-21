@@ -112,6 +112,27 @@ function DOCUMENTS_outputPreviewImage($image, $mime)
     }
 }
 
+function DOCUMENTS_pruneStalePreviews($sourceKey, $mtime)
+{
+    $directory = DOCUMENTS_previewDirectory();
+    if ($directory === '' || !is_dir($directory)) {
+        return;
+    }
+
+    $currentPrefix = $sourceKey . '-' . (string) $mtime . '-';
+    $matches = glob($directory . $sourceKey . '-*');
+    if (!is_array($matches)) {
+        return;
+    }
+
+    foreach ($matches as $path) {
+        $filename = basename($path);
+        if (strpos($filename, $currentPrefix) !== 0 && is_file($path)) {
+            @unlink($path);
+        }
+    }
+}
+
 $src = isset($_GET['src']) ? trim($_GET['src']) : '';
 $width = isset($_GET['w']) ? (int) $_GET['w'] : 0;
 $height = isset($_GET['h']) ? (int) $_GET['h'] : 0;
@@ -206,6 +227,8 @@ $extension = DOCUMENTS_previewExtension($mime);
 if ($extension !== '' && DOCUMENTS_ensurePreviewDirectory()) {
     $mtime = @filemtime($sourcePath);
     $sourceKey = sha1($relative);
+    DOCUMENTS_pruneStalePreviews($sourceKey, $mtime);
+
     $cacheKey = $sourceKey . '-'
         . (string) $mtime . '-'
         . $targetWidth . 'x' . $targetHeight;
