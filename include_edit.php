@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.1                                                    |
+// | Documents Plugin 1.1.2                                                    |
 // +---------------------------------------------------------------------------+
 // | include_edit.php                                                          |
 // |                                                                           |
@@ -42,6 +42,9 @@ function DOCUMENTS_editCat($cat = array())
     $template->set_file(array('cat' => 'cat_form.thtml'));
     $template->set_var('doc_url', $_DOCUMENTS_CONF['site_url']);
     $template->set_var('xhtml', XHTML);
+    $csrfToken = SEC_createToken();
+    $template->set_var('gltoken_name', CSRF_TOKEN);
+    $template->set_var('gltoken', $csrfToken);
 
     if ($cat['cid'] === '') {
         $template->set_var('cat_informations', $LANG_DOCUMENTS_1['new_cat']);
@@ -195,6 +198,9 @@ function DOCUMENTS_editField($field = array())
     $template->set_file(array('field' => 'field_form.thtml'));
     $template->set_var('doc_url', $_DOCUMENTS_CONF['site_url']);
     $template->set_var('xhtml', XHTML);
+    $csrfToken = SEC_createToken();
+    $template->set_var('gltoken_name', CSRF_TOKEN);
+    $template->set_var('gltoken', $csrfToken);
     $template->set_var(
         'field_informations',
         $field['fid'] === ''
@@ -228,7 +234,8 @@ function DOCUMENTS_editField($field = array())
         . "jQuery('#cat_id').change(function(){"
         . "var cat_id=jQuery(this).val();"
         . "jQuery.ajax({type:'POST',url:'" . $_CONF['site_admin_url']
-        . "/plugins/documents/ajax.php',data:{action:'change_field_cat',cat_id:cat_id},"
+        . "/plugins/documents/ajax.php',data:{action:'change_field_cat',cat_id:cat_id,"
+        . json_encode(CSRF_TOKEN) . ':' . json_encode($csrfToken) . "},"
         . "dataType:'json',cache:false,success:function(result){"
         . "jQuery('input[name=f_order]').val(result.a);"
         . "jQuery('#fields_list').html(result.b);}});return false;});});";
@@ -701,6 +708,9 @@ function DOCUMENTS_editGroup($group = array())
     $template->set_file(array('group' => 'group_form.thtml'));
     $template->set_var('doc_url', $_DOCUMENTS_CONF['site_url']);
     $template->set_var('xhtml', XHTML);
+    $csrfToken = SEC_createToken();
+    $template->set_var('gltoken_name', CSRF_TOKEN);
+    $template->set_var('gltoken', $csrfToken);
     $template->set_var(
         'group_informations',
         $group['gid'] === ''
@@ -744,6 +754,9 @@ function DOCUMENTS_editSelect($select = array())
     $template->set_file(array('select' => 'select_form.thtml'));
     $template->set_var('doc_url', $_DOCUMENTS_CONF['site_url']);
     $template->set_var('xhtml', XHTML);
+    $csrfToken = SEC_createToken();
+    $template->set_var('gltoken_name', CSRF_TOKEN);
+    $template->set_var('gltoken', $csrfToken);
     $template->set_var(
         'select_informations',
         $select['sid'] === ''
@@ -775,7 +788,8 @@ function DOCUMENTS_editSelect($select = array())
     $js = "$(document).ready(function(){jQuery('#s_group').change(function(){"
         . "var g=jQuery(this).val();jQuery.ajax({type:'POST',url:'"
         . $_CONF['site_admin_url'] . "/plugins/documents/ajax.php',"
-        . "data:{action:'change_select_group',s_group:g},dataType:'json',cache:false,"
+        . "data:{action:'change_select_group',s_group:g,"
+        . json_encode(CSRF_TOKEN) . ':' . json_encode($csrfToken) . "},dataType:'json',cache:false,"
         . "success:function(r){jQuery('input[name=s_order]').val(r.a);"
         . "jQuery('#groups_list').html(r.b);}});return false;});});";
     $_SCRIPTS->setJavaScript($js, true);
