@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.2                                                    |
+// | Documents Plugin 1.1.8                                                    |
 // +---------------------------------------------------------------------------+
 // | install_defaults.php                                                      |
 // |                                                                           |
@@ -47,6 +47,7 @@ $_DOCUMENTS_DEFAULT['default_permissions'] = array(3, 3, 2, 2);
  *
  * The helper is shared by fresh installation and upgrade code. Geeklog's
  * configuration layer handles persistence in the same way as core plugins.
+ * Runtime code still validates the resulting values before using them.
  *
  * @param object $c  Geeklog config instance
  * @param string $me Configuration group
