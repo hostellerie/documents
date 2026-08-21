@@ -29,83 +29,39 @@ jobs:
         with:
           ref: modernize-1.1.2
 
-      - name: Normalize canonical redirects and remove diagnostics
+      - name: Remove temporary Documents diagnostics
         shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
-          import re
 
-          # Keep .htaccess for internal rewriting only.
-          p = Path('rewrite.php')
-          s = p.read_text()
-          start = s.index('        $rules = "RewriteEngine On\\n\\n"')
-          end = s.index('        if (@file_put_contents', start)
-          rules = '''        $rules = "RewriteEngine On\\n\\n"
-              . "RewriteCond %{REQUEST_FILENAME} !-f\\n"
-              . "RewriteCond %{REQUEST_FILENAME} !-d\\n"
-              . "RewriteRule ^([^/]+)/([^/]+)/?$ index.php?mode=view&cat=$1&doc=$2 [L,QSA]\\n\\n"
-              . "RewriteCond %{REQUEST_FILENAME} !-f\\n"
-              . "RewriteCond %{REQUEST_FILENAME} !-d\\n"
-              . "RewriteRule ^([^/]+)/?$ index.php?mode=view&cat=$1 [L,QSA]\\n";
+          path = Path('include_html.php')
+          lines = path.read_text().splitlines(True)
+          cleaned = []
+          skip_debug_block = False
 
-'''
-          s = s[:start] + rules + s[end:]
-          p.write_text(s)
+          for line in lines:
+              if 'DOCUMENTS DEBUG N' in line:
+                  continue
+              if "$documentsDebug = isset($_GET['documents_debug'])" in line:
+                  continue
 
-          # Canonicalize explicit index.php view URLs in PHP, where an absolute
-          # site URL can be emitted without Apache filesystem path expansion.
-          p = Path('public_html/index.php')
-          s = p.read_text()
-          marker = "DOCUMENTS_initializeRequestDefaults($_REQUEST);\n\n"
-          block = r'''DOCUMENTS_initializeRequestDefaults($_REQUEST);
+              if skip_debug_block:
+                  if line.strip() == '}':
+                      skip_debug_block = False
+                  continue
 
-$requestPath = isset($_SERVER['REQUEST_URI'])
-    ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH)
-    : '';
-if (is_string($requestPath) && preg_match('#/index\.php$#', $requestPath)) {
-    $mode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
-    $catUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'cat', '');
-    $docUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc', '');
+              if line.strip() == 'if (isset($documentsDebug) && $documentsDebug) {':
+                  skip_debug_block = True
+                  continue
 
-    if ($mode === 'view' && $catUrl !== '') {
-        $canonical = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
-            . '/' . rawurlencode($catUrl);
-        if ($docUrl !== '') {
-            $canonical .= '/' . rawurlencode($docUrl);
-        }
-        header('Location: ' . $canonical, true, 301);
-        exit;
-    }
-}
+              cleaned.append(line)
 
-'''
-          if "header('Location: ' . $canonical, true, 301);" not in s:
-              if marker not in s:
-                  raise SystemExit('public index canonicalization anchor missing')
-              s = s.replace(marker, block, 1)
-          p.write_text(s)
+          text = ''.join(cleaned)
+          if 'DOCUMENTS DEBUG N' in text or 'documents_debug' in text or 'DOCUMENTS OUTPUT SENTINEL' in text:
+              raise SystemExit('Temporary Documents diagnostics remain')
 
-          # Remove all temporary N01-N15 diagnostics from include_html.php.
-          p = Path('include_html.php')
-          s = p.read_text()
-          s = re.sub(r"^.*DOCUMENTS DEBUG N(?:0[1-9]|1[0-5]).*\n", "", s, flags=re.M)
-          s = re.sub(r"^\s*\$documentsDebug = isset\(\$_GET\['documents_debug'\]\).*\n", "", s, flags=re.M)
-          s = re.sub(
-              r"\nif \(isset\(\$documentsDebug\) && \$documentsDebug\) \{\n"
-              r"\s*echo '<div style=\\?\"position:fixed;.*?DOCUMENTS OUTPUT SENTINEL.*?\n"
-              r"\s*@ob_flush\(\);\n\s*@flush\(\);\n\}\n",
-              "\n",
-              s,
-              flags=re.S
-          )
-          # Defensive cleanup for any remaining debug-only browser echo lines.
-          s = re.sub(r"^.*documents_debug.*\n", "", s, flags=re.M)
-          s = re.sub(r"^.*DOCUMENTS OUTPUT SENTINEL.*\n", "", s, flags=re.M)
-          s = re.sub(r"^\s*@ob_flush\(\);\n\s*@flush\(\);\n\}\n", "", s, flags=re.M)
-          if 'DOCUMENTS DEBUG N' in s or 'documents_debug' in s or 'DOCUMENTS OUTPUT SENTINEL' in s:
-              raise SystemExit('temporary Documents diagnostics remain')
-          p.write_text(s)
+          path.write_text(text)
           PY
 
       - name: Setup PHP 5.6
@@ -138,7 +94,7 @@ if (is_string($requestPath) && preg_match('#/index\.php$#', $requestPath)) {
             -not -path './test-artifacts/*' \
             -print0 | xargs -0 -n1 php -l
 
-      - name: Verify 1.1.2 runtime fixes
+      - name: Verify runtime fixes
         shell: bash
         run: |
           grep -q "function DOCUMENTS_writeHtaccess" rewrite.php
@@ -148,9 +104,9 @@ if (is_string($requestPath) && preg_match('#/index\.php$#', $requestPath)) {
           ! grep -q "THE_REQUEST" rewrite.php
           ! grep -q "DOCUMENTS DEBUG N" include_html.php
           ! grep -q "documents_debug" include_html.php
+          ! grep -q "DOCUMENTS OUTPUT SENTINEL" include_html.php
           if find . -type f -name '.gitkeep' -not -path './.git/*' | grep -q .; then
-            echo 'Unexpected .gitkeep file found in source tree.'
-            find . -type f -name '.gitkeep' -not -path './.git/*'
+            echo 'Unexpected .gitkeep file found.'
             exit 1
           fi
 
@@ -184,15 +140,15 @@ if (is_string($requestPath) && preg_match('#/index\.php$#', $requestPath)) {
             test-artifacts/lint-report.txt
           if-no-files-found: error
 
-      - name: Commit normalized source and current package
+      - name: Commit cleaned source and package
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- rewrite.php public_html/index.php include_html.php test-artifacts/documents-1.1.2.zip test-artifacts/lint-report.txt
+          git add -- include_html.php test-artifacts/documents-1.1.2.zip test-artifacts/lint-report.txt
           if git diff --cached --quiet; then
             echo 'Source and package already current.'
           else
-            git commit -m 'Documents 1.1.2: fix canonical redirects, clean debug and rebuild package'
+            git commit -m 'Documents 1.1.2: remove diagnostics and rebuild installable package'
             git push origin HEAD:modernize-1.1.2
           fi
