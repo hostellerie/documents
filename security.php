@@ -16,48 +16,28 @@ if (strpos(strtolower(isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : ''), 
 /**
  * Prevent non-administrators from forging document ownership or permissions.
  *
- * Existing rows keep their persisted security values. New rows are owned by
- * the current user and receive the plugin's configured default permissions.
- * Documents administrators keep the historical ability to edit these values.
- *
- * @param array      $request Request array, passed by reference
- * @param array|null $existing Existing document row for edits
+ * @param array $request Request array, passed by reference
+ * @param int   $ownerId Trusted owner id
+ * @param int   $groupId Trusted group id
+ * @param array $permissions Trusted permission values
  * @return void
  */
-function DOCUMENTS_lockSecurityFields(&$request, $existing = null)
+function DOCUMENTS_lockSecurityFields(&$request, $ownerId, $groupId, $permissions)
 {
-    global $_DOCUMENTS_CONF, $_GROUPS, $_USER;
-
     if (!is_array($request) || SEC_hasRights('documents.admin')) {
         return;
     }
 
-    if (is_array($existing)
-        && isset($existing['owner_id'], $existing['group_id'], $existing['perm_owner'],
-            $existing['perm_group'], $existing['perm_members'], $existing['perm_anon'])) {
-        $request['owner_id'] = (int) $existing['owner_id'];
-        $request['group_id'] = (int) $existing['group_id'];
-        $request['perm_owner'] = (int) $existing['perm_owner'];
-        $request['perm_group'] = (int) $existing['perm_group'];
-        $request['perm_members'] = (int) $existing['perm_members'];
-        $request['perm_anon'] = (int) $existing['perm_anon'];
-        return;
-    }
-
-    $defaults = array();
-    $configured = isset($_DOCUMENTS_CONF['default_permissions'])
-        ? $_DOCUMENTS_CONF['default_permissions']
-        : array(3, 3, 2, 2);
-    SEC_setDefaultPermissions($defaults, $configured);
-
-    $request['owner_id'] = isset($_USER['uid']) ? (int) $_USER['uid'] : 1;
-    $request['group_id'] = isset($_GROUPS['Documents Admin'])
-        ? (int) $_GROUPS['Documents Admin']
-        : 1;
-    $request['perm_owner'] = isset($defaults['perm_owner']) ? (int) $defaults['perm_owner'] : 3;
-    $request['perm_group'] = isset($defaults['perm_group']) ? (int) $defaults['perm_group'] : 3;
-    $request['perm_members'] = isset($defaults['perm_members']) ? (int) $defaults['perm_members'] : 2;
-    $request['perm_anon'] = isset($defaults['perm_anon']) ? (int) $defaults['perm_anon'] : 2;
+    $request['owner_id'] = (int) $ownerId;
+    $request['group_id'] = (int) $groupId;
+    $request['perm_owner'] = isset($permissions['perm_owner'])
+        ? (int) $permissions['perm_owner'] : 3;
+    $request['perm_group'] = isset($permissions['perm_group'])
+        ? (int) $permissions['perm_group'] : 3;
+    $request['perm_members'] = isset($permissions['perm_members'])
+        ? (int) $permissions['perm_members'] : 2;
+    $request['perm_anon'] = isset($permissions['perm_anon'])
+        ? (int) $permissions['perm_anon'] : 2;
 }
 
 /**
@@ -126,7 +106,7 @@ function DOCUMENTS_prepareDocumentFieldRequest(&$request, $categoryId)
         }
 
         $name = (string) $field['var_name'];
-        $type = isset($field['f_type']) ? (string) $field['f_type'] : '';
+        $type = isset($field['f_type']) ? strtolower((string) $field['f_type']) : '';
         $value = isset($request[$name]) ? $request[$name] : '';
         $value = DOCUMENTS_normalizeFieldInput($type, $value);
 
