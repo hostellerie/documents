@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.2                                                    |
+// | Documents Plugin 1.1.8                                                    |
 // +---------------------------------------------------------------------------+
 // | index.php                                                                 |
 // |                                                                           |
@@ -75,7 +75,9 @@ if ($mode === 'integrity') {
     $details = '';
 
     if (!empty($report['duplicate_category_slugs'])) {
-        $details .= '<h3>Duplicate category slugs</h3><ul>';
+        $details .= '<h3>'
+            . htmlspecialchars($LANG_DOCUMENTS_1['integrity_duplicate_category_slugs'], ENT_QUOTES, 'UTF-8')
+            . '</h3><ul>';
         foreach ($report['duplicate_category_slugs'] as $item) {
             $details .= '<li>' . htmlspecialchars($item['slug'], ENT_QUOTES, 'UTF-8')
                 . ' (' . (int) $item['count'] . ')</li>';
@@ -84,7 +86,9 @@ if ($mode === 'integrity') {
     }
 
     if (!empty($report['duplicate_document_slugs'])) {
-        $details .= '<h3>Duplicate document slugs</h3><ul>';
+        $details .= '<h3>'
+            . htmlspecialchars($LANG_DOCUMENTS_1['integrity_duplicate_document_slugs'], ENT_QUOTES, 'UTF-8')
+            . '</h3><ul>';
         foreach ($report['duplicate_document_slugs'] as $item) {
             $details .= '<li>' . htmlspecialchars($item['slug'], ENT_QUOTES, 'UTF-8')
                 . ' (' . (int) $item['count'] . ')</li>';
@@ -93,7 +97,9 @@ if ($mode === 'integrity') {
     }
 
     if (!empty($report['missing_image_files'])) {
-        $details .= '<h3>Missing image files</h3><ul>';
+        $details .= '<h3>'
+            . htmlspecialchars($LANG_DOCUMENTS_1['integrity_missing_images'], ENT_QUOTES, 'UTF-8')
+            . '</h3><ul>';
         foreach ($report['missing_image_files'] as $filename) {
             $details .= '<li>' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '</li>';
         }
@@ -101,7 +107,9 @@ if ($mode === 'integrity') {
     }
 
     if (!empty($report['unreferenced_image_files'])) {
-        $details .= '<h3>Unreferenced image files</h3><ul>';
+        $details .= '<h3>'
+            . htmlspecialchars($LANG_DOCUMENTS_1['integrity_unreferenced_images'], ENT_QUOTES, 'UTF-8')
+            . '</h3><ul>';
         foreach ($report['unreferenced_image_files'] as $filename) {
             $details .= '<li>' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '</li>';
         }
@@ -110,29 +118,29 @@ if ($mode === 'integrity') {
 
     $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
     $template->set_file(array('integrity' => 'admin_integrity.thtml'));
-    $template->set_var('audit_title', 'Data integrity audit');
-    $template->set_var('audit_notice', 'This report is read-only. No data or files are modified.');
-    $template->set_var('check_label', 'Check');
-    $template->set_var('result_label', 'Result');
-    $template->set_var('duplicate_category_label', 'Duplicate category slugs');
+    $template->set_var('audit_title', $LANG_DOCUMENTS_1['integrity_audit_title']);
+    $template->set_var('audit_notice', $LANG_DOCUMENTS_1['integrity_audit_notice']);
+    $template->set_var('check_label', $LANG_DOCUMENTS_1['integrity_check']);
+    $template->set_var('result_label', $LANG_DOCUMENTS_1['integrity_result']);
+    $template->set_var('duplicate_category_label', $LANG_DOCUMENTS_1['integrity_duplicate_category_slugs']);
     $template->set_var('duplicate_category_count', count($report['duplicate_category_slugs']));
-    $template->set_var('duplicate_document_label', 'Duplicate document slugs');
+    $template->set_var('duplicate_document_label', $LANG_DOCUMENTS_1['integrity_duplicate_document_slugs']);
     $template->set_var('duplicate_document_count', count($report['duplicate_document_slugs']));
-    $template->set_var('documents_without_values_label', 'Documents without values');
+    $template->set_var('documents_without_values_label', $LANG_DOCUMENTS_1['integrity_documents_without_values']);
     $template->set_var('documents_without_values_count', (int) $report['orphan_documents_without_values']);
-    $template->set_var('values_without_document_label', 'Values without document');
+    $template->set_var('values_without_document_label', $LANG_DOCUMENTS_1['integrity_values_without_document']);
     $template->set_var('values_without_document_count', (int) $report['orphan_values_without_document']);
-    $template->set_var('values_without_field_label', 'Values without field');
+    $template->set_var('values_without_field_label', $LANG_DOCUMENTS_1['integrity_values_without_field']);
     $template->set_var('values_without_field_count', (int) $report['orphan_values_without_field']);
-    $template->set_var('fields_without_category_label', 'Fields without category');
+    $template->set_var('fields_without_category_label', $LANG_DOCUMENTS_1['integrity_fields_without_category']);
     $template->set_var('fields_without_category_count', (int) $report['orphan_fields_without_category']);
-    $template->set_var('missing_images_label', 'Referenced image files missing on disk');
+    $template->set_var('missing_images_label', $LANG_DOCUMENTS_1['integrity_missing_images']);
     $template->set_var('missing_images_count', count($report['missing_image_files']));
-    $template->set_var('unreferenced_images_label', 'Image files not referenced by Documents');
+    $template->set_var('unreferenced_images_label', $LANG_DOCUMENTS_1['integrity_unreferenced_images']);
     $template->set_var('unreferenced_images_count', count($report['unreferenced_image_files']));
     $template->set_var('details', $details);
     $template->set_var('admin_url', htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8'));
-    $template->set_var('back_label', 'Back to Documents administration');
+    $template->set_var('back_label', $LANG_DOCUMENTS_1['integrity_back_admin']);
     $display .= $template->parse('output', 'integrity');
 } else {
     $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
@@ -143,7 +151,7 @@ if ($mode === 'integrity') {
         'integrity_url',
         htmlspecialchars($adminUrl . '?mode=integrity', ENT_QUOTES, 'UTF-8')
     );
-    $template->set_var('integrity_label', 'Data integrity audit');
+    $template->set_var('integrity_label', $LANG_DOCUMENTS_1['integrity_audit_title']);
     $display .= $template->parse('output', 'home');
 }
 
