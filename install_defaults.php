@@ -43,11 +43,12 @@ $_DOCUMENTS_DEFAULT['max_image_size'] = 4194304;
 $_DOCUMENTS_DEFAULT['default_permissions'] = array(3, 3, 2, 2);
 
 /**
- * Add the Documents image configuration items.
+ * Add missing Documents image configuration items.
  *
- * The helper is shared by fresh installation and upgrade code. Geeklog's
- * configuration layer handles persistence in the same way as core plugins.
- * Runtime code still validates the resulting values before using them.
+ * Geeklog config::add() replaces an existing parameter, so upgrade code must
+ * never call it blindly for values administrators may already have customized.
+ * This helper checks the loaded configuration first and adds only missing keys.
+ * It is shared by fresh installation and upgrade code.
  *
  * @param object $c  Geeklog config instance
  * @param string $me Configuration group
@@ -57,43 +58,62 @@ function DOCUMENTS_addImageConfigItems($c, $me)
 {
     global $_DOCUMENTS_DEFAULT;
 
-    $c->add('fs_images', null, 'fieldset', 0, 1, null, 0, true, $me, 0);
-    $c->add(
-        'max_image_width',
-        $_DOCUMENTS_DEFAULT['max_image_width'],
-        'text',
-        0,
-        1,
-        null,
-        40,
-        true,
-        $me,
-        0
-    );
-    $c->add(
-        'max_image_height',
-        $_DOCUMENTS_DEFAULT['max_image_height'],
-        'text',
-        0,
-        1,
-        null,
-        50,
-        true,
-        $me,
-        0
-    );
-    $c->add(
-        'max_image_size',
-        $_DOCUMENTS_DEFAULT['max_image_size'],
-        'text',
-        0,
-        1,
-        null,
-        60,
-        true,
-        $me,
-        0
-    );
+    $existing = $c->get_config($me);
+    if (!is_array($existing)) {
+        $existing = array();
+    }
+
+    if (!array_key_exists('fs_images', $existing)) {
+        $c->add('fs_images', null, 'fieldset', 0, 1, null, 0, true, $me, 0);
+        $existing['fs_images'] = null;
+    }
+
+    if (!array_key_exists('max_image_width', $existing)) {
+        $c->add(
+            'max_image_width',
+            $_DOCUMENTS_DEFAULT['max_image_width'],
+            'text',
+            0,
+            1,
+            null,
+            40,
+            true,
+            $me,
+            0
+        );
+        $existing['max_image_width'] = $_DOCUMENTS_DEFAULT['max_image_width'];
+    }
+
+    if (!array_key_exists('max_image_height', $existing)) {
+        $c->add(
+            'max_image_height',
+            $_DOCUMENTS_DEFAULT['max_image_height'],
+            'text',
+            0,
+            1,
+            null,
+            50,
+            true,
+            $me,
+            0
+        );
+        $existing['max_image_height'] = $_DOCUMENTS_DEFAULT['max_image_height'];
+    }
+
+    if (!array_key_exists('max_image_size', $existing)) {
+        $c->add(
+            'max_image_size',
+            $_DOCUMENTS_DEFAULT['max_image_size'],
+            'text',
+            0,
+            1,
+            null,
+            60,
+            true,
+            $me,
+            0
+        );
+    }
 }
 
 /**
