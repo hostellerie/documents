@@ -88,83 +88,6 @@ function DOCUMENTS_documentUrlExists($docUrl)
 }
 
 /**
- * Return current image references for one document, keyed by field id.
- *
- * @param string $docUrl Document URL
- * @return array
- */
-function DOCUMENTS_getDocumentImageReferences($docUrl)
-{
-    global $_TABLES;
-
-    $references = array();
-    $docUrl = trim((string) $docUrl);
-    if ($docUrl === '') {
-        return $references;
-    }
-
-    $docUrlSql = DB_escapeString($docUrl);
-    $result = DB_query(
-        "SELECT v.field_id, v.v_value FROM {$_TABLES['documents_values']} AS v "
-        . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
-        . "WHERE v.doc_url='{$docUrlSql}' AND f.f_type='image' AND v.v_value<>''"
-    );
-
-    while ($row = DB_fetchArray($result)) {
-        if (!is_array($row) || empty($row['field_id']) || empty($row['v_value'])) {
-            continue;
-        }
-
-        $filename = basename((string) $row['v_value']);
-        if ($filename !== '') {
-            $references[(int) $row['field_id']] = $filename;
-        }
-    }
-
-    return $references;
-}
-
-/**
- * Delete files that were replaced by a successful document image update.
- *
- * This runs after the save request has finished. An old file is removed only
- * when the same field now references a different non-empty filename. Failed
- * uploads therefore leave the previous file untouched.
- *
- * @param string $docUrl Document URL
- * @param array $before Image references captured before saving
- * @return void
- */
-function DOCUMENTS_cleanupReplacedImages($docUrl, $before)
-{
-    global $_DOCUMENTS_CONF;
-
-    if (!is_array($before) || empty($before) || empty($_DOCUMENTS_CONF['path_images'])) {
-        return;
-    }
-
-    $after = DOCUMENTS_getDocumentImageReferences($docUrl);
-    $basePath = rtrim((string) $_DOCUMENTS_CONF['path_images'], "/\\") . DIRECTORY_SEPARATOR;
-
-    foreach ($before as $fieldId => $oldFilename) {
-        $fieldId = (int) $fieldId;
-        $oldFilename = basename((string) $oldFilename);
-        if ($fieldId <= 0 || $oldFilename === '') {
-            continue;
-        }
-
-        if (!isset($after[$fieldId]) || $after[$fieldId] === '' || $after[$fieldId] === $oldFilename) {
-            continue;
-        }
-
-        $oldPath = $basePath . $oldFilename;
-        if (is_file($oldPath) && !@unlink($oldPath) && function_exists('COM_errorLog')) {
-            COM_errorLog('Documents integrity: unable to delete replaced image ' . $oldPath);
-        }
-    }
-}
-
-/**
  * Return a count from a SELECT COUNT(*) AS total query.
  *
  * @param string $sql SQL query
@@ -183,6 +106,110 @@ function DOCUMENTS_integrityCount($sql)
 }
 
 /**
+ * Return duplicate slug groups from a table.
+ *
+ * @param string $table Table name
+ * @param string $column Slug column
+ * @return array
+ */
+function DOCUMENTS_duplicateSlugs($table, $column)
+{
+    $duplicates = array();
+    $result = DB_query(
+        "SELECT {$column} AS slug, COUNT(*) AS total FROM {$table} "
+        . "WHERE {$column}<>'' GROUP BY {$column} HAVING COUNT(*)>1 ORDER BY {$column}"
+    );
+
+    while ($row = DB_fetchArray($result)) {
+        if (!is_array($row) || !isset($row['slug'], $row['total'])) {
+            continue;
+        }
+
+        $duplicates[] = array(
+            'slug' => (string) $row['slug'],
+            'count' => (int) $row['total']
+        );
+    }
+
+    return $duplicates;
+}
+
+/**
+ * Return image values currently associated with one document.
+ *
+ * @param string $docUrl Document URL
+ * @return array field id => filename
+ */
+function DOCUMENTS_documentImageReferences($docUrl)
+{
+    global $_TABLES;
+
+    $images = array();
+    $docUrl = DB_escapeString((string) $docUrl);
+    if ($docUrl === '') {
+        return $images;
+    }
+
+    $result = DB_query(
+        "SELECT v.field_id, v.v_value FROM {$_TABLES['documents_values']} AS v "
+        . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
+        . "WHERE v.doc_url='{$docUrl}' AND f.f_type='image' AND v.v_value<>''"
+    );
+
+    while ($row = DB_fetchArray($result)) {
+        if (!is_array($row) || empty($row['v_value'])) {
+            continue;
+        }
+
+        $filename = basename((string) $row['v_value']);
+        if ($filename !== '') {
+            $images[(int) $row['field_id']] = $filename;
+        }
+    }
+
+    return $images;
+}
+
+/**
+ * Delete image files that were replaced by new references for the document.
+ *
+ * @param array $before field id => filename before save
+ * @param string $docUrl Document URL
+ * @return int Number of files removed
+ */
+function DOCUMENTS_cleanupReplacedImages($before, $docUrl)
+{
+    global $_DOCUMENTS_CONF;
+
+    if (!is_array($before) || empty($before) || empty($_DOCUMENTS_CONF['path_images'])) {
+        return 0;
+    }
+
+    $after = DOCUMENTS_documentImageReferences($docUrl);
+    $removed = 0;
+    $base = rtrim((string) $_DOCUMENTS_CONF['path_images'], "/\\") . DIRECTORY_SEPARATOR;
+
+    foreach ($before as $fieldId => $oldFilename) {
+        $newFilename = isset($after[$fieldId]) ? $after[$fieldId] : '';
+        if ($newFilename === '' || $newFilename === $oldFilename) {
+            continue;
+        }
+
+        $oldFilename = basename((string) $oldFilename);
+        if ($oldFilename === '') {
+            continue;
+        }
+
+        $path = $base . $oldFilename;
+        if (is_file($path) && @unlink($path)) {
+            $removed++;
+        }
+    }
+
+    return $removed;
+}
+
+/**
  * Build a read-only integrity report.
  *
  * Nothing is deleted or repaired here. The report is intended for upgrade and
@@ -195,11 +222,22 @@ function DOCUMENTS_integrityReport()
     global $_TABLES, $_DOCUMENTS_CONF;
 
     $report = array(
+        'duplicate_category_slugs' => array(),
+        'duplicate_document_slugs' => array(),
         'orphan_values_without_document' => 0,
         'orphan_values_without_field' => 0,
         'orphan_fields_without_category' => 0,
         'missing_image_files' => array(),
         'unreferenced_image_files' => array()
+    );
+
+    $report['duplicate_category_slugs'] = DOCUMENTS_duplicateSlugs(
+        $_TABLES['documents_cat'],
+        'cat_url'
+    );
+    $report['duplicate_document_slugs'] = DOCUMENTS_duplicateSlugs(
+        $_TABLES['documents_docs'],
+        'doc_url'
     );
 
     $report['orphan_values_without_document'] = DOCUMENTS_integrityCount(
