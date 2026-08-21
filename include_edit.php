@@ -388,10 +388,7 @@ function DOCUMENTS_editDoc($doc = array())
     }
 
     $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
-    $template->set_file(array(
-        'doc' => 'doc_form.thtml',
-        'access' => 'access_permissions.thtml'
-    ));
+    $template->set_file(array('doc' => 'doc_form.thtml'));
     $template->set_var('doc_url', $_DOCUMENTS_CONF['site_url']);
     $template->set_var('xhtml', XHTML);
     $template->set_var('gltoken_name', CSRF_TOKEN);
@@ -498,13 +495,15 @@ function DOCUMENTS_editDoc($doc = array())
         }
         $ownerSelect .= '</select>';
 
-        $template->set_var('lang_accessrights', $LANG_ACCESS['accessrights']);
-        $template->set_var('lang_owner', $LANG_ACCESS['owner']);
-        $template->set_var('owner_select', $ownerSelect);
-        $template->set_var('owner', COM_getDisplayName((int) $doc['owner_id']));
-        $template->set_var('lang_group', $LANG_ACCESS['group']);
-        $template->set_var('group_dropdown', SEC_getGroupDropdown((int) $doc['group_id'], 3));
-        $template->set_var(
+        $accessTemplate = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
+        $accessTemplate->set_file(array('access' => 'access_permissions.thtml'));
+        $accessTemplate->set_var('lang_accessrights', $LANG_ACCESS['accessrights']);
+        $accessTemplate->set_var('lang_owner', $LANG_ACCESS['owner']);
+        $accessTemplate->set_var('owner_select', $ownerSelect);
+        $accessTemplate->set_var('owner', COM_getDisplayName((int) $doc['owner_id']));
+        $accessTemplate->set_var('lang_group', $LANG_ACCESS['group']);
+        $accessTemplate->set_var('group_dropdown', SEC_getGroupDropdown((int) $doc['group_id'], 3));
+        $accessTemplate->set_var(
             'permissions_editor',
             SEC_getPermissionsHTML(
                 $doc['perm_owner'],
@@ -513,12 +512,12 @@ function DOCUMENTS_editDoc($doc = array())
                 $doc['perm_anon']
             )
         );
-        $template->set_var('lang_permissions', $LANG_ACCESS['permissions']);
-        $template->set_var('lang_perm_key', $LANG_ACCESS['permissionskey']);
-        $template->set_var('permissions_msg', $LANG_ACCESS['permmsg']);
-        $template->set_var('lang_permissions_msg', $LANG_ACCESS['permmsg']);
-        $template->parse('access_perms', 'access');
-        $accessPerms = $template->finish($template->get_var('access_perms'));
+        $accessTemplate->set_var('lang_permissions', $LANG_ACCESS['permissions']);
+        $accessTemplate->set_var('lang_perm_key', $LANG_ACCESS['permissionskey']);
+        $accessTemplate->set_var('permissions_msg', $LANG_ACCESS['permmsg']);
+        $accessTemplate->set_var('lang_permissions_msg', $LANG_ACCESS['permmsg']);
+        $accessTemplate->parse('access_perms', 'access');
+        $accessPerms = $accessTemplate->finish($accessTemplate->get_var('access_perms'));
     }
 
     $template->set_var('access_perms', $accessPerms);
@@ -528,6 +527,10 @@ function DOCUMENTS_editDoc($doc = array())
 
     $template->parse('output', 'doc');
     $retval = $template->finish($template->get_var('output'));
+    if (trim((string) $retval) === '') {
+        COM_errorLog('Documents: doc_form.thtml rendered an empty result for category ' . (int) $doc['cid']);
+        return '<div class="pluginAlert">Documents: the document form template returned no output.</div>';
+    }
 
     return $retval;
 }
