@@ -56,6 +56,12 @@ $documentsUrl = isset($_DOCUMENTS_CONF['site_url'])
 $adminUrl = $_CONF['site_admin_url'] . '/plugins/documents/index.php';
 $mode = isset($_GET['mode']) ? (string) $_GET['mode'] : '';
 
+$_SCRIPTS->setCSSFile(
+    'documents_admin_css',
+    '/admin/plugins/documents/documents.css',
+    true
+);
+
 $display .= COM_startBlock(
     $pluginName,
     '',
@@ -66,77 +72,83 @@ if ($mode === 'integrity') {
     require_once $_CONF['path'] . 'plugins/documents/integrity.php';
     $report = DOCUMENTS_integrityReport();
 
-    $display .= '<h2>Data integrity audit</h2>';
-    $display .= '<p>This report is read-only. No data or files are modified.</p>';
-    $display .= '<table class="admin-list" style="width:100%">';
-    $display .= '<thead><tr><th>Check</th><th>Result</th></tr></thead><tbody>';
-    $display .= '<tr><td>Duplicate category slugs</td><td>'
-        . count($report['duplicate_category_slugs']) . '</td></tr>';
-    $display .= '<tr><td>Duplicate document slugs</td><td>'
-        . count($report['duplicate_document_slugs']) . '</td></tr>';
-    $display .= '<tr><td>Documents without values</td><td>'
-        . (int) $report['orphan_documents_without_values'] . '</td></tr>';
-    $display .= '<tr><td>Values without document</td><td>'
-        . (int) $report['orphan_values_without_document'] . '</td></tr>';
-    $display .= '<tr><td>Values without field</td><td>'
-        . (int) $report['orphan_values_without_field'] . '</td></tr>';
-    $display .= '<tr><td>Fields without category</td><td>'
-        . (int) $report['orphan_fields_without_category'] . '</td></tr>';
-    $display .= '<tr><td>Referenced image files missing on disk</td><td>'
-        . count($report['missing_image_files']) . '</td></tr>';
-    $display .= '<tr><td>Image files not referenced by Documents</td><td>'
-        . count($report['unreferenced_image_files']) . '</td></tr>';
-    $display .= '</tbody></table>';
+    $details = '';
 
     if (!empty($report['duplicate_category_slugs'])) {
-        $display .= '<h3>Duplicate category slugs</h3><ul>';
+        $details .= '<h3>Duplicate category slugs</h3><ul>';
         foreach ($report['duplicate_category_slugs'] as $item) {
-            $display .= '<li>' . htmlspecialchars($item['slug'], ENT_QUOTES, 'UTF-8')
+            $details .= '<li>' . htmlspecialchars($item['slug'], ENT_QUOTES, 'UTF-8')
                 . ' (' . (int) $item['count'] . ')</li>';
         }
-        $display .= '</ul>';
+        $details .= '</ul>';
     }
 
     if (!empty($report['duplicate_document_slugs'])) {
-        $display .= '<h3>Duplicate document slugs</h3><ul>';
+        $details .= '<h3>Duplicate document slugs</h3><ul>';
         foreach ($report['duplicate_document_slugs'] as $item) {
-            $display .= '<li>' . htmlspecialchars($item['slug'], ENT_QUOTES, 'UTF-8')
+            $details .= '<li>' . htmlspecialchars($item['slug'], ENT_QUOTES, 'UTF-8')
                 . ' (' . (int) $item['count'] . ')</li>';
         }
-        $display .= '</ul>';
+        $details .= '</ul>';
     }
 
     if (!empty($report['missing_image_files'])) {
-        $display .= '<h3>Missing image files</h3><ul>';
+        $details .= '<h3>Missing image files</h3><ul>';
         foreach ($report['missing_image_files'] as $filename) {
-            $display .= '<li>' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '</li>';
+            $details .= '<li>' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '</li>';
         }
-        $display .= '</ul>';
+        $details .= '</ul>';
     }
 
     if (!empty($report['unreferenced_image_files'])) {
-        $display .= '<h3>Unreferenced image files</h3><ul>';
+        $details .= '<h3>Unreferenced image files</h3><ul>';
         foreach ($report['unreferenced_image_files'] as $filename) {
-            $display .= '<li>' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '</li>';
+            $details .= '<li>' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '</li>';
         }
-        $display .= '</ul>';
+        $details .= '</ul>';
     }
 
-    $display .= '<p><a href="' . htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8')
-        . '">&laquo; Back to Documents administration</a></p>';
+    $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
+    $template->set_file(array('integrity' => 'admin_integrity.thtml'));
+    $template->set_var('audit_title', 'Data integrity audit');
+    $template->set_var('audit_notice', 'This report is read-only. No data or files are modified.');
+    $template->set_var('check_label', 'Check');
+    $template->set_var('result_label', 'Result');
+    $template->set_var('duplicate_category_label', 'Duplicate category slugs');
+    $template->set_var('duplicate_category_count', count($report['duplicate_category_slugs']));
+    $template->set_var('duplicate_document_label', 'Duplicate document slugs');
+    $template->set_var('duplicate_document_count', count($report['duplicate_document_slugs']));
+    $template->set_var('documents_without_values_label', 'Documents without values');
+    $template->set_var('documents_without_values_count', (int) $report['orphan_documents_without_values']);
+    $template->set_var('values_without_document_label', 'Values without document');
+    $template->set_var('values_without_document_count', (int) $report['orphan_values_without_document']);
+    $template->set_var('values_without_field_label', 'Values without field');
+    $template->set_var('values_without_field_count', (int) $report['orphan_values_without_field']);
+    $template->set_var('fields_without_category_label', 'Fields without category');
+    $template->set_var('fields_without_category_count', (int) $report['orphan_fields_without_category']);
+    $template->set_var('missing_images_label', 'Referenced image files missing on disk');
+    $template->set_var('missing_images_count', count($report['missing_image_files']));
+    $template->set_var('unreferenced_images_label', 'Image files not referenced by Documents');
+    $template->set_var('unreferenced_images_count', count($report['unreferenced_image_files']));
+    $template->set_var('details', $details);
+    $template->set_var('admin_url', htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8'));
+    $template->set_var('back_label', 'Back to Documents administration');
+    $display .= $template->parse('output', 'integrity');
 } else {
-    $display .= '<p><a href="'
-        . htmlspecialchars($documentsUrl, ENT_QUOTES, 'UTF-8') . '">'
-        . htmlspecialchars($pluginName, ENT_QUOTES, 'UTF-8')
-        . '</a></p>';
-    $display .= '<p><a href="'
-        . htmlspecialchars($adminUrl . '?mode=integrity', ENT_QUOTES, 'UTF-8')
-        . '">Data integrity audit</a></p>';
+    $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
+    $template->set_file(array('home' => 'admin_home.thtml'));
+    $template->set_var('documents_url', htmlspecialchars($documentsUrl, ENT_QUOTES, 'UTF-8'));
+    $template->set_var('plugin_name', htmlspecialchars($pluginName, ENT_QUOTES, 'UTF-8'));
+    $template->set_var(
+        'integrity_url',
+        htmlspecialchars($adminUrl . '?mode=integrity', ENT_QUOTES, 'UTF-8')
+    );
+    $template->set_var('integrity_label', 'Data integrity audit');
+    $display .= $template->parse('output', 'home');
 }
 
 $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
 
-// Geeklog 2.1.1 and newer use COM_createHTMLDocument() for full-page output.
 $display = COM_createHTMLDocument(
     $display,
     array('pagetitle' => $pluginName)
