@@ -88,6 +88,83 @@ function DOCUMENTS_documentUrlExists($docUrl)
 }
 
 /**
+ * Return current image references for one document, keyed by field id.
+ *
+ * @param string $docUrl Document URL
+ * @return array
+ */
+function DOCUMENTS_getDocumentImageReferences($docUrl)
+{
+    global $_TABLES;
+
+    $references = array();
+    $docUrl = trim((string) $docUrl);
+    if ($docUrl === '') {
+        return $references;
+    }
+
+    $docUrlSql = DB_escapeString($docUrl);
+    $result = DB_query(
+        "SELECT v.field_id, v.v_value FROM {$_TABLES['documents_values']} AS v "
+        . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
+        . "WHERE v.doc_url='{$docUrlSql}' AND f.f_type='image' AND v.v_value<>''"
+    );
+
+    while ($row = DB_fetchArray($result)) {
+        if (!is_array($row) || empty($row['field_id']) || empty($row['v_value'])) {
+            continue;
+        }
+
+        $filename = basename((string) $row['v_value']);
+        if ($filename !== '') {
+            $references[(int) $row['field_id']] = $filename;
+        }
+    }
+
+    return $references;
+}
+
+/**
+ * Delete files that were replaced by a successful document image update.
+ *
+ * This runs after the save request has finished. An old file is removed only
+ * when the same field now references a different non-empty filename. Failed
+ * uploads therefore leave the previous file untouched.
+ *
+ * @param string $docUrl Document URL
+ * @param array $before Image references captured before saving
+ * @return void
+ */
+function DOCUMENTS_cleanupReplacedImages($docUrl, $before)
+{
+    global $_DOCUMENTS_CONF;
+
+    if (!is_array($before) || empty($before) || empty($_DOCUMENTS_CONF['path_images'])) {
+        return;
+    }
+
+    $after = DOCUMENTS_getDocumentImageReferences($docUrl);
+    $basePath = rtrim((string) $_DOCUMENTS_CONF['path_images'], "/\\") . DIRECTORY_SEPARATOR;
+
+    foreach ($before as $fieldId => $oldFilename) {
+        $fieldId = (int) $fieldId;
+        $oldFilename = basename((string) $oldFilename);
+        if ($fieldId <= 0 || $oldFilename === '') {
+            continue;
+        }
+
+        if (!isset($after[$fieldId]) || $after[$fieldId] === '' || $after[$fieldId] === $oldFilename) {
+            continue;
+        }
+
+        $oldPath = $basePath . $oldFilename;
+        if (is_file($oldPath) && !@unlink($oldPath) && function_exists('COM_errorLog')) {
+            COM_errorLog('Documents integrity: unable to delete replaced image ' . $oldPath);
+        }
+    }
+}
+
+/**
  * Return a count from a SELECT COUNT(*) AS total query.
  *
  * @param string $sql SQL query
