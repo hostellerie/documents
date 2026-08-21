@@ -9,15 +9,6 @@
 // | Data-integrity helpers for slugs, relations and local image references.   |
 // +---------------------------------------------------------------------------+
 
-/**
- * Normalize a route slug before it is stored.
- *
- * Existing stored slugs are not rewritten automatically. This helper is used
- * for new/edited values so upgrades do not silently break historical URLs.
- *
- * @param string $value Raw slug value
- * @return string
- */
 function DOCUMENTS_normalizeRouteSlug($value)
 {
     $value = trim(rawurldecode((string) $value));
@@ -42,13 +33,6 @@ function DOCUMENTS_normalizeRouteSlug($value)
     return trim($value, '-');
 }
 
-/**
- * Check whether a normalized category slug already belongs to another row.
- *
- * @param string $slug Category slug
- * @param int $excludeCid Category id to ignore while editing
- * @return bool
- */
 function DOCUMENTS_categorySlugExists($slug, $excludeCid = 0)
 {
     global $_TABLES;
@@ -67,12 +51,6 @@ function DOCUMENTS_categorySlugExists($slug, $excludeCid = 0)
     return DB_getItem($_TABLES['documents_cat'], 'cid', $where) !== '';
 }
 
-/**
- * Check whether a document URL is already present.
- *
- * @param string $docUrl Document URL
- * @return bool
- */
 function DOCUMENTS_documentUrlExists($docUrl)
 {
     global $_TABLES;
@@ -88,11 +66,37 @@ function DOCUMENTS_documentUrlExists($docUrl)
 }
 
 /**
- * Return a count from a SELECT COUNT(*) AS total query.
+ * Generate a stable document URL and guarantee that it is unused.
  *
- * @param string $sql SQL query
- * @return int
+ * Historical Documents URLs are prefixed with a numeric identifier. Keep that
+ * format for compatibility, but verify the final candidate instead of assuming
+ * MAX(did)+1 can never collide.
+ *
+ * @param string $title Document title or first field value
+ * @return string
  */
+function DOCUMENTS_uniqueDocumentUrl($title)
+{
+    global $_TABLES;
+
+    $slug = DOCUMENTS_normalizeRouteSlug($title);
+    if ($slug === '') {
+        $slug = 'document';
+    }
+
+    $next = (int) DB_getItem($_TABLES['documents_docs'], 'MAX(did)', '1=1') + 1;
+    if ($next < 1) {
+        $next = 1;
+    }
+
+    do {
+        $candidate = $next . '-' . $slug;
+        $next++;
+    } while (DOCUMENTS_documentUrlExists($candidate));
+
+    return $candidate;
+}
+
 function DOCUMENTS_integrityCount($sql)
 {
     $result = DB_query($sql);
@@ -105,13 +109,6 @@ function DOCUMENTS_integrityCount($sql)
     return (is_array($row) && isset($row['total'])) ? (int) $row['total'] : 0;
 }
 
-/**
- * Return duplicate slug groups from a table.
- *
- * @param string $table Table name
- * @param string $column Slug column
- * @return array
- */
 function DOCUMENTS_duplicateSlugs($table, $column)
 {
     $duplicates = array();
@@ -134,12 +131,6 @@ function DOCUMENTS_duplicateSlugs($table, $column)
     return $duplicates;
 }
 
-/**
- * Return image values currently associated with one document.
- *
- * @param string $docUrl Document URL
- * @return array field id => filename
- */
 function DOCUMENTS_documentImageReferences($docUrl)
 {
     global $_TABLES;
@@ -171,12 +162,44 @@ function DOCUMENTS_documentImageReferences($docUrl)
 }
 
 /**
- * Delete image files that were replaced by new references for the document.
+ * Return image files referenced by one field before it is deleted.
  *
- * @param array $before field id => filename before save
- * @param string $docUrl Document URL
- * @return int Number of files removed
+ * @param int $fieldId Field id
+ * @return array
  */
+function DOCUMENTS_fieldImageReferences($fieldId)
+{
+    global $_TABLES;
+
+    $images = array();
+    $fieldId = (int) $fieldId;
+    if ($fieldId <= 0) {
+        return $images;
+    }
+
+    $fieldType = DB_getItem($_TABLES['documents_fields'], 'f_type', 'fid=' . $fieldId);
+    if ($fieldType !== 'image') {
+        return $images;
+    }
+
+    $result = DB_query(
+        "SELECT v_value FROM {$_TABLES['documents_values']} "
+        . "WHERE field_id={$fieldId} AND v_value<>''"
+    );
+
+    while ($row = DB_fetchArray($result)) {
+        if (!is_array($row) || empty($row['v_value'])) {
+            continue;
+        }
+        $filename = basename((string) $row['v_value']);
+        if ($filename !== '') {
+            $images[$filename] = true;
+        }
+    }
+
+    return array_keys($images);
+}
+
 function DOCUMENTS_cleanupReplacedImages($before, $docUrl)
 {
     global $_DOCUMENTS_CONF;
@@ -210,13 +233,47 @@ function DOCUMENTS_cleanupReplacedImages($before, $docUrl)
 }
 
 /**
- * Build a read-only integrity report.
+ * Remove files captured before a field deletion, but only if the field and all
+ * its values were actually removed from the database.
  *
- * Nothing is deleted or repaired here. The report is intended for upgrade and
- * administration tools so orphan cleanup can remain explicit and reviewable.
- *
- * @return array
+ * @param int $fieldId Field id
+ * @param array $filenames Captured image filenames
+ * @return int
  */
+function DOCUMENTS_cleanupDeletedFieldImages($fieldId, $filenames)
+{
+    global $_TABLES, $_DOCUMENTS_CONF;
+
+    $fieldId = (int) $fieldId;
+    if ($fieldId <= 0 || !is_array($filenames) || empty($filenames)
+        || empty($_DOCUMENTS_CONF['path_images'])) {
+        return 0;
+    }
+
+    if (DB_getItem($_TABLES['documents_fields'], 'fid', 'fid=' . $fieldId) !== '') {
+        return 0;
+    }
+
+    if ((int) DB_count($_TABLES['documents_values'], 'field_id', $fieldId) > 0) {
+        return 0;
+    }
+
+    $base = rtrim((string) $_DOCUMENTS_CONF['path_images'], "/\\") . DIRECTORY_SEPARATOR;
+    $removed = 0;
+    foreach ($filenames as $filename) {
+        $filename = basename((string) $filename);
+        if ($filename === '') {
+            continue;
+        }
+        $path = $base . $filename;
+        if (is_file($path) && @unlink($path)) {
+            $removed++;
+        }
+    }
+
+    return $removed;
+}
+
 function DOCUMENTS_integrityReport()
 {
     global $_TABLES, $_DOCUMENTS_CONF;
