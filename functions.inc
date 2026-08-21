@@ -137,9 +137,15 @@ $_DOCUMENTS_CONF['images_cat_url'] = $_CONF['site_url'] . '/'
     . '/documents/categories/';
 $_DOCUMENTS_CONF['path_data'] = DOCUMENTS_dataDir();
 $_DOCUMENTS_CONF['legacy_path_data'] = DOCUMENTS_legacyDataDir();
-$_DOCUMENTS_CONF['max_image_width'] = 3000;
-$_DOCUMENTS_CONF['max_image_height'] = 3000;
-$_DOCUMENTS_CONF['max_image_size'] = 4194304;
+if (!isset($_DOCUMENTS_CONF['max_image_width']) || (int) $_DOCUMENTS_CONF['max_image_width'] <= 0) {
+    $_DOCUMENTS_CONF['max_image_width'] = 3000;
+}
+if (!isset($_DOCUMENTS_CONF['max_image_height']) || (int) $_DOCUMENTS_CONF['max_image_height'] <= 0) {
+    $_DOCUMENTS_CONF['max_image_height'] = 3000;
+}
+if (!isset($_DOCUMENTS_CONF['max_image_size']) || (int) $_DOCUMENTS_CONF['max_image_size'] <= 0) {
+    $_DOCUMENTS_CONF['max_image_size'] = 4194304;
+}
 $_DOCUMENTS_CONF['date'] = 'd.m.Y';
 $_DOCUMENTS_CONF['db_date'] = '%d %m %Y';
 $_DOCUMENTS_CONF['album_date'] = 'd.m.Y';
