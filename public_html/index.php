@@ -34,6 +34,9 @@ if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGIN
 require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
 DOCUMENTS_writeHtaccess(false);
 
+require_once $_CONF['path'] . 'plugins/documents/runtime.php';
+DOCUMENTS_ensureImageDirectory();
+
 require_once $_CONF['path'] . 'plugins/documents/include_compat.php';
 DOCUMENTS_initializeRequestDefaults($_REQUEST);
 
