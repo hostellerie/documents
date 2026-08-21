@@ -42,48 +42,45 @@
  *
  * @return string HTML of user menu
  */
-function DOCUMENTS_user_menu() 
+function DOCUMENTS_user_menu()
 {
-    global $_CONF, $_DOCUMENTS_CONF, $LANG_DOCUMENTS_1, $_TABLES;
+    global $_DOCUMENTS_CONF, $LANG_DOCUMENTS_1;
 
-    $retval = '';
+    $siteUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/');
+    $documentsLabel = isset($LANG_DOCUMENTS_1['documents']) ? $LANG_DOCUMENTS_1['documents'] : 'Documents';
+    $fieldsLabel = isset($LANG_DOCUMENTS_1['fields']) ? $LANG_DOCUMENTS_1['fields'] : 'Fields';
+    $selectsLabel = isset($LANG_DOCUMENTS_1['selects']) ? $LANG_DOCUMENTS_1['selects'] : 'Selects';
 
-    // Generate the menu from the template
-    
-	$menu = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates/menus');
-    $menu->set_file(array('menu' => 'user_menu.thtml'));
-    $menu->set_var('site_url', $_DOCUMENTS_CONF['site_url']);
-	$menu->set_var('documents', $LANG_DOCUMENTS_1['documents']);
-	
-	if (SEC_hasRights('documents.admin')) {
-        $admin_menu = '> ' . '<a href="' . $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=list_fields">' . $LANG_DOCUMENTS_1['fields'] . '</a>';
-		$mode = DOCUMENTS_requestValue($_REQUEST, 'mode');
-		if ($mode === 'list_fields' || $mode === 'list_groups') {
-		     $admin_menu .= ' > ' . '<a href="' . $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=list_groups">' . $LANG_DOCUMENTS_1['selects'] . '</a>';
-		}
-		$menu->set_var('fields', $admin_menu);
-    } else {
-	    $menu->set_var('fields', '');
-	}
-	
-	$doc_breadcrums = '';
-	
-	if (defined("CAT_NAME")) {
-	    $doc_breadcrums .= ' > <a href="' . $_DOCUMENTS_CONF['site_url'] .'/'. CAT_URL . '">' . CAT_NAME . '</a>';
-	}
-	
-	if (defined("DOC_NAME")) {
-	    $doc_breadcrums .= ' > <a href="' . $_DOCUMENTS_CONF['site_url'] .'/'. CAT_URL .'/'. DOC_URL . '">' . DOC_NAME . '</a>';
-		$menu->set_var('fields', '');
-	}
-	
-	$menu->set_var('document', $doc_breadcrums);
+    $html = '<div class="user_menu"><p><a href="'
+        . htmlspecialchars($siteUrl . '/', ENT_QUOTES, 'UTF-8') . '">'
+        . htmlspecialchars($documentsLabel, ENT_QUOTES, 'UTF-8') . '</a>';
 
-	
-	
-    $retval .= $menu->parse('output', 'menu');
+    if (defined('CAT_NAME') && defined('CAT_URL')) {
+        $html .= ' > <a href="'
+            . htmlspecialchars($siteUrl . '/' . CAT_URL, ENT_QUOTES, 'UTF-8') . '">'
+            . htmlspecialchars(CAT_NAME, ENT_QUOTES, 'UTF-8') . '</a>';
+    }
 
-    return $retval;
+    if (defined('DOC_NAME') && defined('DOC_URL') && defined('CAT_URL')) {
+        $html .= ' > <a href="'
+            . htmlspecialchars($siteUrl . '/' . CAT_URL . '/' . DOC_URL, ENT_QUOTES, 'UTF-8') . '">'
+            . htmlspecialchars(DOC_NAME, ENT_QUOTES, 'UTF-8') . '</a>';
+    } elseif (SEC_hasRights('documents.admin')) {
+        $html .= ' > <a href="'
+            . htmlspecialchars($siteUrl . '/index.php?mode=list_fields', ENT_QUOTES, 'UTF-8') . '">'
+            . htmlspecialchars($fieldsLabel, ENT_QUOTES, 'UTF-8') . '</a>';
+
+        $mode = DOCUMENTS_requestValue($_REQUEST, 'mode');
+        if ($mode === 'list_fields' || $mode === 'list_groups') {
+            $html .= ' > <a href="'
+                . htmlspecialchars($siteUrl . '/index.php?mode=list_groups', ENT_QUOTES, 'UTF-8') . '">'
+                . htmlspecialchars($selectsLabel, ENT_QUOTES, 'UTF-8') . '</a>';
+        }
+    }
+
+    $html .= '</p></div>';
+
+    return $html;
 }
 
 function DOCUMENTS_missingFieldCat ()
