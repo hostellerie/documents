@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.8                                                    |
+// | Documents Plugin 1.1.9                                                    |
 // +---------------------------------------------------------------------------+
 // | include_compat.php                                                        |
 // |                                                                           |
@@ -147,6 +147,68 @@ function DOCUMENTS_requestPermissions($source, $defaults = array())
     }
 
     return array((int) $owner, (int) $group, (int) $members, (int) $anon);
+}
+
+/**
+ * Check whether the current user may reach a document route.
+ *
+ * Status rules are enforced before normal Geeklog row permissions:
+ * - active documents follow their stored permissions;
+ * - inactive documents are restricted to Documents administrators;
+ * - drafts are restricted to their owner or a Documents administrator;
+ * - submissions are restricted to their owner or a Documents administrator.
+ *
+ * The normal permission check still applies after the status check so a
+ * malformed or overly restrictive row is not made readable accidentally.
+ *
+ * @param array $document Document row
+ * @param int   $minimumAccess Minimum SEC_hasAccess() level required
+ * @return bool
+ */
+function DOCUMENTS_canViewDocument($document, $minimumAccess = 2)
+{
+    global $_USER;
+
+    if (!is_array($document)
+        || !isset($document['active'])
+        || !isset($document['owner_id'])
+        || !isset($document['group_id'])
+        || !isset($document['perm_owner'])
+        || !isset($document['perm_group'])
+        || !isset($document['perm_members'])
+        || !isset($document['perm_anon'])) {
+        return false;
+    }
+
+    $status = (int) $document['active'];
+    $ownerId = (int) $document['owner_id'];
+    $userId = isset($_USER['uid']) ? (int) $_USER['uid'] : 1;
+    $isAdmin = SEC_hasRights('documents.admin');
+
+    if ($status === DOCUMENTS_STATUS_INACTIVE && !$isAdmin) {
+        return false;
+    }
+
+    if (($status === DOCUMENTS_STATUS_DRAFT || $status === DOCUMENTS_STATUS_SUBMISSION)
+        && !$isAdmin
+        && $ownerId !== $userId) {
+        return false;
+    }
+
+    if ($status < DOCUMENTS_STATUS_INACTIVE || $status > DOCUMENTS_STATUS_SUBMISSION) {
+        return false;
+    }
+
+    $access = SEC_hasAccess(
+        $ownerId,
+        (int) $document['group_id'],
+        (int) $document['perm_owner'],
+        (int) $document['perm_group'],
+        (int) $document['perm_members'],
+        (int) $document['perm_anon']
+    );
+
+    return $access >= (int) $minimumAccess;
 }
 
 function DOCUMENTS_linkifyUrls($content)
