@@ -50,7 +50,7 @@ function DOCUMENTS_user_menu()
 
     // Generate the menu from the template
     
-	$menu = new Template($_CONF['path'] . 'plugins/documents/templates/menus');
+	$menu = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates/menus');
     $menu->set_file(array('menu' => 'user_menu.thtml'));
     $menu->set_var('site_url', $_DOCUMENTS_CONF['site_url']);
 	$menu->set_var('documents', $LANG_DOCUMENTS_1['documents']);
