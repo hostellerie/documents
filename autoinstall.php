@@ -25,11 +25,27 @@
 // | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             |
 // | GNU General Public License for more details.                              |
 // |                                                                           |
+// | You should have received a copy of the GNU General Public License         |
+// | along with this program; if not, write to the Free Software Foundation,   |
+// | Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.           |
+// |                                                                           |
 // +---------------------------------------------------------------------------+
 
 /**
  * @package Documents
  */
+
+/** Minimum supported Geeklog version. */
+define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1');
+
+/** First Geeklog version outside the supported range. */
+define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3');
+
+/** Minimum supported PHP version. */
+define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0');
+
+/** First PHP version outside the supported range. */
+define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0');
 
 function DOCUMENTS_runStorageMigration()
 {
@@ -51,33 +67,86 @@ function DOCUMENTS_runStorageMigration()
     return true;
 }
 
-function plugin_autoinstall_documents($pi_name)
+/**
+ * Run idempotent upgrade work for the stabilization series.
+ *
+ * This function is called only by the actual Geeklog plugin upgrade path.
+ * Version checks remain read-only. Each step may safely be rerun.
+ *
+ * @param string $installedVersion Version currently registered in Geeklog
+ * @return bool
+ */
+function DOCUMENTS_runUpgradeSteps($installedVersion)
 {
     global $_CONF;
+
+    $installedVersion = (string) $installedVersion;
+
+    /* 1.1.1: establish multisite-safe persistent storage and URL rewriting. */
+    if (version_compare($installedVersion, '1.1.1', '<')) {
+        require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
+        if (!DOCUMENTS_writeHtaccess(true)) {
+            return false;
+        }
+        if (!DOCUMENTS_runStorageMigration()) {
+            return false;
+        }
+    }
+
+    /*
+     * 1.1.2: refresh generated routing and rerun the storage migration.
+     * Both operations are deliberately idempotent. Rerunning the migration
+     * copies only files that are still missing from the site-specific target.
+     */
+    if (version_compare($installedVersion, '1.1.2', '<')) {
+        require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
+        if (!DOCUMENTS_writeHtaccess(true)) {
+            return false;
+        }
+        if (!DOCUMENTS_runStorageMigration()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function plugin_autoinstall_documents($pi_name)
+{
+    global $_CONF, $_TABLES;
 
     $pi_name         = 'documents';
     $pi_display_name = 'Documents';
     $pi_admin        = $pi_display_name . ' Admin';
 
     /*
-     * plugin_chkVersion_documents() also calls this function. Keep version
-     * checks read-only: rewrite .htaccess and migrate storage only when the
-     * caller is the actual upgrade routine. Fresh installs perform both tasks
-     * from plugin_postinstall_documents().
+     * plugin_chkVersion_documents() also calls this function. Keep ordinary
+     * version checks read-only. Persistent storage/routing changes run only
+     * when plugin_upgrade_documents() calls this function during an upgrade.
      */
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
     $caller = isset($trace[1]['function']) ? $trace[1]['function'] : '';
     if ($caller === 'plugin_upgrade_documents') {
-        require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
-        DOCUMENTS_writeHtaccess(true);
-        DOCUMENTS_runStorageMigration();
+        $installedVersion = DB_getItem(
+            $_TABLES['plugins'],
+            'pi_version',
+            "pi_name = 'documents'"
+        );
+        if (!DOCUMENTS_runUpgradeSteps($installedVersion)) {
+            if (function_exists('COM_errorLog')) {
+                COM_errorLog(
+                    'Documents upgrade: stabilization upgrade steps failed from version '
+                    . $installedVersion
+                );
+            }
+        }
     }
 
     $info = array(
         'pi_name'         => $pi_name,
         'pi_display_name' => $pi_display_name,
         'pi_version'      => '1.1.2',
-        'pi_gl_version'   => '2.1.1',
+        'pi_gl_version'   => DOCUMENTS_MIN_GEEKLOG_VERSION,
         'pi_homepage'     => 'https://github.com/Geeklog-Plugins/documents'
     );
 
@@ -137,14 +206,14 @@ function plugin_compatible_with_this_version_documents($pi_name)
         return false;
     }
 
-    if (version_compare(PHP_VERSION, '5.6.0', '<')
-        || version_compare(PHP_VERSION, '8.2.0', '>=')) {
+    if (version_compare(PHP_VERSION, DOCUMENTS_MIN_PHP_VERSION, '<')
+        || version_compare(PHP_VERSION, DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE, '>=')) {
         return false;
     }
 
     if (defined('VERSION')) {
-        if (version_compare(VERSION, '2.1.1', '<')
-            || version_compare(VERSION, '2.2.3', '>=')) {
+        if (version_compare(VERSION, DOCUMENTS_MIN_GEEKLOG_VERSION, '<')
+            || version_compare(VERSION, DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE, '>=')) {
             return false;
         }
     }
@@ -157,7 +226,9 @@ function plugin_postinstall_documents($pi_name)
     global $_CONF;
 
     require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
-    DOCUMENTS_writeHtaccess(true);
+    if (!DOCUMENTS_writeHtaccess(true)) {
+        return false;
+    }
 
     return DOCUMENTS_runStorageMigration();
 }
