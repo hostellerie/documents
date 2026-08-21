@@ -50,7 +50,37 @@ Historical Documents versions used:
 <path_data>/data_documents/
 ```
 
-The legacy path is still identified by the stabilization code so existing installations can be migrated safely. The actual idempotent file migration is planned for the 1.1.7 upgrade work. New code must use the site-specific Documents data directory and must not introduce a fixed global `site-documents` path.
+### Legacy data migration
+
+The 1.1.7 stabilization work implements an idempotent migration from the historical `data_documents/` directory to the site-specific sibling directory returned by `DOCUMENTS_dataDir()`.
+
+The migration deliberately follows conservative rules:
+
+- the legacy directory is never deleted automatically;
+- existing files in the new directory are never overwritten;
+- rerunning the migration copies only files that are still missing;
+- symlinks are ignored;
+- nested directories, including custom templates, are copied recursively;
+- the target path is validated against the current site's `$_CONF['path_data']` before any copy is attempted;
+- an upgrade is not recorded as successful when routing or persistent-data migration fails.
+
+For example, a site using:
+
+```text
+/home/account/g2data/
+```
+
+migrates its Documents persistent files to:
+
+```text
+/home/account/g2data-documents/
+```
+
+A second multisite instance using `/home/account/g3data/` therefore receives `/home/account/g3data-documents/` and cannot share the first site's Documents persistent directory through the normal path derivation logic.
+
+The legacy directory remains available as a temporary read fallback during the stabilization series. New writes must use the site-specific Documents directory.
+
+Do not manually remove `data_documents/` until the upgraded site has been checked and all expected custom templates or other persistent Documents files are present in the new directory.
 
 ## Optional integrations
 
@@ -78,23 +108,26 @@ When MediaGallery is missing or inactive, Documents must:
 - not render album-related controls;
 - continue to operate normally for all other field types.
 
-## 1.1.1 development goals
+## Stabilization work
 
-The first stabilization release focuses on:
+The 1.1.x stabilization line includes:
 
 - removal of unsolicited installation/upgrade telemetry;
 - stronger Geeklog/PHP compatibility checks;
-- protection of administrative AJAX actions;
-- multisite-safe persistent data path handling;
+- protection of administrative and AJAX mutations;
+- multisite-safe persistent data path handling and migration;
 - strict optional Maps and MediaGallery behavior;
 - removal of TimThumb and replacement with local-only image handling;
+- JPEG, PNG, GIF and WebP upload handling;
+- persistent image previews;
+- data-integrity checks and safer deletion handling;
 - input/output hardening without changing the historical database model.
 
 ## Upgrade policy
 
 The 1.1.x series must preserve existing Documents installations and data. Major database restructuring is intentionally deferred until 1.3.0.
 
-The legacy `data_documents` directory must not be deleted manually before the migration step has been tested. During stabilization, it remains the source directory for upgrade migration compatibility.
+The legacy `data_documents` directory must not be deleted manually before the migrated installation has been validated. During stabilization, it remains available as a compatibility source/read fallback.
 
 Before installing a development build on a production site, back up both the Geeklog database and the Documents image/data directories.
 
