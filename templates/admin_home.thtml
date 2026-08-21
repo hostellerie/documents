@@ -1,0 +1,4 @@
+<nav class="documents-admin-nav" aria-label="Documents administration">
+    <a href="{documents_url}">{plugin_name}</a>
+    <a href="{integrity_url}">{integrity_label}</a>
+</nav>
