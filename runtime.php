@@ -51,3 +51,49 @@ function DOCUMENTS_ensureImageDirectory()
 
     return true;
 }
+
+/**
+ * Remove image files that belonged to a document after its DB row was deleted.
+ *
+ * The function is intended for a shutdown callback. It first verifies that the
+ * document no longer exists, so a failed/aborted delete never removes files.
+ *
+ * @param string $docUrl Document URL
+ * @param array $images field id => filename captured before deletion
+ * @return int Number of files removed
+ */
+function DOCUMENTS_cleanupDeletedDocumentImages($docUrl, $images)
+{
+    global $_TABLES, $_DOCUMENTS_CONF;
+
+    if (!is_array($images) || empty($images) || empty($_DOCUMENTS_CONF['path_images'])) {
+        return 0;
+    }
+
+    $docUrl = trim((string) $docUrl);
+    if ($docUrl === '') {
+        return 0;
+    }
+
+    $docUrlSql = DB_escapeString($docUrl);
+    if (DB_getItem($_TABLES['documents_docs'], 'did', "doc_url='{$docUrlSql}'") !== '') {
+        return 0;
+    }
+
+    $base = rtrim((string) $_DOCUMENTS_CONF['path_images'], "/\\") . DIRECTORY_SEPARATOR;
+    $removed = 0;
+
+    foreach ($images as $filename) {
+        $filename = basename((string) $filename);
+        if ($filename === '') {
+            continue;
+        }
+
+        $path = $base . $filename;
+        if (is_file($path) && @unlink($path)) {
+            $removed++;
+        }
+    }
+
+    return $removed;
+}
