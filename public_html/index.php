@@ -41,16 +41,26 @@ require_once $_CONF['path'] . 'plugins/documents/include_compat.php';
 require_once $_CONF['path'] . 'plugins/documents/integrity.php';
 DOCUMENTS_initializeRequestDefaults($_REQUEST);
 
-if ((string) DOCUMENTS_requestValue($_REQUEST, 'mode', '') === 'save_cat') {
+$documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
+$documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
+$documentsOperation = (string) DOCUMENTS_requestValue($_REQUEST, 'op', '');
+
+// Administrative write operations must never reach the legacy controller
+// without Documents Admin rights, even if a future handler forgets its own
+// local check.
+$documentsAdminWriteModes = array('save_cat', 'save_field', 'save_group', 'save_select');
+if (in_array($documentsMode, $documentsAdminWriteModes, true)
+    && !SEC_hasRights('documents.admin')) {
+    echo COM_refresh($_CONF['site_url'] . '/404.php');
+    exit;
+}
+
+if ($documentsMode === 'save_cat') {
     $_REQUEST['cat_url'] = DOCUMENTS_normalizeRouteSlug(
         DOCUMENTS_requestValue($_REQUEST, 'cat_url', '')
     );
     $_POST['cat_url'] = $_REQUEST['cat_url'];
 }
-
-$documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
-$documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
-$documentsOperation = (string) DOCUMENTS_requestValue($_REQUEST, 'op', '');
 
 // Prepare a collision-safe URL before the legacy save controller starts a new
 // document. The controller keeps the historical numeric-prefix format, but if
@@ -95,9 +105,6 @@ if ($documentsMode === 'save' && $documentsDocUrl !== '' && $documentsOperation 
     );
 }
 
-// Field deletion already removes the field and its values in include_html.php.
-// Capture image files first, then delete them only if both DB deletions really
-// completed. Non-image fields have an empty capture and require no callback.
 if ($documentsMode === 'save_field' && $documentsOperation === 'delete') {
     $documentsFieldId = DOCUMENTS_requestInt($_REQUEST, 'fid', 0);
     if ($documentsFieldId > 0) {
