@@ -55,7 +55,6 @@ $allowedLegacyHeaders = array(
     'functions.inc',
     'include_edit.php',
     'include_html.php',
-    'include_lists.php',
     'integrity.php',
     'public_html/index.php'
 );
