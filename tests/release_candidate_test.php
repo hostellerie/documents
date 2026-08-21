@@ -59,7 +59,12 @@ $checks = array(
     array($publicIndex, 'SEC_checkToken()', 'Mutating public/admin controller routes are missing CSRF validation.'),
     array($adminAjax, "SEC_hasRights('documents.admin')", 'Admin AJAX endpoint is missing documents.admin protection.'),
     array($compat, 'function DOCUMENTS_canViewDocument(', 'Central document visibility guard is missing.'),
+    array($compat, 'function DOCUMENTS_canEditDocument(', 'Central document edit guard is missing.'),
+    array($compat, 'function DOCUMENTS_normalizeDocumentStatus(', 'Server-side workflow state normalizer is missing.'),
     array($publicIndex, 'DOCUMENTS_canViewDocument($documentsViewRow, 2)', 'Public document routes do not use the central visibility guard.'),
+    array($publicIndex, 'DOCUMENTS_canEditDocument($documentsExisting)', 'Edit/save routes do not use the central edit guard.'),
+    array($publicIndex, '$documentsRequestedCid !== $documentsActualCid', 'Edit/save routes do not bind the submitted category to the real document category.'),
+    array($publicIndex, 'DOCUMENTS_normalizeDocumentStatus(', 'Save routes do not normalize workflow state server-side.'),
     array($functions, 'WHERE d.active = 1', 'Plugin search is not restricted to active documents.'),
     array($functions, "COM_getPermSQL('AND', 0, 2, 'd')", 'Plugin search is missing document permission filtering.'),
     array($includeLists, '$workflowOwnerFilter = \' AND d.owner_id=\' . (int) $_USER[\'uid\'];', 'Draft/submission lists are not restricted to the current owner for non-admin users.'),
@@ -122,6 +127,7 @@ $requiredTests = array(
     'tests/config_upgrade_test.php',
     'tests/language_sync_test.php',
     'tests/document_visibility_test.php',
+    'tests/document_edit_security_test.php',
     'tests/metadata_consistency_test.php'
 );
 foreach ($requiredTests as $requiredTest) {
