@@ -28,6 +28,12 @@ if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST')
     exit;
 }
 
+if (!SEC_checkToken()) {
+    http_response_code(403);
+    echo json_encode(array('error' => 'invalid_token'));
+    exit;
+}
+
 $vars = array(
     'cat_id'  => 'number',
     's_group' => 'number',
