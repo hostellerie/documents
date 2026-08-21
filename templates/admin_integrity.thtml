@@ -1,0 +1,21 @@
+<section class="documents-admin-audit">
+    <h2>{audit_title}</h2>
+    <p>{audit_notice}</p>
+    <table class="admin-list documents-admin-audit-table">
+        <thead>
+            <tr><th>{check_label}</th><th>{result_label}</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>{duplicate_category_label}</td><td>{duplicate_category_count}</td></tr>
+            <tr><td>{duplicate_document_label}</td><td>{duplicate_document_count}</td></tr>
+            <tr><td>{documents_without_values_label}</td><td>{documents_without_values_count}</td></tr>
+            <tr><td>{values_without_document_label}</td><td>{values_without_document_count}</td></tr>
+            <tr><td>{values_without_field_label}</td><td>{values_without_field_count}</td></tr>
+            <tr><td>{fields_without_category_label}</td><td>{fields_without_category_count}</td></tr>
+            <tr><td>{missing_images_label}</td><td>{missing_images_count}</td></tr>
+            <tr><td>{unreferenced_images_label}</td><td>{unreferenced_images_count}</td></tr>
+        </tbody>
+    </table>
+    {details}
+    <p class="documents-admin-back"><a href="{admin_url}">&laquo; {back_label}</a></p>
+</section>
