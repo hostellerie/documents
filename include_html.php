@@ -950,7 +950,7 @@ function DOCUMENTS_slugify($title) {
  return $title;
 }
 
-function DOCUMENTS_uploadImage ($image_name=array(), $input_name=array(), $fields=array(), $creation) {
+function DOCUMENTS_uploadImage($image_name = array(), $input_name = array(), $fields = array(), $creation = 0) {
 
     global $_CONF, $_DOCUMENTS_CONF, $_TABLES, $LANG24, $_USER;
 
