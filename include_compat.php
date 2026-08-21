@@ -232,26 +232,6 @@ function DOCUMENTS_normalizeDocumentStatus($requestedStatus, $currentStatus = nu
     return $currentStatus;
 }
 
-/**
- * Replace document ownership and permission fields with trusted server values.
- *
- * Normal document forms never expose these controls to non-admin users. Any
- * client-supplied values are therefore ignored before legacy save code runs.
- */
-function DOCUMENTS_lockSecurityFields(&$request, $ownerId, $groupId, $permissions)
-{
-    if (!is_array($request)) {
-        $request = array();
-    }
-
-    $request['owner_id'] = (int) $ownerId;
-    $request['group_id'] = (int) $groupId;
-    $request['perm_owner'] = isset($permissions['perm_owner']) ? (int) $permissions['perm_owner'] : 3;
-    $request['perm_group'] = isset($permissions['perm_group']) ? (int) $permissions['perm_group'] : 3;
-    $request['perm_members'] = isset($permissions['perm_members']) ? (int) $permissions['perm_members'] : 2;
-    $request['perm_anon'] = isset($permissions['perm_anon']) ? (int) $permissions['perm_anon'] : 2;
-}
-
 function DOCUMENTS_linkifyUrls($content)
 {
     return preg_replace_callback(
