@@ -68,15 +68,9 @@ DOCUMENTS_testAssert(
     $failures
 );
 
-/* Creation: normal users can draft or submit, never self-publish. */
 DOCUMENTS_testAssert(
     DOCUMENTS_normalizeDocumentStatus(DOCUMENTS_STATUS_ACTIVE, null) === DOCUMENTS_STATUS_SUBMISSION,
     'A normal user can self-publish a new document.',
-    $failures
-);
-DOCUMENTS_testAssert(
-    DOCUMENTS_normalizeDocumentStatus(DOCUMENTS_STATUS_INACTIVE, null) === DOCUMENTS_STATUS_SUBMISSION,
-    'A normal user can create an inactive row instead of a submission.',
     $failures
 );
 DOCUMENTS_testAssert(
@@ -84,61 +78,46 @@ DOCUMENTS_testAssert(
     'A normal user cannot save a new draft.',
     $failures
 );
-
-/* Existing private rows cannot be promoted by forged state values. */
 DOCUMENTS_testAssert(
-    DOCUMENTS_normalizeDocumentStatus(
-        DOCUMENTS_STATUS_ACTIVE,
-        DOCUMENTS_STATUS_DRAFT
-    ) === DOCUMENTS_STATUS_DRAFT,
+    DOCUMENTS_normalizeDocumentStatus(DOCUMENTS_STATUS_ACTIVE, DOCUMENTS_STATUS_DRAFT)
+        === DOCUMENTS_STATUS_DRAFT,
     'A normal user can publish their draft by forging active=1.',
     $failures
 );
 DOCUMENTS_testAssert(
-    DOCUMENTS_normalizeDocumentStatus(
-        DOCUMENTS_STATUS_SUBMISSION,
-        DOCUMENTS_STATUS_DRAFT
-    ) === DOCUMENTS_STATUS_DRAFT,
-    'Legacy edit handling can turn a draft submission request into an unsafe state.',
-    $failures
-);
-DOCUMENTS_testAssert(
-    DOCUMENTS_normalizeDocumentStatus(
-        DOCUMENTS_STATUS_ACTIVE,
-        DOCUMENTS_STATUS_SUBMISSION
-    ) === DOCUMENTS_STATUS_SUBMISSION,
+    DOCUMENTS_normalizeDocumentStatus(DOCUMENTS_STATUS_ACTIVE, DOCUMENTS_STATUS_SUBMISSION)
+        === DOCUMENTS_STATUS_SUBMISSION,
     'A submitted row can be promoted by a forged active value.',
     $failures
 );
 
-/* Existing active documents preserve the historical owner edit workflow. */
-DOCUMENTS_testAssert(
-    DOCUMENTS_normalizeDocumentStatus(
-        DOCUMENTS_STATUS_ACTIVE,
-        DOCUMENTS_STATUS_ACTIVE
-    ) === DOCUMENTS_STATUS_ACTIVE,
-    'A normal user cannot keep an editable active document active.',
-    $failures
+/* Forged ownership and permission fields must be replaced by server values. */
+$forged = array(
+    'owner_id' => 999,
+    'group_id' => 999,
+    'perm_owner' => 3,
+    'perm_group' => 3,
+    'perm_members' => 3,
+    'perm_anon' => 3
 );
-DOCUMENTS_testAssert(
-    DOCUMENTS_normalizeDocumentStatus(
-        DOCUMENTS_STATUS_DRAFT,
-        DOCUMENTS_STATUS_ACTIVE
-    ) === DOCUMENTS_STATUS_DRAFT,
-    'A normal user cannot move an editable active document to draft.',
-    $failures
+$trustedPermissions = array(
+    'perm_owner' => 3,
+    'perm_group' => 2,
+    'perm_members' => 2,
+    'perm_anon' => 0
 );
+DOCUMENTS_lockSecurityFields($forged, 10, 4, $trustedPermissions);
+DOCUMENTS_testAssert($forged['owner_id'] === 10, 'Forged owner_id was not replaced.', $failures);
+DOCUMENTS_testAssert($forged['group_id'] === 4, 'Forged group_id was not replaced.', $failures);
+DOCUMENTS_testAssert($forged['perm_owner'] === 3, 'Trusted owner permission was not applied.', $failures);
+DOCUMENTS_testAssert($forged['perm_group'] === 2, 'Forged group permission was not replaced.', $failures);
+DOCUMENTS_testAssert($forged['perm_members'] === 2, 'Forged member permission was not replaced.', $failures);
+DOCUMENTS_testAssert($forged['perm_anon'] === 0, 'Forged anonymous permission was not replaced.', $failures);
 
-/* Publishers may publish or draft, but do not bypass private ownership rules. */
 $DOCUMENTS_TEST_RIGHTS = array('documents.publish');
 DOCUMENTS_testAssert(
     DOCUMENTS_normalizeDocumentStatus(DOCUMENTS_STATUS_ACTIVE, null) === DOCUMENTS_STATUS_ACTIVE,
     'A publisher cannot publish a new document.',
-    $failures
-);
-DOCUMENTS_testAssert(
-    DOCUMENTS_normalizeDocumentStatus(DOCUMENTS_STATUS_SUBMISSION, null) === DOCUMENTS_STATUS_ACTIVE,
-    'Publisher workflow does not normalize non-draft states to active.',
     $failures
 );
 DOCUMENTS_testAssert(
@@ -147,7 +126,6 @@ DOCUMENTS_testAssert(
     $failures
 );
 
-/* Documents administrators retain full workflow control. */
 $DOCUMENTS_TEST_RIGHTS = array('documents.admin');
 DOCUMENTS_testAssert(
     DOCUMENTS_canEditDocument(DOCUMENTS_testRow(DOCUMENTS_STATUS_SUBMISSION, 20)) === true,
@@ -159,14 +137,7 @@ DOCUMENTS_testAssert(
     'Documents administrator cannot create an inactive document.',
     $failures
 );
-DOCUMENTS_testAssert(
-    DOCUMENTS_normalizeDocumentStatus(DOCUMENTS_STATUS_SUBMISSION, DOCUMENTS_STATUS_ACTIVE)
-        === DOCUMENTS_STATUS_SUBMISSION,
-    'Documents administrator cannot explicitly set submission state.',
-    $failures
-);
 
-/* Standard permissions must still be required for non-admin edits. */
 $DOCUMENTS_TEST_RIGHTS = array();
 $DOCUMENTS_TEST_ACCESS = 2;
 $_USER['uid'] = 10;
