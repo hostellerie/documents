@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.2                                                    |
+// | Documents Plugin 1.1.8                                                    |
 // +---------------------------------------------------------------------------+
 // | autoinstall.php                                                           |
 // |                                                                           |
@@ -101,8 +101,9 @@ function DOCUMENTS_runUpgradeSteps($installedVersion)
     }
 
     /*
-     * 1.1.2: refresh routing, rerun storage migration and add the image limits
-     * to existing Geeklog configuration groups. All operations are idempotent.
+     * 1.1.2: refresh routing and rerun storage migration. Both operations are
+     * idempotent and preserve the stabilization behavior of development builds
+     * that predate the explicit 1.1.7 migration milestone.
      */
     if (version_compare($installedVersion, '1.1.2', '<')) {
         require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
@@ -112,9 +113,26 @@ function DOCUMENTS_runUpgradeSteps($installedVersion)
         if (!DOCUMENTS_runStorageMigration()) {
             return false;
         }
+    }
 
+    /*
+     * 1.1.7: the persistent-data migration became an explicit release step.
+     * Run it for every installation older than 1.1.7 before recording a newer
+     * plugin version. Existing target files are never overwritten.
+     */
+    if (version_compare($installedVersion, '1.1.7', '<')) {
+        if (!DOCUMENTS_runStorageMigration()) {
+            return false;
+        }
+    }
+
+    /*
+     * 1.1.8: move image limits into Geeklog configuration. The helper only
+     * adds missing configuration records and is safe to rerun.
+     */
+    if (version_compare($installedVersion, '1.1.8', '<')) {
         require_once $_CONF['path'] . 'plugins/documents/install_updates.php';
-        if (!DOCUMENTS_updateConfig_1_1_2()) {
+        if (!DOCUMENTS_updateConfig_1_1_8()) {
             return false;
         }
     }
@@ -131,7 +149,7 @@ function plugin_autoinstall_documents($pi_name)
     $info = array(
         'pi_name'         => $pi_name,
         'pi_display_name' => $pi_display_name,
-        'pi_version'      => '1.1.2',
+        'pi_version'      => '1.1.8',
         'pi_gl_version'   => DOCUMENTS_MIN_GEEKLOG_VERSION,
         'pi_homepage'     => 'https://github.com/Geeklog-Plugins/documents'
     );
