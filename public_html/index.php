@@ -45,11 +45,16 @@ $documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
 $documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
 $documentsOperation = (string) DOCUMENTS_requestValue($_REQUEST, 'op', '');
 
-// Administrative write operations must never reach the legacy controller
-// without Documents Admin rights, even if a future handler forgets its own
-// local check.
-$documentsAdminWriteModes = array('save_cat', 'save_field', 'save_group', 'save_select');
-if (in_array($documentsMode, $documentsAdminWriteModes, true)
+// Category/field/select administration is private to Documents Admin. Keep
+// this guard in front of the legacy controller so direct URLs cannot expose or
+// mutate the plugin schema when a local handler misses a permission check.
+$documentsAdminModes = array(
+    'edit_cat', 'save_cat',
+    'edit_field', 'save_field', 'list_fields',
+    'edit_group', 'save_group', 'list_groups',
+    'edit_select', 'save_select', 'list_selects'
+);
+if (in_array($documentsMode, $documentsAdminModes, true)
     && !SEC_hasRights('documents.admin')) {
     echo COM_refresh($_CONF['site_url'] . '/404.php');
     exit;
@@ -60,6 +65,67 @@ if ($documentsMode === 'save_cat') {
         DOCUMENTS_requestValue($_REQUEST, 'cat_url', '')
     );
     $_POST['cat_url'] = $_REQUEST['cat_url'];
+}
+
+// Enforce document permissions again at write time. Opening an edit form is
+// not sufficient authorization for a later POST: the target document and its
+// current permissions are reloaded before any value can be changed.
+if ($documentsMode === 'save') {
+    if ($documentsDocUrl !== '') {
+        $documentsDocUrlSql = DB_escapeString($documentsDocUrl);
+        $documentsResult = DB_query(
+            "SELECT owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+            . "FROM {$_TABLES['documents_docs']} WHERE doc_url='{$documentsDocUrlSql}' LIMIT 1"
+        );
+        $documentsRow = DB_fetchArray($documentsResult);
+
+        if (!is_array($documentsRow) || !isset($documentsRow['owner_id'])) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+
+        if ($documentsOperation === 'delete') {
+            if (!SEC_hasRights('documents.admin')) {
+                echo COM_refresh($_CONF['site_url'] . '/404.php');
+                exit;
+            }
+        } else {
+            $documentsAccess = SEC_hasAccess(
+                (int) $documentsRow['owner_id'],
+                (int) $documentsRow['group_id'],
+                (int) $documentsRow['perm_owner'],
+                (int) $documentsRow['perm_group'],
+                (int) $documentsRow['perm_members'],
+                (int) $documentsRow['perm_anon']
+            );
+            if ($documentsAccess < 3) {
+                echo COM_refresh($_CONF['site_url'] . '/404.php');
+                exit;
+            }
+        }
+    } else {
+        if (COM_isAnonUser()) {
+            echo COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
+            exit;
+        }
+
+        $documentsCid = DOCUMENTS_requestInt($_REQUEST, 'cid', 0);
+        if ($documentsCid <= 0) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+
+        $documentsSubmitable = DB_getItem(
+            $_TABLES['documents_cat'],
+            'submitable',
+            'cid=' . $documentsCid
+        );
+        if ($documentsSubmitable === ''
+            || ((int) $documentsSubmitable !== 1 && !SEC_hasRights('documents.admin'))) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+    }
 }
 
 // Prepare a collision-safe URL before the legacy save controller starts a new
