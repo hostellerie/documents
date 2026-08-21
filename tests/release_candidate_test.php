@@ -44,6 +44,7 @@ $publicIndex = DOCUMENTS_rcRead($root, 'public_html/index.php', $failures);
 $adminAjax = DOCUMENTS_rcRead($root, 'admin/ajax.php', $failures);
 $includeHtml = DOCUMENTS_rcRead($root, 'include_html.php', $failures);
 $includeEdit = DOCUMENTS_rcRead($root, 'include_edit.php', $failures);
+$includeLists = DOCUMENTS_rcRead($root, 'include_lists.php', $failures);
 
 DOCUMENTS_rcRequireContains(
     $autoinstall,
@@ -142,6 +143,24 @@ DOCUMENTS_rcRequireContains(
     $functions,
     "COM_getPermSQL('AND', 0, 2, 'd')",
     'Plugin search is missing document permission filtering.',
+    $failures
+);
+DOCUMENTS_rcRequireContains(
+    $includeLists,
+    "$workflowOwnerFilter = ' AND d.owner_id=' . (int) $_USER['uid'];",
+    'Draft/submission lists are not restricted to the current owner for non-admin users.',
+    $failures
+);
+DOCUMENTS_rcRequireContains(
+    $includeLists,
+    'AND d.active=3"\n        . $workflowOwnerFilter',
+    'Submission list does not apply the workflow owner filter.',
+    $failures
+);
+DOCUMENTS_rcRequireContains(
+    $includeLists,
+    'AND d.active=2"\n        . $workflowOwnerFilter',
+    'Draft list does not apply the workflow owner filter.',
     $failures
 );
 
