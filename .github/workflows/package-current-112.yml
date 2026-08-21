@@ -1,0 +1,161 @@
+name: Package current Documents 1.1.2 test build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package-current:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+        with:
+          ref: modernize-1.1.2
+
+      - name: Apply document form runtime fix
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('include_edit.php')
+          text = path.read_text()
+
+          start = text.find('function DOCUMENTS_editDoc')
+          end = text.find('function DOCUMENTS_buildRawForm')
+          if start < 0 or end < 0 or end <= start:
+              raise SystemExit('Unable to locate DOCUMENTS_editDoc()')
+
+          before = text[:start]
+          block = text[start:end]
+          after = text[end:]
+
+          block = block.replace(
+              "    $template->set_file(array(\n        'doc' => 'doc_form.thtml',\n        'access' => 'access_permissions.thtml'\n    ));",
+              "    $template->set_file(array('doc' => 'doc_form.thtml'));"
+          )
+
+          old = """        $template->set_var('lang_accessrights', $LANG_ACCESS['accessrights']);
+        $template->set_var('lang_owner', $LANG_ACCESS['owner']);
+        $template->set_var('owner_select', $ownerSelect);
+        $template->set_var('owner', COM_getDisplayName((int) $doc['owner_id']));
+        $template->set_var('lang_group', $LANG_ACCESS['group']);
+        $template->set_var('group_dropdown', SEC_getGroupDropdown((int) $doc['group_id'], 3));
+        $template->set_var(
+            'permissions_editor',
+            SEC_getPermissionsHTML(
+                $doc['perm_owner'],
+                $doc['perm_group'],
+                $doc['perm_members'],
+                $doc['perm_anon']
+            )
+        );
+        $template->set_var('lang_permissions', $LANG_ACCESS['permissions']);
+        $template->set_var('lang_perm_key', $LANG_ACCESS['permissionskey']);
+        $template->set_var('permissions_msg', $LANG_ACCESS['permmsg']);
+        $template->set_var('lang_permissions_msg', $LANG_ACCESS['permmsg']);
+        $template->parse('access_perms', 'access');
+        $accessPerms = $template->finish($template->get_var('access_perms'));"""
+
+          new = """        $accessTemplate = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
+        $accessTemplate->set_file(array('access' => 'access_permissions.thtml'));
+        $accessTemplate->set_var('lang_accessrights', $LANG_ACCESS['accessrights']);
+        $accessTemplate->set_var('lang_owner', $LANG_ACCESS['owner']);
+        $accessTemplate->set_var('owner_select', $ownerSelect);
+        $accessTemplate->set_var('owner', COM_getDisplayName((int) $doc['owner_id']));
+        $accessTemplate->set_var('lang_group', $LANG_ACCESS['group']);
+        $accessTemplate->set_var('group_dropdown', SEC_getGroupDropdown((int) $doc['group_id'], 3));
+        $accessTemplate->set_var(
+            'permissions_editor',
+            SEC_getPermissionsHTML(
+                $doc['perm_owner'],
+                $doc['perm_group'],
+                $doc['perm_members'],
+                $doc['perm_anon']
+            )
+        );
+        $accessTemplate->set_var('lang_permissions', $LANG_ACCESS['permissions']);
+        $accessTemplate->set_var('lang_perm_key', $LANG_ACCESS['permissionskey']);
+        $accessTemplate->set_var('permissions_msg', $LANG_ACCESS['permmsg']);
+        $accessTemplate->set_var('lang_permissions_msg', $LANG_ACCESS['permmsg']);
+        $accessTemplate->parse('access_perms', 'access');
+        $accessPerms = $accessTemplate->finish($accessTemplate->get_var('access_perms'));"""
+
+          if old in block:
+              block = block.replace(old, new, 1)
+
+          final_old = """    $template->parse('output', 'doc');
+    $retval = $template->finish($template->get_var('output'));
+
+    return $retval;"""
+          final_new = """    $template->parse('output', 'doc');
+    $retval = $template->finish($template->get_var('output'));
+    if (trim((string) $retval) === '') {
+        COM_errorLog('Documents: doc_form.thtml rendered an empty result for category ' . (int) $doc['cid']);
+        return '<div class=\"pluginAlert\">Documents: the document form template returned no output.</div>';
+    }
+
+    return $retval;"""
+          if final_old in block:
+              block = block.replace(final_old, final_new, 1)
+
+          if "'access' => 'access_permissions.thtml'" in block:
+              raise SystemExit('Document form still shares access template')
+          if "$accessTemplate->set_file(array('access' => 'access_permissions.thtml'));" not in block:
+              raise SystemExit('Dedicated access template renderer missing')
+          if 'document form template returned no output' not in block:
+              raise SystemExit('Empty template guard missing')
+
+          path.write_text(before + block + after)
+          PY
+
+      - name: Setup PHP 5.6
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '5.6'
+          coverage: none
+
+      - name: Lint PHP 5.6
+        shell: bash
+        run: |
+          find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './test-artifacts/*' -print0 | xargs -0 -n1 php -l
+
+      - name: Setup PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: Lint PHP 8.1
+        shell: bash
+        run: |
+          find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './test-artifacts/*' -print0 | xargs -0 -n1 php -l
+
+      - name: Build current installable ZIP
+        shell: bash
+        run: |
+          rm -rf build test-artifacts
+          mkdir -p build/documents test-artifacts
+          rsync -a --exclude='.git' --exclude='.github' --exclude='build' --exclude='test-artifacts' ./ build/documents/
+          cd build
+          zip -r ../test-artifacts/documents-1.1.2-test.zip documents >/dev/null
+          cd ..
+          printf 'Documents 1.1.2 current test package\nSource commit: %s\nDocument form fix: isolated access template + empty-output guard\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
+
+      - name: Commit current test package
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- test-artifacts/lint-report.txt test-artifacts/documents-1.1.2-test.zip
+          if git diff --cached --quiet; then
+            echo 'Package already current.'
+          else
+            git commit -m 'Documents 1.1.2: rebuild current test package'
+            git push origin HEAD:modernize-1.1.2
+          fi
