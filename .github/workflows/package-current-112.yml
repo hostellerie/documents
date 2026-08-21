@@ -29,37 +29,46 @@ jobs:
         with:
           ref: modernize-1.1.2
 
-      - name: Remove temporary Documents diagnostics
+      - name: Apply source normalizations
         shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
 
           path = Path('include_html.php')
-          lines = path.read_text().splitlines(True)
+          text = path.read_text()
+
+          # Remove any remaining temporary diagnostics.
+          lines = text.splitlines(True)
           cleaned = []
           skip_debug_block = False
-
           for line in lines:
               if 'DOCUMENTS DEBUG N' in line:
                   continue
               if "$documentsDebug = isset($_GET['documents_debug'])" in line:
                   continue
-
               if skip_debug_block:
                   if line.strip() == '}':
                       skip_debug_block = False
                   continue
-
               if line.strip() == 'if (isset($documentsDebug) && $documentsDebug) {':
                   skip_debug_block = True
                   continue
-
               cleaned.append(line)
-
           text = ''.join(cleaned)
+
+          # Allow WebP images in the Documents upload handler.
+          if "'image/webp'" not in text:
+              old = "        'image/x-png' => '.png',\n        'image/png'   => '.png'\n"
+              new = "        'image/x-png' => '.png',\n        'image/png'   => '.png',\n        'image/webp'  => '.webp'\n"
+              if old not in text:
+                  raise SystemExit('Upload MIME block anchor not found')
+              text = text.replace(old, new, 1)
+
           if 'DOCUMENTS DEBUG N' in text or 'documents_debug' in text or 'DOCUMENTS OUTPUT SENTINEL' in text:
               raise SystemExit('Temporary Documents diagnostics remain')
+          if "'image/webp'  => '.webp'" not in text:
+              raise SystemExit('WebP upload MIME type missing')
 
           path.write_text(text)
           PY
@@ -101,6 +110,7 @@ jobs:
           grep -q "DOCUMENTS_writeHtaccess(false)" public_html/index.php
           grep -q "DOCUMENTS_writeHtaccess(true)" autoinstall.php
           grep -q "header('Location: ' . \$canonical, true, 301)" public_html/index.php
+          grep -q "'image/webp'  => '.webp'" include_html.php
           ! grep -q "THE_REQUEST" rewrite.php
           ! grep -q "DOCUMENTS DEBUG N" include_html.php
           ! grep -q "documents_debug" include_html.php
@@ -129,7 +139,7 @@ jobs:
             echo 'Archive contains .gitkeep.'
             exit 1
           fi
-          printf 'Documents 1.1.2 installable package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nCanonical redirects: PHP 301\nPretty URLs: .htaccess internal rewriting only\nTemporary debug logs: removed\n.gitkeep files: none\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
+          printf 'Documents 1.1.2 installable package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nCanonical redirects: PHP 301\nPretty URLs: .htaccess internal rewriting only\nWebP uploads: enabled\nTemporary debug logs: removed\n.gitkeep files: none\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
 
       - name: Upload installable artifact
         uses: actions/upload-artifact@v4
@@ -140,7 +150,7 @@ jobs:
             test-artifacts/lint-report.txt
           if-no-files-found: error
 
-      - name: Commit cleaned source and package
+      - name: Commit source and package
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
@@ -149,6 +159,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Source and package already current.'
           else
-            git commit -m 'Documents 1.1.2: remove diagnostics and rebuild installable package'
+            git commit -m 'Documents 1.1.2: allow WebP uploads and rebuild installable package'
             git push origin HEAD:modernize-1.1.2
           fi
