@@ -41,10 +41,12 @@ $installDefaults = DOCUMENTS_rcRead($root, 'install_defaults.php', $failures);
 $installUpdates = DOCUMENTS_rcRead($root, 'install_updates.php', $failures);
 $functions = DOCUMENTS_rcRead($root, 'functions.inc', $failures);
 $compat = DOCUMENTS_rcRead($root, 'include_compat.php', $failures);
+$integrity = DOCUMENTS_rcRead($root, 'integrity.php', $failures);
 $security = DOCUMENTS_rcRead($root, 'security.php', $failures);
 $runtime = DOCUMENTS_rcRead($root, 'runtime.php', $failures);
 $storage = DOCUMENTS_rcRead($root, 'storage.php', $failures);
 $publicIndex = DOCUMENTS_rcRead($root, 'public_html/index.php', $failures);
+$imageEndpoint = DOCUMENTS_rcRead($root, 'public_html/image.php', $failures);
 $adminAjax = DOCUMENTS_rcRead($root, 'admin/ajax.php', $failures);
 $includeHtml = DOCUMENTS_rcRead($root, 'include_html.php', $failures);
 $includeEdit = DOCUMENTS_rcRead($root, 'include_edit.php', $failures);
@@ -76,6 +78,9 @@ $checks = array(
     array($publicIndex, 'DOCUMENTS_lockSecurityFields(', 'Save routes do not replace forged ownership/permission fields.'),
     array($publicIndex, '$documentsTrustedPermissions = array(', 'Existing document saves do not preserve stored permissions for non-admin users.'),
     array($publicIndex, 'SEC_setDefaultPermissions($documentsDefaults, $_DOCUMENTS_CONF[\'default_permissions\'])', 'New non-admin documents do not use server-side default permissions.'),
+    array($imageEndpoint, 'DOCUMENTS_canViewImageReference(', 'Image endpoint does not resolve image references to Documents rows.'),
+    array($imageEndpoint, 'DOCUMENTS_canViewDocument($document, 2)', 'Image endpoint does not enforce document visibility.'),
+    array($imageEndpoint, 'Cache-Control: private, no-store, max-age=0', 'Image endpoint still permits public caching of protected images.'),
     array($functions, 'WHERE d.active = 1', 'Plugin search is not restricted to active documents.'),
     array($functions, "COM_getPermSQL('AND', 0, 2, 'd')", 'Plugin search is missing document permission filtering.'),
     array($includeLists, '$workflowOwnerFilter = \' AND d.owner_id=\' . (int) $_USER[\'uid\'];', 'Draft/submission lists are not restricted to the current owner for non-admin users.'),
@@ -91,13 +96,13 @@ foreach ($checks as $check) {
     DOCUMENTS_rcRequireContains($check[0], $check[1], $check[2], $failures);
 }
 
-/* Security helpers must have one runtime owner to avoid fatal redeclarations. */
-DOCUMENTS_rcRequireAbsent(
-    $compat,
-    'function DOCUMENTS_lockSecurityFields(',
-    'include_compat.php still duplicates DOCUMENTS_lockSecurityFields from security.php.',
-    $failures
-);
+/* Shared runtime helpers must have exactly one implementation. */
+if (substr_count($compat . $integrity, 'function DOCUMENTS_canViewDocument(') !== 1) {
+    $failures[] = 'DOCUMENTS_canViewDocument must have exactly one runtime implementation.';
+}
+if (substr_count($compat . $security, 'function DOCUMENTS_lockSecurityFields(') !== 1) {
+    $failures[] = 'DOCUMENTS_lockSecurityFields must have exactly one runtime implementation.';
+}
 
 /* Both workflow-private queries must append the owner filter. */
 if (substr_count($includeLists, '. $workflowOwnerFilter;') < 2) {
