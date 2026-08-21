@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - modernize-1.1.9
+      - modernize-1.1.9-rc-hardening
     paths:
       - '.github/workflows/package-current.yml'
       - '*.php'
       - '*.inc'
+      - '*.md'
       - 'admin/**'
       - 'language/**'
       - 'public_html/**'
@@ -27,7 +29,7 @@ jobs:
       - name: Checkout current branch
         uses: actions/checkout@v4
         with:
-          ref: modernize-1.1.9
+          ref: ${{ github.ref_name }}
 
       - name: Verify source invariants
         shell: bash
@@ -81,6 +83,10 @@ jobs:
         shell: bash
         run: php tests/release_candidate_test.php
 
+      - name: Test metadata consistency PHP 5.6
+        shell: bash
+        run: php tests/metadata_consistency_test.php
+
       - name: Setup PHP 8.1
         uses: shivammathur/setup-php@v2
         with:
@@ -112,6 +118,10 @@ jobs:
         shell: bash
         run: php tests/release_candidate_test.php
 
+      - name: Test metadata consistency PHP 8.1
+        shell: bash
+        run: php tests/metadata_consistency_test.php
+
       - name: Verify source remained unchanged
         shell: bash
         run: git diff --exit-code
@@ -136,7 +146,7 @@ jobs:
             echo 'Archive contains .gitkeep.'
             exit 1
           fi
-          printf 'Documents 1.1.9 release-candidate package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nStorage migration idempotence: PHP 5.6 and 8.1 PASS\nConfiguration upgrade idempotence: PHP 5.6 and 8.1 PASS\nLanguage synchronization: PHP 5.6 and 8.1 PASS\nRelease-candidate invariants: PHP 5.6 and 8.1 PASS\nCustomized image limits preserved: PASS\nPersistent storage migration: enabled\nWorkflow source mutations: none\n.gitkeep files: none\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
+          printf 'Documents 1.1.9 release-candidate package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nStorage migration idempotence: PHP 5.6 and 8.1 PASS\nConfiguration upgrade idempotence: PHP 5.6 and 8.1 PASS\nLanguage synchronization: PHP 5.6 and 8.1 PASS\nRelease-candidate invariants: PHP 5.6 and 8.1 PASS\nMetadata consistency: PHP 5.6 and 8.1 PASS\nCustomized image limits preserved: PASS\nPersistent storage migration: enabled\nWorkflow source mutations: none\n.gitkeep files: none\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
 
       - name: Upload installable artifact
         uses: actions/upload-artifact@v4
@@ -157,5 +167,5 @@ jobs:
             echo 'Package already current.'
           else
             git commit -m 'Documents 1.1.9: rebuild release candidate package'
-            git push origin HEAD:modernize-1.1.9
+            git push origin HEAD:${GITHUB_REF_NAME}
           fi
