@@ -10,6 +10,18 @@
 #documents_display {
   margin-bottom:45px;
 }
+.documents-form-fieldset {
+  margin-top:10px;
+}
+.documents-form-fieldset-wide {
+  width:100%;
+}
+.documents-required-mark {
+  color:red;
+}
+.documents-required-note {
+  font-weight:bold;
+}
 .document_field{
   color:#999;
   float: left;
