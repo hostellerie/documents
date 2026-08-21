@@ -102,3 +102,45 @@ function DOCUMENTS_ensurePreviewDirectory()
 
     return true;
 }
+
+/**
+ * Remove all cached previews generated from one original image.
+ *
+ * Preview filenames start with sha1(original filename), so cleanup does not
+ * need to know which dimensions or source modification times were cached.
+ *
+ * @param string $filename Original image filename
+ * @return int Number of preview files removed
+ */
+function DOCUMENTS_removeImagePreviews($filename)
+{
+    $filename = basename((string) $filename);
+    if ($filename === '') {
+        return 0;
+    }
+
+    $directory = DOCUMENTS_previewDirectory();
+    if ($directory === '' || !is_dir($directory)) {
+        return 0;
+    }
+
+    $prefix = sha1($filename) . '-';
+    $items = @scandir($directory);
+    if (!is_array($items)) {
+        return 0;
+    }
+
+    $removed = 0;
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..' || strpos($item, $prefix) !== 0) {
+            continue;
+        }
+
+        $path = $directory . basename($item);
+        if (is_file($path) && @unlink($path)) {
+            $removed++;
+        }
+    }
+
+    return $removed;
+}
