@@ -115,6 +115,48 @@ if ($documentsMode === 'view' || $documentsMode === 'new') {
     }
 }
 
+// A direct document URL must obey both its permissions and publication state.
+// Published documents are readable with normal read access. Drafts,
+// submissions and inactive documents stay private to their owner, Documents
+// Admin, or a user with Documents Publish rights.
+if ($documentsMode === 'view') {
+    $documentsViewDoc = (string) DOCUMENTS_requestValue($_REQUEST, 'doc', '');
+    if ($documentsViewDoc !== '') {
+        $documentsViewDocSql = DB_escapeString($documentsViewDoc);
+        $documentsViewResult = DB_query(
+            "SELECT active, owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
+            . "FROM {$_TABLES['documents_docs']} WHERE doc_url='{$documentsViewDocSql}' LIMIT 1"
+        );
+        $documentsViewRow = DB_fetchArray($documentsViewResult);
+
+        if (!is_array($documentsViewRow) || !isset($documentsViewRow['owner_id'])) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+
+        $documentsViewAccess = SEC_hasAccess(
+            (int) $documentsViewRow['owner_id'],
+            (int) $documentsViewRow['group_id'],
+            (int) $documentsViewRow['perm_owner'],
+            (int) $documentsViewRow['perm_group'],
+            (int) $documentsViewRow['perm_members'],
+            (int) $documentsViewRow['perm_anon']
+        );
+        if ($documentsViewAccess < 2) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+
+        $documentsIsPrivilegedViewer = SEC_hasRights('documents.admin')
+            || SEC_hasRights('documents.publish')
+            || (!COM_isAnonUser() && (int) $_USER['uid'] === (int) $documentsViewRow['owner_id']);
+        if ((int) $documentsViewRow['active'] !== 1 && !$documentsIsPrivilegedViewer) {
+            echo COM_refresh($_CONF['site_url'] . '/404.php');
+            exit;
+        }
+    }
+}
+
 if ($documentsMode === 'save_cat') {
     $_REQUEST['cat_url'] = DOCUMENTS_normalizeRouteSlug(
         DOCUMENTS_requestValue($_REQUEST, 'cat_url', '')
