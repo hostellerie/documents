@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.1                                                    |
+// | Documents Plugin 1.1.2                                                    |
 // +---------------------------------------------------------------------------+
 // | install_defaults.php                                                      |
 // |                                                                           |
@@ -37,7 +37,63 @@ $_DOCUMENTS_DEFAULT = array();
 $_DOCUMENTS_DEFAULT['documents_folder'] = 'documents';
 $_DOCUMENTS_DEFAULT['documents_main_header'] = '';
 $_DOCUMENTS_DEFAULT['documents_main_footer'] = '';
+$_DOCUMENTS_DEFAULT['max_image_width'] = 3000;
+$_DOCUMENTS_DEFAULT['max_image_height'] = 3000;
+$_DOCUMENTS_DEFAULT['max_image_size'] = 4194304;
 $_DOCUMENTS_DEFAULT['default_permissions'] = array(3, 3, 2, 2);
+
+/**
+ * Add the Documents image configuration items.
+ *
+ * The helper is shared by fresh installation and upgrade code. Geeklog's
+ * configuration layer handles persistence in the same way as core plugins.
+ *
+ * @param object $c  Geeklog config instance
+ * @param string $me Configuration group
+ * @return void
+ */
+function DOCUMENTS_addImageConfigItems($c, $me)
+{
+    global $_DOCUMENTS_DEFAULT;
+
+    $c->add('fs_images', null, 'fieldset', 0, 1, null, 0, true, $me, 0);
+    $c->add(
+        'max_image_width',
+        $_DOCUMENTS_DEFAULT['max_image_width'],
+        'text',
+        0,
+        1,
+        null,
+        40,
+        true,
+        $me,
+        0
+    );
+    $c->add(
+        'max_image_height',
+        $_DOCUMENTS_DEFAULT['max_image_height'],
+        'text',
+        0,
+        1,
+        null,
+        50,
+        true,
+        $me,
+        0
+    );
+    $c->add(
+        'max_image_size',
+        $_DOCUMENTS_DEFAULT['max_image_size'],
+        'text',
+        0,
+        1,
+        null,
+        60,
+        true,
+        $me,
+        0
+    );
+}
 
 /**
  * Initialize Documents plugin configuration.
@@ -96,6 +152,8 @@ function plugin_initconfig_documents()
             $me,
             0
         );
+
+        DOCUMENTS_addImageConfigItems($c, $me);
 
         $c->add('fs_permissions', null, 'fieldset', 0, 2, null, 0, true, $me, 0);
         $c->add(
