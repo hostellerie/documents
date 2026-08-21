@@ -256,6 +256,9 @@ function DOCUMENTS_cleanupReplacedImages($before, $docUrl)
         if (is_file($path) && @unlink($path)) {
             $removed++;
         }
+        if (function_exists('DOCUMENTS_removeImagePreviews')) {
+            DOCUMENTS_removeImagePreviews($oldFilename);
+        }
     }
 
     return $removed;
@@ -290,6 +293,9 @@ function DOCUMENTS_cleanupDeletedDocumentImages($docUrl, $images)
         if (is_file($path) && @unlink($path)) {
             $removed++;
         }
+        if (function_exists('DOCUMENTS_removeImagePreviews')) {
+            DOCUMENTS_removeImagePreviews($filename);
+        }
     }
 
     return $removed;
@@ -323,6 +329,9 @@ function DOCUMENTS_cleanupDeletedFieldImages($fieldId, $filenames)
         $path = $base . $filename;
         if (is_file($path) && @unlink($path)) {
             $removed++;
+        }
+        if (function_exists('DOCUMENTS_removeImagePreviews')) {
+            DOCUMENTS_removeImagePreviews($filename);
         }
     }
 
