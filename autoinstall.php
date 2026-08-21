@@ -25,10 +25,6 @@
 // | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             |
 // | GNU General Public License for more details.                              |
 // |                                                                           |
-// | You should have received a copy of the GNU General Public License         |
-// | along with this program; if not, write to the Free Software Foundation,   |
-// | Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.           |
-// |                                                                           |
 // +---------------------------------------------------------------------------+
 
 /**
@@ -50,6 +46,17 @@ define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0');
 function DOCUMENTS_runStorageMigration()
 {
     global $_CONF;
+
+    /*
+     * Fresh plugin installation may call the post-install hook before the
+     * normal plugin functions file has been loaded. The storage helpers rely
+     * on DOCUMENTS_dataDir() / DOCUMENTS_legacyDataDir(), so load the common
+     * plugin API only when those helpers are not available yet.
+     */
+    if (!function_exists('DOCUMENTS_dataDir')
+        || !function_exists('DOCUMENTS_legacyDataDir')) {
+        require_once $_CONF['path'] . 'plugins/documents/functions.inc';
+    }
 
     require_once $_CONF['path'] . 'plugins/documents/storage.php';
     $migration = DOCUMENTS_migrateLegacyData();
