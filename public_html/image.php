@@ -2,11 +2,11 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.2                                                    |
+// | Documents Plugin 1.1.9                                                    |
 // +---------------------------------------------------------------------------+
 // | image.php                                                                 |
 // |                                                                           |
-// | Local-only image preview endpoint with persistent preview caching.         |
+// | Access-controlled local image preview endpoint with persistent caching.   |
 // +---------------------------------------------------------------------------+
 // | Copyright (C) 2012-2026 by the following authors:                         |
 // |                                                                           |
@@ -33,6 +33,7 @@ if (!isset($_DOCUMENTS_CONF) || !is_array($_DOCUMENTS_CONF)) {
 }
 
 require_once $_CONF['path'] . 'plugins/documents/runtime.php';
+require_once $_CONF['path'] . 'plugins/documents/include_compat.php';
 
 function DOCUMENTS_imageError($status)
 {
@@ -46,6 +47,7 @@ function DOCUMENTS_imageError($status)
     $text = isset($messages[$status]) ? $messages[$status] : 'Error';
     header('HTTP/1.1 ' . $status . ' ' . $text);
     header('Content-Type: text/plain; charset=utf-8');
+    header('Cache-Control: private, no-store, max-age=0');
     echo $text;
     exit;
 }
@@ -54,7 +56,7 @@ function DOCUMENTS_sendOriginalImage($path, $mime)
 {
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . filesize($path));
-    header('Cache-Control: public, max-age=86400');
+    header('Cache-Control: private, no-store, max-age=0');
     readfile($path);
     exit;
 }
@@ -94,7 +96,7 @@ function DOCUMENTS_writePreviewImage($image, $path, $mime)
 function DOCUMENTS_outputPreviewImage($image, $mime)
 {
     header('Content-Type: ' . $mime);
-    header('Cache-Control: public, max-age=86400');
+    header('Cache-Control: private, no-store, max-age=0');
 
     switch ($mime) {
         case 'image/jpeg':
@@ -133,6 +135,34 @@ function DOCUMENTS_pruneStalePreviews($sourceKey, $mtime)
     }
 }
 
+function DOCUMENTS_canViewImageReference($filename)
+{
+    global $_TABLES;
+
+    $filename = basename((string) $filename);
+    if ($filename === '') {
+        return false;
+    }
+
+    $filenameSql = DB_escapeString($filename);
+    $result = DB_query(
+        "SELECT DISTINCT d.active, d.owner_id, d.group_id, "
+        . "d.perm_owner, d.perm_group, d.perm_members, d.perm_anon "
+        . "FROM {$_TABLES['documents_values']} AS v "
+        . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
+        . "INNER JOIN {$_TABLES['documents_docs']} AS d ON d.doc_url=v.doc_url "
+        . "WHERE f.f_type='image' AND v.v_value='{$filenameSql}'"
+    );
+
+    while ($document = DB_fetchArray($result)) {
+        if (DOCUMENTS_canViewDocument($document, 2)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 $src = isset($_GET['src']) ? trim($_GET['src']) : '';
 $width = isset($_GET['w']) ? (int) $_GET['w'] : 0;
 $height = isset($_GET['h']) ? (int) $_GET['h'] : 0;
@@ -160,6 +190,10 @@ if (
     || strpos($relative, '/') !== false
     || strpos($relative, '\\') !== false
 ) {
+    DOCUMENTS_imageError(404);
+}
+
+if (!DOCUMENTS_canViewImageReference($relative)) {
     DOCUMENTS_imageError(404);
 }
 
