@@ -29,5 +29,6 @@
     <p><strong><font color="red">*</font><em> {required_field}</em></strong></p>
 	{admin_options}
     <input type="submit" name="submit" value="{validate_button}" {xhtml}>
+    <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
 
 </form>
