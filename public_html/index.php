@@ -65,6 +65,12 @@ if (in_array($documentsMode, $documentsAdminModes, true)
     exit;
 }
 
+$documentsAdminSaveModes = array('save_cat', 'save_field', 'save_group', 'save_select');
+if (in_array($documentsMode, $documentsAdminSaveModes, true) && !SEC_checkToken()) {
+    http_response_code(403);
+    exit;
+}
+
 if ($documentsMode === 'view' || $documentsMode === 'new') {
     $documentsCategorySlug = (string) DOCUMENTS_requestValue($_REQUEST, 'cat', '');
     if ($documentsCategorySlug !== '') {
@@ -131,8 +137,6 @@ if ($documentsMode === 'save_cat') {
     $_POST['cat_url'] = $_REQUEST['cat_url'];
 }
 
-// The document form already emits the standard Geeklog CSRF token. Require it
-// before any document mutation, including uploads and deletions.
 if ($documentsMode === 'save' && !SEC_checkToken()) {
     http_response_code(403);
     exit;
