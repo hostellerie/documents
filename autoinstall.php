@@ -94,9 +94,8 @@ function DOCUMENTS_runUpgradeSteps($installedVersion)
     }
 
     /*
-     * 1.1.2: refresh generated routing and rerun the storage migration.
-     * Both operations are deliberately idempotent. Rerunning the migration
-     * copies only files that are still missing from the site-specific target.
+     * 1.1.2: refresh routing, rerun storage migration and add the image limits
+     * to existing Geeklog configuration groups. All operations are idempotent.
      */
     if (version_compare($installedVersion, '1.1.2', '<')) {
         require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
@@ -104,6 +103,11 @@ function DOCUMENTS_runUpgradeSteps($installedVersion)
             return false;
         }
         if (!DOCUMENTS_runStorageMigration()) {
+            return false;
+        }
+
+        require_once $_CONF['path'] . 'plugins/documents/install_updates.php';
+        if (!DOCUMENTS_updateConfig_1_1_2()) {
             return false;
         }
     }
