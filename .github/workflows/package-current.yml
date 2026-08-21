@@ -3,7 +3,7 @@ name: Package Documents current installable
 on:
   push:
     branches:
-      - modernize-1.1.8
+      - modernize-1.1.9
     paths:
       - '.github/workflows/package-current.yml'
       - '*.php'
@@ -27,7 +27,7 @@ jobs:
       - name: Checkout current branch
         uses: actions/checkout@v4
         with:
-          ref: modernize-1.1.8
+          ref: modernize-1.1.9
 
       - name: Verify source invariants
         shell: bash
@@ -39,7 +39,7 @@ jobs:
           grep -q "function DOCUMENTS_migrateLegacyData" storage.php
           grep -q "function plugin_upgrade_documents" functions.inc
           grep -q "DOCUMENTS_updateConfig_1_1_8" autoinstall.php
-          grep -q "'pi_version'.*'1.1.8'" autoinstall.php
+          grep -q "'pi_version'.*'1.1.9'" autoinstall.php
           ! grep -q "THE_REQUEST" rewrite.php
           ! grep -q "DOCUMENTS DEBUG N" include_html.php
           ! grep -q "documents_debug" include_html.php
@@ -77,6 +77,10 @@ jobs:
         shell: bash
         run: php tests/language_sync_test.php
 
+      - name: Test release candidate invariants PHP 5.6
+        shell: bash
+        run: php tests/release_candidate_test.php
+
       - name: Setup PHP 8.1
         uses: shivammathur/setup-php@v2
         with:
@@ -104,6 +108,10 @@ jobs:
         shell: bash
         run: php tests/language_sync_test.php
 
+      - name: Test release candidate invariants PHP 8.1
+        shell: bash
+        run: php tests/release_candidate_test.php
+
       - name: Verify source remained unchanged
         shell: bash
         run: git diff --exit-code
@@ -122,20 +130,20 @@ jobs:
             --exclude='.gitkeep' \
             ./ build/documents/
           cd build
-          zip -r ../test-artifacts/documents-1.1.8.zip documents >/dev/null
+          zip -r ../test-artifacts/documents-1.1.9.zip documents >/dev/null
           cd ..
-          if unzip -Z1 test-artifacts/documents-1.1.8.zip | grep -q '/\.gitkeep$'; then
+          if unzip -Z1 test-artifacts/documents-1.1.9.zip | grep -q '/\.gitkeep$'; then
             echo 'Archive contains .gitkeep.'
             exit 1
           fi
-          printf 'Documents 1.1.8 installable package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nStorage migration idempotence: PHP 5.6 and 8.1 PASS\nConfiguration upgrade idempotence: PHP 5.6 and 8.1 PASS\nLanguage synchronization: PHP 5.6 and 8.1 PASS\nCustomized image limits preserved: PASS\nPersistent storage migration: enabled\nWorkflow source mutations: none\n.gitkeep files: none\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
+          printf 'Documents 1.1.9 release-candidate package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nStorage migration idempotence: PHP 5.6 and 8.1 PASS\nConfiguration upgrade idempotence: PHP 5.6 and 8.1 PASS\nLanguage synchronization: PHP 5.6 and 8.1 PASS\nRelease-candidate invariants: PHP 5.6 and 8.1 PASS\nCustomized image limits preserved: PASS\nPersistent storage migration: enabled\nWorkflow source mutations: none\n.gitkeep files: none\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
 
       - name: Upload installable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: documents-1.1.8-installable
+          name: documents-1.1.9-installable
           path: |
-            test-artifacts/documents-1.1.8.zip
+            test-artifacts/documents-1.1.9.zip
             test-artifacts/lint-report.txt
           if-no-files-found: error
 
@@ -144,10 +152,10 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- test-artifacts/documents-1.1.8.zip test-artifacts/lint-report.txt
+          git add -- test-artifacts/documents-1.1.9.zip test-artifacts/lint-report.txt
           if git diff --cached --quiet; then
             echo 'Package already current.'
           else
-            git commit -m 'Documents 1.1.8: rebuild installable package'
-            git push origin HEAD:modernize-1.1.8
+            git commit -m 'Documents 1.1.9: rebuild release candidate package'
+            git push origin HEAD:modernize-1.1.9
           fi
