@@ -58,7 +58,8 @@ $allowedLegacyHeaders = array(
     'functions.inc',
     'include_edit.php',
     'include_html.php',
-    'integrity.php'
+    'integrity.php',
+    'public_html/image.php'
 );
 sort($allowedLegacyHeaders);
 
