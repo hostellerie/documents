@@ -43,23 +43,28 @@ function DOCUMENTS_testRow($status, $owner)
     );
 }
 
-/* Normal user: private workflow rows must remain owner-only. */
 $DOCUMENTS_TEST_RIGHTS = array();
 $DOCUMENTS_TEST_ACCESS = 3;
 $_USER['uid'] = 10;
+
 DOCUMENTS_testAssert(
     DOCUMENTS_canEditDocument(DOCUMENTS_testRow(DOCUMENTS_STATUS_DRAFT, 20)) === false,
     'A non-owner can edit another user draft when row permissions are writable.',
     $failures
 );
 DOCUMENTS_testAssert(
-    DOCUMENTS_canEditDocument(DOCUMENTS_testRow(DOCUMENTS_STATUS_SUBMISSION, 20)) === false,
-    'A non-owner can edit another user submission when row permissions are writable.',
+    DOCUMENTS_canEditDocument(DOCUMENTS_testRow(DOCUMENTS_STATUS_DRAFT, 10)) === true,
+    'The draft owner cannot edit their own writable draft.',
     $failures
 );
 DOCUMENTS_testAssert(
-    DOCUMENTS_canEditDocument(DOCUMENTS_testRow(DOCUMENTS_STATUS_DRAFT, 10)) === true,
-    'The draft owner cannot edit their own writable draft.',
+    DOCUMENTS_canEditDocument(DOCUMENTS_testRow(DOCUMENTS_STATUS_SUBMISSION, 10)) === false,
+    'A submitted document remains editable by its owner before moderation.',
+    $failures
+);
+DOCUMENTS_testAssert(
+    DOCUMENTS_canEditDocument(DOCUMENTS_testRow(DOCUMENTS_STATUS_SUBMISSION, 20)) === false,
+    'A non-owner can edit another user submission.',
     $failures
 );
 
@@ -71,7 +76,7 @@ DOCUMENTS_testAssert(
 );
 DOCUMENTS_testAssert(
     DOCUMENTS_normalizeDocumentStatus(DOCUMENTS_STATUS_INACTIVE, null) === DOCUMENTS_STATUS_SUBMISSION,
-    'A normal user can create an inactive workflow row instead of a submission.',
+    'A normal user can create an inactive row instead of a submission.',
     $failures
 );
 DOCUMENTS_testAssert(
@@ -80,29 +85,29 @@ DOCUMENTS_testAssert(
     $failures
 );
 
-/* Editing a private workflow row cannot promote it to active without publish rights. */
+/* Existing private rows cannot be promoted by forged state values. */
 DOCUMENTS_testAssert(
     DOCUMENTS_normalizeDocumentStatus(
         DOCUMENTS_STATUS_ACTIVE,
         DOCUMENTS_STATUS_DRAFT
-    ) === DOCUMENTS_STATUS_SUBMISSION,
+    ) === DOCUMENTS_STATUS_DRAFT,
     'A normal user can publish their draft by forging active=1.',
     $failures
 );
 DOCUMENTS_testAssert(
     DOCUMENTS_normalizeDocumentStatus(
-        DOCUMENTS_STATUS_ACTIVE,
-        DOCUMENTS_STATUS_SUBMISSION
-    ) === DOCUMENTS_STATUS_SUBMISSION,
-    'A normal user can publish their submission by forging active=1.',
+        DOCUMENTS_STATUS_SUBMISSION,
+        DOCUMENTS_STATUS_DRAFT
+    ) === DOCUMENTS_STATUS_DRAFT,
+    'Legacy edit handling can turn a draft submission request into an unsafe state.',
     $failures
 );
 DOCUMENTS_testAssert(
     DOCUMENTS_normalizeDocumentStatus(
-        DOCUMENTS_STATUS_DRAFT,
+        DOCUMENTS_STATUS_ACTIVE,
         DOCUMENTS_STATUS_SUBMISSION
-    ) === DOCUMENTS_STATUS_DRAFT,
-    'A normal user cannot move their submission back to draft.',
+    ) === DOCUMENTS_STATUS_SUBMISSION,
+    'A submitted row can be promoted by a forged active value.',
     $failures
 );
 
@@ -124,7 +129,7 @@ DOCUMENTS_testAssert(
     $failures
 );
 
-/* Publishers may publish or draft, but do not bypass private ownership checks. */
+/* Publishers may publish or draft, but do not bypass private ownership rules. */
 $DOCUMENTS_TEST_RIGHTS = array('documents.publish');
 DOCUMENTS_testAssert(
     DOCUMENTS_normalizeDocumentStatus(DOCUMENTS_STATUS_ACTIVE, null) === DOCUMENTS_STATUS_ACTIVE,
