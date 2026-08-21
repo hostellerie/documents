@@ -43,7 +43,9 @@ jobs:
           grep -q "function DOCUMENTS_canViewDocument" include_compat.php
           grep -q "function DOCUMENTS_canEditDocument" include_compat.php
           grep -q "function DOCUMENTS_normalizeDocumentStatus" include_compat.php
-          grep -q "function DOCUMENTS_lockSecurityFields" include_compat.php
+          grep -q "function DOCUMENTS_lockSecurityFields" security.php
+          grep -q "function DOCUMENTS_prepareDocumentFieldRequest" security.php
+          grep -q "security.php" runtime.php
           grep -q "DOCUMENTS_lockSecurityFields" public_html/index.php
           grep -q "DOCUMENTS_updateConfig_1_1_8" autoinstall.php
           grep -q "'pi_version'.*'1.1.9'" autoinstall.php
@@ -167,7 +169,7 @@ jobs:
             echo 'Archive contains .gitkeep.'
             exit 1
           fi
-          printf 'Documents 1.1.9 release-candidate package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nStorage migration idempotence: PHP 5.6 and 8.1 PASS\nConfiguration upgrade idempotence: PHP 5.6 and 8.1 PASS\nLanguage synchronization: PHP 5.6 and 8.1 PASS\nDocument visibility rules: PHP 5.6 and 8.1 PASS\nDocument edit security: PHP 5.6 and 8.1 PASS\nOwnership and permission locking: PASS\nRelease-candidate invariants: PHP 5.6 and 8.1 PASS\nMetadata consistency: PHP 5.6 and 8.1 PASS\nCustomized image limits preserved: PASS\nPersistent storage migration: enabled\nWorkflow source mutations: none\n.gitkeep files: none\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
+          printf 'Documents 1.1.9 release-candidate package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nStorage migration idempotence: PHP 5.6 and 8.1 PASS\nConfiguration upgrade idempotence: PHP 5.6 and 8.1 PASS\nLanguage synchronization: PHP 5.6 and 8.1 PASS\nDocument visibility rules: PHP 5.6 and 8.1 PASS\nDocument edit security: PHP 5.6 and 8.1 PASS\nOwnership and permission locking: PASS\nDynamic field normalization: PASS\nRelease-candidate invariants: PHP 5.6 and 8.1 PASS\nMetadata consistency: PHP 5.6 and 8.1 PASS\nCustomized image limits preserved: PASS\nPersistent storage migration: enabled\nWorkflow source mutations: none\n.gitkeep files: none\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
 
       - name: Upload installable artifact
         uses: actions/upload-artifact@v4
