@@ -51,9 +51,17 @@ if (!function_exists('DOCUMENTS_writeHtaccess')) {
         }
 
         $rules = "RewriteEngine On\n\n"
+            // Canonicalize explicit document URLs to the historical pretty URL.
+            . "RewriteCond %{THE_REQUEST} \\s/+documents/index\\.php\\?mode=view&cat=([^&\\s]+)&doc=([^&\\s]+) [NC]\n"
+            . "RewriteRule ^index\\.php$ %1/%2? [R=301,L,NE]\n\n"
+            // Canonicalize explicit category URLs.
+            . "RewriteCond %{THE_REQUEST} \\s/+documents/index\\.php\\?mode=view&cat=([^&\\s]+) [NC]\n"
+            . "RewriteRule ^index\\.php$ %1? [R=301,L,NE]\n\n"
+            // Pretty document URL -> internal request.
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
             . "RewriteRule ^([^/]+)/([^/]+)/?$ index.php?mode=view&cat=$1&doc=$2 [L,QSA]\n\n"
+            // Pretty category URL -> internal request.
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
             . "RewriteRule ^([^/]+)/?$ index.php?mode=view&cat=$1 [L,QSA]\n";
