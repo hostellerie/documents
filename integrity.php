@@ -224,6 +224,7 @@ function DOCUMENTS_integrityReport()
     $report = array(
         'duplicate_category_slugs' => array(),
         'duplicate_document_slugs' => array(),
+        'orphan_documents_without_values' => 0,
         'orphan_values_without_document' => 0,
         'orphan_values_without_field' => 0,
         'orphan_fields_without_category' => 0,
@@ -238,6 +239,12 @@ function DOCUMENTS_integrityReport()
     $report['duplicate_document_slugs'] = DOCUMENTS_duplicateSlugs(
         $_TABLES['documents_docs'],
         'doc_url'
+    );
+
+    $report['orphan_documents_without_values'] = DOCUMENTS_integrityCount(
+        "SELECT COUNT(*) AS total FROM {$_TABLES['documents_docs']} AS d "
+        . "LEFT JOIN {$_TABLES['documents_values']} AS v ON v.doc_url=d.doc_url "
+        . "WHERE v.doc_url IS NULL"
     );
 
     $report['orphan_values_without_document'] = DOCUMENTS_integrityCount(
