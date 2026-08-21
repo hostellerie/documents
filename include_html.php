@@ -2354,6 +2354,13 @@ $display = COM_createHTMLDocument(
 if (isset($documentsDebug) && $documentsDebug) { echo '<pre style="background:#fff;color:#000;padding:10px">DOCUMENTS DEBUG N13 after COM_createHTMLDocument length=' . strlen((string) $display) . '</pre>'; @ob_flush(); @flush(); }
 COM_errorLog('DOCUMENTS DEBUG N13 after COM_createHTMLDocument length=' . strlen((string) $display));
 
+COM_errorLog('DOCUMENTS DEBUG N14 before COM_output length=' . strlen((string) $display));
 COM_output($display);
+COM_errorLog('DOCUMENTS DEBUG N15 after COM_output');
+if (isset($documentsDebug) && $documentsDebug) {
+    echo '<div style="position:fixed;top:0;left:0;z-index:999999;background:#ff0;color:#000;padding:10px">DOCUMENTS OUTPUT SENTINEL</div>';
+    @ob_flush();
+    @flush();
+}
 
 ?>
