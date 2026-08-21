@@ -128,5 +128,17 @@ function plugin_postinstall_documents($pi_name)
     require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
     DOCUMENTS_writeHtaccess(true);
 
+    require_once $_CONF['path'] . 'plugins/documents/storage.php';
+    $migration = DOCUMENTS_migrateLegacyData();
+    if (!empty($migration['errors'])) {
+        if (function_exists('COM_errorLog')) {
+            COM_errorLog(
+                'Documents storage migration completed with '
+                . (int) $migration['errors'] . ' error(s).'
+            );
+        }
+        return false;
+    }
+
     return true;
 }
