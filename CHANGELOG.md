@@ -18,6 +18,23 @@ Compatibility target:
 - The previous storage-migration, configuration-upgrade and language-synchronization tests remain mandatory.
 - Release-candidate checks run under PHP 5.6 and PHP 8.1 before packaging.
 
+### Document workflow and authorization hardening
+
+- Added centralized document visibility and edit guards.
+- Active documents continue to use normal Geeklog permissions.
+- Drafts are restricted to their owner or a Documents administrator.
+- Submitted documents are frozen for normal users while awaiting moderation.
+- Non-admin draft/submission lists are filtered by `owner_id` before rendering.
+- Search results remain restricted to active documents and normal Geeklog permissions.
+- Existing document edit/save requests are bound to the document's real category; forged `cid`/category values are rejected.
+- Non-admin users cannot self-publish by forging the `active` request value.
+- Document workflow states are normalized server-side before legacy save handlers run.
+- Non-admin POST values for `owner_id`, `group_id` and `perm_*` are ignored.
+- Existing documents preserve their stored owner, group and permissions during non-admin edits.
+- New non-admin documents receive the current user as owner, the Documents Admin group and the configured default permissions.
+- The same trusted values are propagated to dependent save paths such as Maps markers.
+- Added `tests/document_visibility_test.php` and `tests/document_edit_security_test.php`.
+
 ### Packaging
 
 - Development metadata is now 1.1.9.
