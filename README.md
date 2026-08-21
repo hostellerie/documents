@@ -6,7 +6,7 @@ Documents is a configurable structured-content plugin for Geeklog. A category de
 
 The current development line is **1.1.x**, focused on stabilizing the historical 1.1.0 codebase before the 1.2.0 stable release.
 
-The current stabilization milestone is **1.1.8**, covering configuration, language synchronization and cleanup after the 1.1.7 persistent-data migration work.
+The current stabilization milestone is **1.1.9 release candidate**, dedicated to the final compatibility and regression matrix after the 1.1.8 configuration/language cleanup and the 1.1.7 persistent-data migration work.
 
 See [ROADMAP.md](ROADMAP.md) for the complete stabilization, architecture and feature roadmap.
 
@@ -141,9 +141,12 @@ The permanent packaging workflow runs the following checks under PHP **5.6** and
 - configuration-upgrade idempotence;
 - preservation of customized image limits;
 - English/French language-key synchronization;
+- release-candidate static invariants covering supported versions, TimThumb removal, CSRF/admin protection, optional integrations and persistent storage;
 - verification that packaging does not mutate source files.
 
-The generated development archive is `documents-1.1.8.zip` while this milestone is active.
+The generated release-candidate archive is `documents-1.1.9.zip` while this milestone is active.
+
+Automated checks complement, but do not replace, the manual Geeklog compatibility matrix required before 1.2.0.
 
 ## Stabilization work
 
@@ -160,7 +163,7 @@ The 1.1.x stabilization line includes:
 - data-integrity checks and safer deletion handling;
 - input/output hardening without changing the historical database model;
 - administrator-configurable image limits;
-- synchronized English and French configuration labels.
+- synchronized English and French configuration and integrity-audit labels.
 
 ## Upgrade policy
 
@@ -168,7 +171,7 @@ The 1.1.x series must preserve existing Documents installations and data. Major 
 
 The legacy `data_documents` directory must not be deleted manually before the migrated installation has been validated. During stabilization, it remains available as a compatibility source/read fallback.
 
-Before installing a development build on a production site, back up both the Geeklog database and the Documents image/data directories.
+Before installing a development or release-candidate build on a production site, back up both the Geeklog database and the Documents image/data directories.
 
 ## License
 
