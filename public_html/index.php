@@ -130,11 +130,6 @@ if ($documentsMode === 'view') {
     }
 }
 
-/*
- * Resolve and authorize existing document edit/save routes before the legacy
- * controller touches document values. This also binds the request category to
- * the document's actual category so a forged cid/cat cannot cross categories.
- */
 if (($documentsMode === 'edit' || $documentsMode === 'save') && $documentsDocUrl !== '') {
     $documentsDocUrlSql = DB_escapeString($documentsDocUrl);
     $documentsExistingResult = DB_query(
@@ -187,6 +182,27 @@ if (($documentsMode === 'edit' || $documentsMode === 'save') && $documentsDocUrl
                 (int) $documentsExisting['active']
             );
             $_POST['active'] = $_REQUEST['active'];
+
+            if (!SEC_hasRights('documents.admin')) {
+                $documentsTrustedPermissions = array(
+                    'perm_owner' => $documentsExisting['perm_owner'],
+                    'perm_group' => $documentsExisting['perm_group'],
+                    'perm_members' => $documentsExisting['perm_members'],
+                    'perm_anon' => $documentsExisting['perm_anon']
+                );
+                DOCUMENTS_lockSecurityFields(
+                    $_REQUEST,
+                    $documentsExisting['owner_id'],
+                    $documentsExisting['group_id'],
+                    $documentsTrustedPermissions
+                );
+                DOCUMENTS_lockSecurityFields(
+                    $_POST,
+                    $documentsExisting['owner_id'],
+                    $documentsExisting['group_id'],
+                    $documentsTrustedPermissions
+                );
+            }
         }
     } else {
         $documentsRequestedCid = DOCUMENTS_requestInt($_REQUEST, 'cat', 0);
@@ -250,6 +266,31 @@ if ($documentsMode === 'save' && $documentsDocUrl === '') {
             null
         );
         $_POST['active'] = $_REQUEST['active'];
+
+        if (!SEC_hasRights('documents.admin')) {
+            $documentsDefaults = array();
+            SEC_setDefaultPermissions($documentsDefaults, $_DOCUMENTS_CONF['default_permissions']);
+            $documentsDefaultGroup = (int) DB_getItem(
+                $_TABLES['groups'],
+                'grp_id',
+                "grp_name='Documents Admin'"
+            );
+            if ($documentsDefaultGroup <= 0) {
+                $documentsDefaultGroup = 1;
+            }
+            DOCUMENTS_lockSecurityFields(
+                $_REQUEST,
+                isset($_USER['uid']) ? (int) $_USER['uid'] : 1,
+                $documentsDefaultGroup,
+                $documentsDefaults
+            );
+            DOCUMENTS_lockSecurityFields(
+                $_POST,
+                isset($_USER['uid']) ? (int) $_USER['uid'] : 1,
+                $documentsDefaultGroup,
+                $documentsDefaults
+            );
+        }
     }
 }
 
