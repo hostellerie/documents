@@ -2,16 +2,16 @@
 {cid}
 {doc_url_hidden}
     <div id="documents_edit">
-		<fieldset style="margin-top: 10px; width:100%">
-			<legend><b>{doc_informations}</b></legend>
-				{raws}
-				{active}
-		</fieldset>
-		
-		<p><strong><font color="red">*</font><em> {required_field}</em></strong></p>
-		{access_perms}
-		{admin_options}
-		<input type="submit" name="submit" value="{validate_button}" {xhtml}>
-		<input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
+        <fieldset class="documents-form-fieldset documents-form-fieldset-wide">
+            <legend><b>{doc_informations}</b></legend>
+                {raws}
+                {active}
+        </fieldset>
+
+        <p class="documents-required-note"><span class="documents-required-mark">*</span><em> {required_field}</em></p>
+        {access_perms}
+        {admin_options}
+        <input type="submit" name="submit" value="{validate_button}" {xhtml}>
+        <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
     </div>
 </form>
