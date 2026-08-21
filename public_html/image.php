@@ -2,11 +2,11 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.1                                                    |
+// | Documents Plugin 1.1.2                                                    |
 // +---------------------------------------------------------------------------+
 // | image.php                                                                 |
 // |                                                                           |
-// | Local-only image preview endpoint.                                        |
+// | Local-only image preview endpoint with persistent preview caching.         |
 // +---------------------------------------------------------------------------+
 // | Copyright (C) 2012-2026 by the following authors:                         |
 // |                                                                           |
@@ -22,7 +22,7 @@
 
 require_once '../lib-common.php';
 
-if (!isset($_PLUGINS) || !in_array('documents', $_PLUGINS)) {
+if (!isset($_PLUGINS) || !in_array('documents', $_PLUGINS, true)) {
     header('HTTP/1.1 404 Not Found');
     exit;
 }
@@ -31,6 +31,8 @@ if (!isset($_DOCUMENTS_CONF) || !is_array($_DOCUMENTS_CONF)) {
     header('HTTP/1.1 500 Internal Server Error');
     exit;
 }
+
+require_once $_CONF['path'] . 'plugins/documents/runtime.php';
 
 function DOCUMENTS_imageError($status)
 {
@@ -57,6 +59,59 @@ function DOCUMENTS_sendOriginalImage($path, $mime)
     exit;
 }
 
+function DOCUMENTS_previewExtension($mime)
+{
+    switch ($mime) {
+        case 'image/jpeg':
+            return '.jpg';
+        case 'image/png':
+            return '.png';
+        case 'image/gif':
+            return '.gif';
+        case 'image/webp':
+            return '.webp';
+    }
+
+    return '';
+}
+
+function DOCUMENTS_writePreviewImage($image, $path, $mime)
+{
+    switch ($mime) {
+        case 'image/jpeg':
+            return imagejpeg($image, $path, 90);
+        case 'image/png':
+            return imagepng($image, $path, 6);
+        case 'image/gif':
+            return imagegif($image, $path);
+        case 'image/webp':
+            return function_exists('imagewebp') ? imagewebp($image, $path, 90) : false;
+    }
+
+    return false;
+}
+
+function DOCUMENTS_outputPreviewImage($image, $mime)
+{
+    header('Content-Type: ' . $mime);
+    header('Cache-Control: public, max-age=86400');
+
+    switch ($mime) {
+        case 'image/jpeg':
+            imagejpeg($image, null, 90);
+            break;
+        case 'image/png':
+            imagepng($image, null, 6);
+            break;
+        case 'image/gif':
+            imagegif($image);
+            break;
+        case 'image/webp':
+            imagewebp($image, null, 90);
+            break;
+    }
+}
+
 $src = isset($_GET['src']) ? trim($_GET['src']) : '';
 $width = isset($_GET['w']) ? (int) $_GET['w'] : 0;
 $height = isset($_GET['h']) ? (int) $_GET['h'] : 0;
@@ -65,13 +120,6 @@ if ($src === '') {
     DOCUMENTS_imageError(400);
 }
 
-/*
- * Compatibility:
- * - historical templates pass the complete public Documents image URL;
- * - 1.1.1+ code may pass only the stored filename.
- *
- * In both cases the result must resolve to one basename inside path_images.
- */
 $allowedUrl = isset($_DOCUMENTS_CONF['images_url'])
     ? rtrim($_DOCUMENTS_CONF['images_url'], '/') . '/'
     : '';
@@ -145,13 +193,28 @@ if ($width < 1 || $height < 1) {
     DOCUMENTS_imageError(400);
 }
 
-// Never upscale an image just to generate a preview.
 $ratio = min($width / $sourceWidth, $height / $sourceHeight, 1);
 $targetWidth = max(1, (int) round($sourceWidth * $ratio));
 $targetHeight = max(1, (int) round($sourceHeight * $ratio));
 
 if ($targetWidth === $sourceWidth && $targetHeight === $sourceHeight) {
     DOCUMENTS_sendOriginalImage($sourcePath, $mime);
+}
+
+$previewPath = '';
+$extension = DOCUMENTS_previewExtension($mime);
+if ($extension !== '' && DOCUMENTS_ensurePreviewDirectory()) {
+    $mtime = @filemtime($sourcePath);
+    $cacheKey = md5(
+        $relative . '|'
+        . (string) $mtime . '|'
+        . $targetWidth . 'x' . $targetHeight
+    );
+    $previewPath = DOCUMENTS_previewDirectory() . $cacheKey . $extension;
+
+    if (is_file($previewPath) && is_readable($previewPath)) {
+        DOCUMENTS_sendOriginalImage($previewPath, $mime);
+    }
 }
 
 if (!function_exists('imagecreatetruecolor')) {
@@ -232,24 +295,13 @@ if (!imagecopyresampled(
     DOCUMENTS_imageError(500);
 }
 
-header('Content-Type: ' . $mime);
-header('Cache-Control: public, max-age=86400');
-
-switch ($mime) {
-    case 'image/jpeg':
-        imagejpeg($targetImage, null, 90);
-        break;
-    case 'image/png':
-        imagepng($targetImage, null, 6);
-        break;
-    case 'image/gif':
-        imagegif($targetImage);
-        break;
-    case 'image/webp':
-        imagewebp($targetImage, null, 90);
-        break;
+if ($previewPath !== '' && DOCUMENTS_writePreviewImage($targetImage, $previewPath, $mime)) {
+    imagedestroy($sourceImage);
+    imagedestroy($targetImage);
+    DOCUMENTS_sendOriginalImage($previewPath, $mime);
 }
 
+DOCUMENTS_outputPreviewImage($targetImage, $mime);
 imagedestroy($sourceImage);
 imagedestroy($targetImage);
 exit;
