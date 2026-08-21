@@ -2304,10 +2304,10 @@ switch (DOCUMENTS_requestValue($_REQUEST, 'mode')) {
 				exit();
 			} else {
 			    if($creation == 1) {
-				    echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/' . $cat['cat_url'] . '/' . DOC_URL);
+				    echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($cat['cat_url']) . '&doc=' . rawurlencode(DOC_URL));
 					exit();
 			    } else {
-			       echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/' . $cat['cat_url'] . '/' . $_REQUEST['doc_url']);
+			       echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($cat['cat_url']) . '&doc=' . rawurlencode((string) $_REQUEST['doc_url']));
 			       exit();
 			    }
 			}
