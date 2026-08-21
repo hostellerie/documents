@@ -38,7 +38,18 @@ require_once $_CONF['path'] . 'plugins/documents/runtime.php';
 DOCUMENTS_ensureImageDirectory();
 
 require_once $_CONF['path'] . 'plugins/documents/include_compat.php';
+require_once $_CONF['path'] . 'plugins/documents/integrity.php';
 DOCUMENTS_initializeRequestDefaults($_REQUEST);
+
+// Normalize new/edited category routes before the existing validation and
+// duplicate check run in include_html.php. Existing stored routes are left
+// untouched so an upgrade never changes historical URLs automatically.
+if ((string) DOCUMENTS_requestValue($_REQUEST, 'mode', '') === 'save_cat') {
+    $_REQUEST['cat_url'] = DOCUMENTS_normalizeRouteSlug(
+        DOCUMENTS_requestValue($_REQUEST, 'cat_url', '')
+    );
+    $_POST['cat_url'] = $_REQUEST['cat_url'];
+}
 
 $requestPath = isset($_SERVER['REQUEST_URI'])
     ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH)
