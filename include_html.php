@@ -985,7 +985,8 @@ function DOCUMENTS_uploadImage($image_name = array(), $input_name = array(), $fi
         'image/jpeg'  => '.jpg,.jpeg',
         'image/pjpeg' => '.jpg,.jpeg',
         'image/x-png' => '.png',
-        'image/png'   => '.png'
+        'image/png'   => '.png',
+        'image/webp'  => '.webp'
     ));
 
     if (!$upload->setPath($_DOCUMENTS_CONF['path_images'])) {
