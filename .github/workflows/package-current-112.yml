@@ -68,6 +68,11 @@ jobs:
           grep -q "function DOCUMENTS_user_menu" include_html.php
           grep -q "function DOCUMENTS_uploadImage" include_html.php
           ! grep -q "DOCUMENTS DEBUG" public_html/index.php
+          if find . -type f -name '.gitkeep' -not -path './.git/*' | grep -q .; then
+            echo 'Unexpected .gitkeep file found in source tree.'
+            find . -type f -name '.gitkeep' -not -path './.git/*'
+            exit 1
+          fi
 
       - name: Build installable ZIP
         shell: bash
@@ -79,11 +84,16 @@ jobs:
             --exclude='.github' \
             --exclude='build' \
             --exclude='test-artifacts' \
+            --exclude='.gitkeep' \
             ./ build/documents/
           cd build
           zip -r ../test-artifacts/documents-1.1.2.zip documents >/dev/null
           cd ..
-          printf 'Documents 1.1.2 installable package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nPretty URLs: managed .htaccess generation enabled\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
+          if unzip -Z1 test-artifacts/documents-1.1.2.zip | grep -q '/\.gitkeep$'; then
+            echo 'Archive contains .gitkeep.'
+            exit 1
+          fi
+          printf 'Documents 1.1.2 installable package\nSource commit: %s\nPHP lint: 5.6 and 8.1\nPretty URLs: managed .htaccess generation enabled\n.gitkeep files: none\nRESULT: PASS\n' "$GITHUB_SHA" > test-artifacts/lint-report.txt
 
       - name: Upload installable artifact
         uses: actions/upload-artifact@v4
