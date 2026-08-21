@@ -1,0 +1,137 @@
+name: Apply Documents pretty URL htaccess logic
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/apply-pretty-url-htaccess.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: modernize-1.1.2
+
+      - name: Apply htaccess and pretty URL logic
+        shell: python
+        run: |
+          from pathlib import Path
+
+          # functions.inc: central helper + runtime repair + upgrade refresh
+          p = Path('functions.inc')
+          s = p.read_text()
+          anchor = "function DOCUMENTS_legacyDataDir()\n{"
+          helper = r'''function DOCUMENTS_writeHtaccess($force = false)
+{
+    global $_DOCUMENTS_CONF;
+
+    $publicDir = isset($_DOCUMENTS_CONF['path_html'])
+        ? rtrim($_DOCUMENTS_CONF['path_html'], "/\\") . DIRECTORY_SEPARATOR
+        : '';
+    if ($publicDir === '' || !is_dir($publicDir)) {
+        return false;
+    }
+
+    $target = $publicDir . '.htaccess';
+    if (!$force && is_file($target)) {
+        return true;
+    }
+
+    $rules = "RewriteEngine On\n\n"
+        . "RewriteCond %{REQUEST_FILENAME} !-f\n"
+        . "RewriteCond %{REQUEST_FILENAME} !-d\n"
+        . "RewriteRule ^([^/]+)/([^/]+)/?$ index.php?mode=view&cat=$1&doc=$2 [L,QSA]\n\n"
+        . "RewriteCond %{REQUEST_FILENAME} !-f\n"
+        . "RewriteCond %{REQUEST_FILENAME} !-d\n"
+        . "RewriteRule ^([^/]+)/?$ index.php?mode=view&cat=$1 [L,QSA]\n";
+
+    if (@file_put_contents($target, $rules) === false) {
+        if (function_exists('COM_errorLog')) {
+            COM_errorLog('Documents: unable to write ' . $target);
+        }
+        return false;
+    }
+
+    return true;
+}
+
+'''
+          if 'function DOCUMENTS_writeHtaccess(' not in s:
+              s = s.replace(anchor, helper + anchor, 1)
+
+          runtime_anchor = "$_DOCUMENTS_CONF['album_date'] = 'd.m.Y';\n"
+          runtime_line = runtime_anchor + "\n// Repair a missing rewrite file during normal plugin execution.\nDOCUMENTS_writeHtaccess(false);\n"
+          if 'DOCUMENTS_writeHtaccess(false);' not in s:
+              s = s.replace(runtime_anchor, runtime_line, 1)
+
+          old_upgrade = "    return true;\n}\n\nfunction plugin_autouninstall_documents()"
+          new_upgrade = "    DOCUMENTS_writeHtaccess(true);\n\n    return true;\n}\n\nfunction plugin_autouninstall_documents()"
+          if 'DOCUMENTS_writeHtaccess(true);' not in s:
+              s = s.replace(old_upgrade, new_upgrade, 1)
+          p.write_text(s)
+
+          # autoinstall.php: postinstall always recreates current rules
+          p = Path('autoinstall.php')
+          s = p.read_text()
+          start = s.index('function plugin_postinstall_documents($pi_name)')
+          replacement = r'''function plugin_postinstall_documents($pi_name)
+{
+    global $_CONF;
+
+    require_once $_CONF['path'] . 'plugins/documents/functions.inc';
+    DOCUMENTS_writeHtaccess(true);
+
+    return true;
+}
+'''
+          s = s[:start] + replacement + "\n"
+          p.write_text(s)
+
+          # include_html.php: restore pretty redirects after document save
+          p = Path('include_html.php')
+          s = p.read_text()
+          s = s.replace(
+              "echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($cat['cat_url']) . '&doc=' . rawurlencode(DOC_URL));",
+              "echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/' . rawurlencode($cat['cat_url']) . '/' . rawurlencode(DOC_URL));"
+          )
+          s = s.replace(
+              "echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($cat['cat_url']) . '&doc=' . rawurlencode((string) $_REQUEST['doc_url']));",
+              "echo COM_refresh($_DOCUMENTS_CONF['site_url'] . '/' . rawurlencode($cat['cat_url']) . '/' . rawurlencode((string) $_REQUEST['doc_url']));"
+          )
+          p.write_text(s)
+
+          # include_lists.php: restore public category/document URLs
+          p = Path('include_lists.php')
+          s = p.read_text()
+          s = s.replace(
+              "$display_url = $_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url']) . '&doc=' . rawurlencode($B['doc_url']);",
+              "$display_url = $_DOCUMENTS_CONF['site_url'] . '/' . rawurlencode($A['cat_url']) . '/' . rawurlencode($B['doc_url']);"
+          )
+          s = s.replace(
+              "$_DOCUMENTS_CONF['site_url'] . '/index.php?mode=view&cat=' . rawurlencode($A['cat_url'])",
+              "$_DOCUMENTS_CONF['site_url'] . '/' . rawurlencode($A['cat_url'])"
+          )
+          p.write_text(s)
+
+      - name: PHP lint
+        run: |
+          php -l functions.inc
+          php -l autoinstall.php
+          php -l include_html.php
+          php -l include_lists.php
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- functions.inc autoinstall.php include_html.php include_lists.php
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Documents 1.1.2: restore managed pretty URLs"
+          git push origin HEAD:modernize-1.1.2
