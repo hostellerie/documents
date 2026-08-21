@@ -61,10 +61,14 @@ $checks = array(
     array($compat, 'function DOCUMENTS_canViewDocument(', 'Central document visibility guard is missing.'),
     array($compat, 'function DOCUMENTS_canEditDocument(', 'Central document edit guard is missing.'),
     array($compat, 'function DOCUMENTS_normalizeDocumentStatus(', 'Server-side workflow state normalizer is missing.'),
+    array($compat, 'function DOCUMENTS_lockSecurityFields(', 'Server-side ownership/permission lock helper is missing.'),
     array($publicIndex, 'DOCUMENTS_canViewDocument($documentsViewRow, 2)', 'Public document routes do not use the central visibility guard.'),
     array($publicIndex, 'DOCUMENTS_canEditDocument($documentsExisting)', 'Edit/save routes do not use the central edit guard.'),
     array($publicIndex, '$documentsRequestedCid !== $documentsActualCid', 'Edit/save routes do not bind the submitted category to the real document category.'),
     array($publicIndex, 'DOCUMENTS_normalizeDocumentStatus(', 'Save routes do not normalize workflow state server-side.'),
+    array($publicIndex, 'DOCUMENTS_lockSecurityFields(', 'Save routes do not replace forged ownership/permission fields.'),
+    array($publicIndex, '$documentsTrustedPermissions = array(', 'Existing document saves do not preserve stored permissions for non-admin users.'),
+    array($publicIndex, 'SEC_setDefaultPermissions($documentsDefaults, $_DOCUMENTS_CONF[\'default_permissions\'])', 'New non-admin documents do not use server-side default permissions.'),
     array($functions, 'WHERE d.active = 1', 'Plugin search is not restricted to active documents.'),
     array($functions, "COM_getPermSQL('AND', 0, 2, 'd')", 'Plugin search is missing document permission filtering.'),
     array($includeLists, '$workflowOwnerFilter = \' AND d.owner_id=\' . (int) $_USER[\'uid\'];', 'Draft/submission lists are not restricted to the current owner for non-admin users.'),
@@ -80,12 +84,7 @@ foreach ($checks as $check) {
     DOCUMENTS_rcRequireContains($check[0], $check[1], $check[2], $failures);
 }
 
-DOCUMENTS_rcRequireAbsent(
-    $storage,
-    'unlink($source',
-    'Storage migration appears to delete legacy source data.',
-    $failures
-);
+DOCUMENTS_rcRequireAbsent($storage, 'unlink($source', 'Storage migration appears to delete legacy source data.', $failures);
 
 if (is_file($root . '/admin/timthumb.php')) {
     $failures[] = 'Legacy admin TimThumb is still present.';
@@ -101,15 +100,9 @@ DOCUMENTS_rcRequireAbsent(
 );
 
 $sourceFiles = array(
-    'autoinstall.php',
-    'functions.inc',
-    'include_edit.php',
-    'include_html.php',
-    'include_lists.php',
-    'admin/ajax.php',
-    'admin/index.php',
-    'public_html/index.php',
-    'public_html/image.php'
+    'autoinstall.php', 'functions.inc', 'include_edit.php', 'include_html.php',
+    'include_lists.php', 'admin/ajax.php', 'admin/index.php',
+    'public_html/index.php', 'public_html/image.php'
 );
 
 foreach ($sourceFiles as $sourceFile) {
