@@ -45,8 +45,6 @@ $documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
 $documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
 $documentsOperation = (string) DOCUMENTS_requestValue($_REQUEST, 'op', '');
 
-// All state-changing handlers are POST-only. This prevents bookmarked or
-// crafted GET URLs from triggering mutations even before CSRF validation.
 $documentsWriteModes = array('save', 'save_cat', 'save_field', 'save_group', 'save_select');
 if (in_array($documentsMode, $documentsWriteModes, true)) {
     if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -55,9 +53,6 @@ if (in_array($documentsMode, $documentsWriteModes, true)) {
     }
 }
 
-// Category/field/select administration is private to Documents Admin. Keep
-// this guard in front of the legacy controller so direct URLs cannot expose or
-// mutate the plugin schema when a local handler misses a permission check.
 $documentsAdminModes = array(
     'edit_cat', 'save_cat',
     'edit_field', 'save_field', 'list_fields',
@@ -70,9 +65,6 @@ if (in_array($documentsMode, $documentsAdminModes, true)
     exit;
 }
 
-// Direct category URLs must obey the category's own permissions. Without this
-// preflight a restricted category could still reveal its name, custom header
-// or submission form even when its documents were individually protected.
 if ($documentsMode === 'view' || $documentsMode === 'new') {
     $documentsCategorySlug = (string) DOCUMENTS_requestValue($_REQUEST, 'cat', '');
     if ($documentsCategorySlug !== '') {
@@ -115,10 +107,6 @@ if ($documentsMode === 'view' || $documentsMode === 'new') {
     }
 }
 
-// A direct document URL must obey both its permissions and publication state.
-// Published documents are readable with normal read access. Drafts,
-// submissions and inactive documents stay private to their owner, Documents
-// Admin, or a user with Documents Publish rights.
 if ($documentsMode === 'view') {
     $documentsViewDoc = (string) DOCUMENTS_requestValue($_REQUEST, 'doc', '');
     if ($documentsViewDoc !== '') {
@@ -164,9 +152,13 @@ if ($documentsMode === 'save_cat') {
     $_POST['cat_url'] = $_REQUEST['cat_url'];
 }
 
-// Enforce document permissions again at write time. Opening an edit form is
-// not sufficient authorization for a later POST: the target document and its
-// current permissions are reloaded before any value can be changed.
+// The document form already emits the standard Geeklog CSRF token. Require it
+// before any document mutation, including uploads and deletions.
+if ($documentsMode === 'save' && !SEC_checkToken()) {
+    http_response_code(403);
+    exit;
+}
+
 if ($documentsMode === 'save') {
     if ($documentsDocUrl !== '') {
         $documentsDocUrlSql = DB_escapeString($documentsDocUrl);
@@ -239,9 +231,6 @@ if ($documentsMode === 'save') {
     }
 }
 
-// Prepare a collision-safe URL before the legacy save controller starts a new
-// document. The controller keeps the historical numeric-prefix format, but if
-// DOC_URL is already defined it reuses this validated candidate.
 if ($documentsMode === 'save' && $documentsDocUrl === '' && $documentsOperation !== 'delete') {
     $documentsCid = DOCUMENTS_requestInt($_REQUEST, 'cid', 0);
     if ($documentsCid > 0) {
