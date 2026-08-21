@@ -14,33 +14,6 @@ if (strpos(strtolower(isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : ''), 
 }
 
 /**
- * Prevent non-administrators from forging document ownership or permissions.
- *
- * @param array $request Request array, passed by reference
- * @param int   $ownerId Trusted owner id
- * @param int   $groupId Trusted group id
- * @param array $permissions Trusted permission values
- * @return void
- */
-function DOCUMENTS_lockSecurityFields(&$request, $ownerId, $groupId, $permissions)
-{
-    if (!is_array($request) || SEC_hasRights('documents.admin')) {
-        return;
-    }
-
-    $request['owner_id'] = (int) $ownerId;
-    $request['group_id'] = (int) $groupId;
-    $request['perm_owner'] = isset($permissions['perm_owner'])
-        ? (int) $permissions['perm_owner'] : 3;
-    $request['perm_group'] = isset($permissions['perm_group'])
-        ? (int) $permissions['perm_group'] : 3;
-    $request['perm_members'] = isset($permissions['perm_members'])
-        ? (int) $permissions['perm_members'] : 2;
-    $request['perm_anon'] = isset($permissions['perm_anon'])
-        ? (int) $permissions['perm_anon'] : 2;
-}
-
-/**
  * Normalize a scalar field value before the legacy save controller sees it.
  *
  * @param string $type Field type
@@ -125,4 +98,37 @@ function DOCUMENTS_prepareDocumentFieldRequest(&$request, $categoryId)
 
         $request[$name] = $value;
     }
+}
+
+/**
+ * Prevent non-administrators from forging document ownership or permissions.
+ * Dynamic field values are normalized in the same trusted server-side pass.
+ *
+ * @param array $request Request array, passed by reference
+ * @param int   $ownerId Trusted owner id
+ * @param int   $groupId Trusted group id
+ * @param array $permissions Trusted permission values
+ * @return void
+ */
+function DOCUMENTS_lockSecurityFields(&$request, $ownerId, $groupId, $permissions)
+{
+    if (!is_array($request) || SEC_hasRights('documents.admin')) {
+        return;
+    }
+
+    $categoryId = isset($request['cid']) ? (int) $request['cid'] : 0;
+    if ($categoryId > 0) {
+        DOCUMENTS_prepareDocumentFieldRequest($request, $categoryId);
+    }
+
+    $request['owner_id'] = (int) $ownerId;
+    $request['group_id'] = (int) $groupId;
+    $request['perm_owner'] = isset($permissions['perm_owner'])
+        ? (int) $permissions['perm_owner'] : 3;
+    $request['perm_group'] = isset($permissions['perm_group'])
+        ? (int) $permissions['perm_group'] : 3;
+    $request['perm_members'] = isset($permissions['perm_members'])
+        ? (int) $permissions['perm_members'] : 2;
+    $request['perm_anon'] = isset($permissions['perm_anon'])
+        ? (int) $permissions['perm_anon'] : 2;
 }
