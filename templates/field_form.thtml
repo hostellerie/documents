@@ -1,58 +1,58 @@
 <form action="{doc_url}/index.php?mode=save_field" method="POST">
 {fid}
-    <fieldset style="margin-top: 10px;">
-	    <legend><b>{field_informations}</b></legend>
+    <fieldset class="documents-form-fieldset">
+        <legend><b>{field_informations}</b></legend>
 
-	        <div>
-    	        <p><label>{field_label}<font color="red"> *</font></label>
-			    <input type="text" name="f_name" value="{field_name}" size="80" maxlength="255" {xhtml}></p>
-	        </div>
-			
-			<div>
-    	        <p><label>{help_label}</label>
-			    <input type="text" name="f_help" value="{f_help}" size="80" maxlength="255" {xhtml}></p>
-	        </div>
-			<div>
-			    <p><input type="checkbox" name="f_required" value="1" {f_required_ckecked} {xhtml}> {f_required}</p>
-			</div>
-			<div>
-			    <p><input type="checkbox" name="f_on_list" value="1" {f_on_list_ckecked} {xhtml}> {f_on_list}</p>
-			</div>
-			<div>
-			    <p><label>{categories_label}</label> {categories_select}</p>
-			</div>
-	        <div>
-	            <p><label>{fieldorder_label}</label>
+        <div>
+            <p><label>{field_label}<span class="documents-required-mark"> *</span></label>
+                <input type="text" name="f_name" value="{field_name}" size="80" maxlength="255" {xhtml}></p>
+        </div>
+
+        <div>
+            <p><label>{help_label}</label>
+                <input type="text" name="f_help" value="{f_help}" size="80" maxlength="255" {xhtml}></p>
+        </div>
+        <div>
+            <p><input type="checkbox" name="f_required" value="1" {f_required_ckecked} {xhtml}> {f_required}</p>
+        </div>
+        <div>
+            <p><input type="checkbox" name="f_on_list" value="1" {f_on_list_ckecked} {xhtml}> {f_on_list}</p>
+        </div>
+        <div>
+            <p><label>{categories_label}</label> {categories_select}</p>
+        </div>
+        <div>
+            <p><label>{fieldorder_label}</label>
                 <input type="text" id="f_order" name="f_order" value="{field_order}" size="5" maxlength="5" {xhtml}></p>
-				<p>{existing_field}
-				<div id="fields_order">{fields_order}</div></p>
-	        </div>
-			
-			<div>
-    	        <p><label>{var_label}<font color="red"> *</font></label>
-			    <input type="text" name="var_name" value="{var_name}" size="80" maxlength="255" {xhtml}></p>
-	        </div>
-			<div>
-			    <p><label>{type_label}</label> {type_select}</p>
-			</div>
-			<div>
-			    <p><label>{sel_label}</label> {group_select}</p>
-			</div>
+            <p>{existing_field}
+            <div id="fields_order">{fields_order}</div></p>
+        </div>
 
-			<div id="lang_accessrights">
-				<div><p><label>{lang_owner}</label> {owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}></p></div>
-				<div><p><label>{lang_group}</label> {group_dropdown}</p></div>
-			</div>
-			<div id="lang_permissions">
-				<p>{lang_perm_key}</p>
-				<p>{permissions_editor}</p>
-				<p>{lang_permissions_msg}</p>
-			</div>
+        <div>
+            <p><label>{var_label}<span class="documents-required-mark"> *</span></label>
+                <input type="text" name="var_name" value="{var_name}" size="80" maxlength="255" {xhtml}></p>
+        </div>
+        <div>
+            <p><label>{type_label}</label> {type_select}</p>
+        </div>
+        <div>
+            <p><label>{sel_label}</label> {group_select}</p>
+        </div>
+
+        <div id="lang_accessrights">
+            <div><p><label>{lang_owner}</label> {owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}></p></div>
+            <div><p><label>{lang_group}</label> {group_dropdown}</p></div>
+        </div>
+        <div id="lang_permissions">
+            <p>{lang_perm_key}</p>
+            <p>{permissions_editor}</p>
+            <p>{lang_permissions_msg}</p>
+        </div>
 
     </fieldset>
-	
-    <p><strong><font color="red">*</font><em> {required_field}</em></strong></p>
-	{admin_options}
+
+    <p class="documents-required-note"><span class="documents-required-mark">*</span><em> {required_field}</em></p>
+    {admin_options}
     <input type="submit" name="submit" value="{validate_button}" {xhtml}>
     <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
 
