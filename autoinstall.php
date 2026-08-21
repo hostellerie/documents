@@ -59,17 +59,17 @@ function plugin_autoinstall_documents($pi_name)
     $pi_display_name = 'Documents';
     $pi_admin        = $pi_display_name . ' Admin';
 
-    require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
-    DOCUMENTS_writeHtaccess(true);
-
     /*
-     * plugin_chkVersion_documents() also calls this function. Only run the
-     * storage migration when this invocation comes directly from the real
-     * upgrade routine, never during a read-only version check.
+     * plugin_chkVersion_documents() also calls this function. Keep version
+     * checks read-only: rewrite .htaccess and migrate storage only when the
+     * caller is the actual upgrade routine. Fresh installs perform both tasks
+     * from plugin_postinstall_documents().
      */
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
     $caller = isset($trace[1]['function']) ? $trace[1]['function'] : '';
     if ($caller === 'plugin_upgrade_documents') {
+        require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
+        DOCUMENTS_writeHtaccess(true);
         DOCUMENTS_runStorageMigration();
     }
 
