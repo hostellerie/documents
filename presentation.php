@@ -58,19 +58,19 @@ function DOCUMENTS_stringUcwords($value)
 
 /**
  * Apply a text field's display convention without changing the stored value.
- * sel_id is unused by text fields, so negative values safely encode display
- * modes while positive values remain available to select/radio fields.
+ * sel_id is unused by text fields. Values 1001-1004 are reserved for text
+ * display modes so they survive Geeklog's historical numeric request filter.
  */
 function DOCUMENTS_formatTextDisplay($value, $formatCode)
 {
     switch ((int) $formatCode) {
-        case -1:
+        case 1001:
             return DOCUMENTS_stringLower($value);
-        case -2:
+        case 1002:
             return DOCUMENTS_stringUpper($value);
-        case -3:
+        case 1003:
             return DOCUMENTS_stringUcfirst($value);
-        case -4:
+        case 1004:
             return DOCUMENTS_stringUcwords($value);
         default:
             return (string) $value;
@@ -81,10 +81,10 @@ function DOCUMENTS_textFormatOptions($selected, $labels)
 {
     $options = array(
         0 => isset($labels['raw']) ? $labels['raw'] : 'As entered',
-        -1 => isset($labels['lower']) ? $labels['lower'] : 'lowercase',
-        -2 => isset($labels['upper']) ? $labels['upper'] : 'UPPERCASE',
-        -3 => isset($labels['sentence']) ? $labels['sentence'] : 'First letter uppercase',
-        -4 => isset($labels['title']) ? $labels['title'] : 'Each Word Capitalized'
+        1001 => isset($labels['lower']) ? $labels['lower'] : 'lowercase',
+        1002 => isset($labels['upper']) ? $labels['upper'] : 'UPPERCASE',
+        1003 => isset($labels['sentence']) ? $labels['sentence'] : 'First letter uppercase',
+        1004 => isset($labels['title']) ? $labels['title'] : 'Each Word Capitalized'
     );
 
     $html = '<select name="sel_id" id="documents_text_format">';
