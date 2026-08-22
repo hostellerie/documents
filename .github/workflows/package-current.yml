@@ -38,6 +38,8 @@ jobs:
           php tests/document_visibility_test.php
           php tests/document_edit_security_test.php
           php tests/comment_security_test.php
+          php tests/presentation_test.php
+          php tests/integration_surface_test.php
           php tests/release_candidate_test.php
           php tests/metadata_consistency_test.php
 
@@ -52,7 +54,6 @@ jobs:
         run: |
           find . -type f \( -name '*.php' -o -name '*.inc' \) \
             -not -path './.git/*' \
-            -not -path './.github/*' \
             -not -path './test-artifacts/*' \
             -print0 | xargs -0 -n1 php -l
 
@@ -65,6 +66,8 @@ jobs:
           php tests/document_visibility_test.php
           php tests/document_edit_security_test.php
           php tests/comment_security_test.php
+          php tests/presentation_test.php
+          php tests/integration_surface_test.php
           php tests/release_candidate_test.php
           php tests/metadata_consistency_test.php
 
