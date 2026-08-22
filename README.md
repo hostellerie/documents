@@ -141,23 +141,15 @@ When MediaGallery is missing or inactive, Documents must:
 - not render album-related controls;
 - continue to operate normally for all other field types.
 
-## Automated checks
+## Validation and test archives
 
-The packaging workflow runs the following checks under PHP **5.6** and **8.1**:
+GitHub Actions are intentionally not used during normal Documents development.
 
-- PHP syntax validation;
-- persistent storage migration tests;
-- multisite storage isolation and migration idempotence;
-- configuration-upgrade idempotence;
-- preservation of customized image and display/integration settings;
-- English/French language-key synchronization;
-- text-display and statistics-visibility behavior;
-- release-candidate static invariants covering supported versions, TimThumb removal, CSRF/admin protection, optional integrations and persistent storage;
-- verification that packaging does not mutate source files.
+The repository keeps the standalone regression tests in `tests/`, but they are run only when a compatibility or release-validation milestone requires them. Test failures therefore do not create automatic GitHub workflow noise during day-to-day development.
 
-The generated release-candidate archive is `documents-1.1.10.zip` while this milestone is active.
+Installable test archives are built directly from the current source at meaningful manual-test milestones. They are not committed to `test-artifacts/` and no GitHub packaging workflow is required.
 
-Automated checks complement, but do not replace, the manual Geeklog compatibility matrix required before 1.2.0.
+Before a public release, the regression suite should still be executed against the supported PHP/Geeklog matrix and complemented by the manual compatibility checklist in `TESTING.md`.
 
 ## Stabilization work
 
