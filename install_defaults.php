@@ -43,10 +43,25 @@ $_DOCUMENTS_DEFAULT['max_image_height'] = 3000;
 $_DOCUMENTS_DEFAULT['max_image_size'] = 4194304;
 $_DOCUMENTS_DEFAULT['default_permissions'] = array(3, 3, 2, 2);
 
+/**
+ * Read the current Documents configuration without assuming a specific
+ * config.class.php generation. Geeklog 2.1.1-era installs may expose a
+ * different public surface, while $_DOCUMENTS_CONF is already available when
+ * the plugin is normally loaded.
+ */
 function DOCUMENTS_configItems($c, $me)
 {
-    $existing = $c->get_config($me);
-    return is_array($existing) ? $existing : array();
+    global $_DOCUMENTS_CONF;
+
+    if (is_object($c) && method_exists($c, 'get_config')) {
+        $existing = $c->get_config($me);
+        if (is_array($existing)) {
+            return $existing;
+        }
+    }
+
+    return isset($_DOCUMENTS_CONF) && is_array($_DOCUMENTS_CONF)
+        ? $_DOCUMENTS_CONF : array();
 }
 
 function DOCUMENTS_addImageConfigItems($c, $me)
@@ -73,7 +88,6 @@ function DOCUMENTS_addImageConfigItems($c, $me)
     }
 }
 
-/** Add integration/display settings without resetting existing values. */
 function DOCUMENTS_addIntegrationConfigItems($c, $me)
 {
     global $_DOCUMENTS_DEFAULT;
