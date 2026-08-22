@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.1.10 — Configuration upgrade and public statistics option
+
+Compatibility target:
+
+- Geeklog 2.1.1 through 2.2.2
+- PHP 5.6 through 8.1
+
+### Configuration upgrade
+
+- Added an explicit `DOCUMENTS_updateConfig_1_1_10()` upgrade step.
+- The 1.1.10 upgrade re-registers missing display/integration settings idempotently.
+- Existing customized values are preserved, including What's New settings and statistics visibility.
+- This ensures sites already recorded as Documents 1.1.9 receive the new configuration entries during upgrade.
+
+### Statistics visibility
+
+- Extended `stats_visibility` with a fourth level: everyone, including anonymous visitors.
+- Visibility levels are now: hidden, administrators only, authenticated users plus administrators, and everyone including anonymous visitors.
+- The default remains administrators only so upgrading does not expose statistics automatically.
+- Added English and French labels for the anonymous/public option.
+- Added regression tests covering anonymous, authenticated and administrator visibility behavior.
+
+### Carried forward from the 1.1.9 development cycle
+
+- Text fields can normalize display case without changing stored values.
+- Geeklog What's New can list recent Documents entries with configurable interval and limit.
+- The Documents home page can show a lightweight statistics block.
+- Geeklog search receives a meaningful description sourced from document text fields.
+
 ## 1.1.9 — Release candidate
 
 Compatibility target:
@@ -175,6 +204,6 @@ Compatibility target:
 
 ## Still required before 1.2.0
 
-- complete the manual 1.1.9 release-candidate compatibility matrix;
+- complete the manual 1.1.10 release-candidate compatibility matrix;
 - correct any regressions found during those tests;
 - confirm the final installable archive and report are produced from the release-candidate branch.
