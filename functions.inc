@@ -202,7 +202,7 @@ function plugin_getwhatsnew_documents()
             $title = $row['doc_url'];
         }
         $url = rtrim($_DOCUMENTS_CONF['site_url'], '/') . '/'
-            . rawurlencode($row['cat_url']) . '/' . rawurlencode($row['doc_url']);
+            . $row['cat_url'] . '/' . $row['doc_url'];
         $items[] = COM_createLink(
             COM_truncate($title, 60, '...'),
             COM_buildUrl($url),
@@ -273,7 +273,7 @@ function plugin_dopluginsearch_documents($query, $datestart, $dateend, $topic, $
     }
 
     $search = new SearchCriteria('documents', $LANG_DOCUMENTS_1['plugin_name']);
-    $columns = array('d.doc_url', 'v.v_value');
+    $columns = array('d.doc_url', 'v.v_value', $descriptionSql);
     list($sql, $ftsql) = $search->buildSearchSQL($keyType, $query, $columns, $sql);
     $search->setSQL($sql);
     $search->setFTSQL($ftsql);
