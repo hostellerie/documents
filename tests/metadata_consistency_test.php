@@ -27,7 +27,7 @@ $readme = DOCUMENTS_metaRead($root, 'README.md', $failures);
 $changelog = DOCUMENTS_metaRead($root, 'CHANGELOG.md', $failures);
 
 $requiredMetadata = array(
-    "'pi_version'      => '1.1.9'" => 'Plugin version metadata is not 1.1.9.',
+    "'pi_version' => '1.1.9'" => 'Plugin version metadata is not 1.1.9.',
     "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')" => 'Minimum Geeklog version metadata is inconsistent.',
     "define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3')" => 'Maximum Geeklog version metadata is inconsistent.',
     "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')" => 'Minimum PHP version metadata is inconsistent.',
@@ -47,15 +47,7 @@ if (strpos($changelog, '## 1.1.9') === false) {
     $failures[] = 'CHANGELOG does not contain a 1.1.9 section.';
 }
 
-/*
- * Large historical runtime files are still being cleaned up header-by-header.
- * Keep an explicit allow-list so no additional stale 1.1.2 source header can
- * appear unnoticed. Test files are excluded: their assertions intentionally
- * contain historical version strings and must not be mistaken for source
- * metadata.
- */
 $allowedLegacyHeaders = array(
-    'functions.inc',
     'include_edit.php',
     'include_html.php'
 );
