@@ -637,7 +637,14 @@ function DOCUMENTS_buildRawDocument ($field, $doc, &$template, $i) {
         case 'text':
         default:
             $html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB;
-            $content = nl2br(stripslashes($value));
+            $displayValue = stripslashes($value);
+            if ($field['f_type'] === 'text' && function_exists('DOCUMENTS_formatTextDisplay')) {
+                $displayValue = DOCUMENTS_formatTextDisplay(
+                    $displayValue,
+                    isset($field['sel_id']) ? $field['sel_id'] : 0
+                );
+            }
+            $content = nl2br($displayValue);
             $content = DOCUMENTS_linkifyUrls($content);
             $html .= '<td class="document_value">' . $content . '</td>' . LB;
             break;

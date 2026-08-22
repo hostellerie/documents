@@ -274,19 +274,47 @@ function DOCUMENTS_editField($field = array())
 
     $template->set_var('type_label', $LANG_DOCUMENTS_1['type']);
     $template->set_var('type_select', DOCUMENTS_fieldsTypeSelect($field['f_type']));
-    $template->set_var('sel_label', $LANG_DOCUMENTS_1['sel_group']);
 
-    $groupSelect = '<select name="sel_id"><option value="0"> -- '
-        . $LANG_DOCUMENTS_1['none'] . ' -- </option>';
-    $res = DB_query(
-        "SELECT g_name, gid FROM {$_TABLES['documents_selects_group']} ORDER BY g_name"
-    );
-    while ($row = DB_fetchArray($res)) {
-        $selected = ((int) $row['gid'] === (int) $field['sel_id']) ? ' selected="selected"' : '';
-        $groupSelect .= '<option value="' . (int) $row['gid'] . '"' . $selected . '>'
-            . htmlspecialchars($row['g_name'], ENT_QUOTES, 'UTF-8') . '</option>';
+    if ($field['f_type'] === 'text') {
+        if (!function_exists('DOCUMENTS_textFormatOptions')) {
+            require_once $_CONF['path'] . 'plugins/documents/presentation.php';
+        }
+        $isFrench = isset($_CONF['language'])
+            && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+        $formatLabels = $isFrench
+            ? array(
+                'raw' => 'Tel que saisi',
+                'lower' => 'minuscules',
+                'upper' => 'MAJUSCULES',
+                'sentence' => 'Première lettre en majuscule',
+                'title' => 'Initiale de chaque mot en majuscule'
+            )
+            : array(
+                'raw' => 'As entered',
+                'lower' => 'lowercase',
+                'upper' => 'UPPERCASE',
+                'sentence' => 'First letter uppercase',
+                'title' => 'Each Word Capitalized'
+            );
+        $template->set_var(
+            'sel_label',
+            $isFrench ? 'Format d’affichage du texte' : 'Text display format'
+        );
+        $groupSelect = DOCUMENTS_textFormatOptions($field['sel_id'], $formatLabels);
+    } else {
+        $template->set_var('sel_label', $LANG_DOCUMENTS_1['sel_group']);
+        $groupSelect = '<select name="sel_id"><option value="0"> -- '
+            . $LANG_DOCUMENTS_1['none'] . ' -- </option>';
+        $res = DB_query(
+            "SELECT g_name, gid FROM {$_TABLES['documents_selects_group']} ORDER BY g_name"
+        );
+        while ($row = DB_fetchArray($res)) {
+            $selected = ((int) $row['gid'] === (int) $field['sel_id']) ? ' selected="selected"' : '';
+            $groupSelect .= '<option value="' . (int) $row['gid'] . '"' . $selected . '>'
+                . htmlspecialchars($row['g_name'], ENT_QUOTES, 'UTF-8') . '</option>';
+        }
+        $groupSelect .= '</select>';
     }
-    $groupSelect .= '</select>';
     $template->set_var('group_select', $groupSelect);
 
     $template->set_var('var_label', $LANG_DOCUMENTS_1['var_name']);
