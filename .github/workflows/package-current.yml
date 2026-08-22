@@ -112,3 +112,5 @@ jobs:
             git commit -m 'Documents 1.1.10: refresh validation archive'
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
+
+# One-shot validation trigger for the finalized 1.1.10 source.
