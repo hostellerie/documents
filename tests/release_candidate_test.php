@@ -1,6 +1,6 @@
 <?php
 
-/* Documents 1.1.9 release-candidate static checks. */
+/* Documents 1.1.10 release-candidate static checks. */
 
 $root = dirname(__DIR__);
 $failures = array();
@@ -54,13 +54,14 @@ $includeEdit = DOCUMENTS_rcRead($root, 'include_edit.php', $failures);
 $includeLists = DOCUMENTS_rcRead($root, 'include_lists.php', $failures);
 
 $checks = array(
-    array($autoinstall, "'pi_version' => '1.1.9'", 'Plugin metadata is not set to 1.1.9.'),
+    array($autoinstall, "'pi_version' => '1.1.10'", 'Plugin metadata is not set to 1.1.10.'),
     array($autoinstall, "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')", 'Minimum Geeklog version is not 2.1.1.'),
     array($autoinstall, "define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3')", 'Maximum Geeklog range does not stop before 2.2.3.'),
     array($autoinstall, "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')", 'Minimum PHP version is not 5.6.0.'),
     array($autoinstall, "define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0')", 'Maximum PHP range does not stop before 8.2.0.'),
-    array($autoinstall, "version_compare(\$installedVersion, '1.1.9', '<')", '1.1.9 configuration upgrade step is missing.'),
-    array($installUpdates, 'function DOCUMENTS_updateConfig_1_1_9()', '1.1.9 configuration upgrade helper is missing.'),
+    array($autoinstall, "version_compare(\$installedVersion, '1.1.10', '<')", '1.1.10 configuration upgrade step is missing.'),
+    array($installUpdates, 'function DOCUMENTS_updateConfig_1_1_10()', '1.1.10 configuration upgrade helper is missing.'),
+    array($installUpdates, 'DOCUMENTS_addIntegrationConfigItems($c, $me);', '1.1.10 does not register integration/display settings.'),
     array($installDefaults, "method_exists(\$c, 'get_config')", 'Older Geeklog configuration compatibility fallback is missing.'),
     array($functions, 'function DOCUMENTS_dataDir()', 'Multisite-safe data directory helper is missing.'),
     array($functions, "basename(\$base) . '-documents'", 'Documents data directory is not derived from path_data.'),
@@ -78,6 +79,7 @@ $checks = array(
     array($runtime, 'presentation.php', 'Runtime does not load presentation helpers.'),
     array($presentation, 'function DOCUMENTS_formatTextDisplay(', 'Text display normalization helper is missing.'),
     array($presentation, 'function DOCUMENTS_homeStatsBlock(', 'Documents home statistics helper is missing.'),
+    array($presentation, 'if ($visibility >= 3)', 'Anonymous/public statistics visibility is missing.'),
     array($includeEdit, 'DOCUMENTS_textFormatOptions(', 'Text-field display format selector is missing.'),
     array($includeHtml, 'DOCUMENTS_formatTextDisplay(', 'Text-field display formatting is not applied when rendering.'),
     array($functions, 'function plugin_whatsnewsupported_documents()', 'Geeklog What\'s New support callback is missing.'),
