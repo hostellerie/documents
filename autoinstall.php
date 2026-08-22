@@ -19,42 +19,20 @@
 // | modify it under the terms of the GNU General Public License               |
 // | as published by the Free Software Foundation; either version 2            |
 // | of the License, or (at your option) any later version.                    |
-// |                                                                           |
-// | This program is distributed in the hope that it will be useful,           |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of            |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             |
-// | GNU General Public License for more details.                              |
-// |                                                                           |
 // +---------------------------------------------------------------------------+
 
-/**
- * @package Documents
- */
+/** @package Documents */
 
-/** Minimum supported Geeklog version. */
 define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1');
-
-/** First Geeklog version outside the supported range. */
 define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3');
-
-/** Minimum supported PHP version. */
 define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0');
-
-/** First PHP version outside the supported range. */
 define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0');
 
 function DOCUMENTS_runStorageMigration()
 {
     global $_CONF;
 
-    /*
-     * Fresh plugin installation may call the post-install hook before the
-     * normal plugin functions file has been loaded. The storage helpers rely
-     * on DOCUMENTS_dataDir() / DOCUMENTS_legacyDataDir(), so load the common
-     * plugin API only when those helpers are not available yet.
-     */
-    if (!function_exists('DOCUMENTS_dataDir')
-        || !function_exists('DOCUMENTS_legacyDataDir')) {
+    if (!function_exists('DOCUMENTS_dataDir') || !function_exists('DOCUMENTS_legacyDataDir')) {
         require_once $_CONF['path'] . 'plugins/documents/functions.inc';
     }
 
@@ -63,10 +41,8 @@ function DOCUMENTS_runStorageMigration()
 
     if (!empty($migration['errors'])) {
         if (function_exists('COM_errorLog')) {
-            COM_errorLog(
-                'Documents storage migration completed with '
-                . (int) $migration['errors'] . ' error(s).'
-            );
+            COM_errorLog('Documents storage migration completed with '
+                . (int) $migration['errors'] . ' error(s).');
         }
         return false;
     }
@@ -74,65 +50,42 @@ function DOCUMENTS_runStorageMigration()
     return true;
 }
 
-/**
- * Run idempotent upgrade work for the stabilization series.
- *
- * Each step may safely be rerun. Version checks never call this helper;
- * plugin_upgrade_documents() is the only upgrade entry point.
- *
- * @param string $installedVersion Version currently registered in Geeklog
- * @return bool
- */
 function DOCUMENTS_runUpgradeSteps($installedVersion)
 {
     global $_CONF;
 
     $installedVersion = (string) $installedVersion;
 
-    /* 1.1.1: establish multisite-safe persistent storage and URL rewriting. */
     if (version_compare($installedVersion, '1.1.1', '<')) {
         require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
-        if (!DOCUMENTS_writeHtaccess(true)) {
-            return false;
-        }
-        if (!DOCUMENTS_runStorageMigration()) {
+        if (!DOCUMENTS_writeHtaccess(true) || !DOCUMENTS_runStorageMigration()) {
             return false;
         }
     }
 
-    /*
-     * 1.1.2: refresh routing and rerun storage migration. Both operations are
-     * idempotent and preserve the stabilization behavior of development builds
-     * that predate the explicit 1.1.7 migration milestone.
-     */
     if (version_compare($installedVersion, '1.1.2', '<')) {
         require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
-        if (!DOCUMENTS_writeHtaccess(true)) {
-            return false;
-        }
-        if (!DOCUMENTS_runStorageMigration()) {
+        if (!DOCUMENTS_writeHtaccess(true) || !DOCUMENTS_runStorageMigration()) {
             return false;
         }
     }
 
-    /*
-     * 1.1.7: the persistent-data migration became an explicit release step.
-     * Run it for every installation older than 1.1.7 before recording a newer
-     * plugin version. Existing target files are never overwritten.
-     */
     if (version_compare($installedVersion, '1.1.7', '<')) {
         if (!DOCUMENTS_runStorageMigration()) {
             return false;
         }
     }
 
-    /*
-     * 1.1.8: move image limits into Geeklog configuration. The helper only
-     * adds missing configuration records and is safe to rerun.
-     */
     if (version_compare($installedVersion, '1.1.8', '<')) {
         require_once $_CONF['path'] . 'plugins/documents/install_updates.php';
         if (!DOCUMENTS_updateConfig_1_1_8()) {
+            return false;
+        }
+    }
+
+    if (version_compare($installedVersion, '1.1.9', '<')) {
+        require_once $_CONF['path'] . 'plugins/documents/install_updates.php';
+        if (!DOCUMENTS_updateConfig_1_1_9()) {
             return false;
         }
     }
@@ -142,30 +95,29 @@ function DOCUMENTS_runUpgradeSteps($installedVersion)
 
 function plugin_autoinstall_documents($pi_name)
 {
-    $pi_name         = 'documents';
+    $pi_name = 'documents';
     $pi_display_name = 'Documents';
-    $pi_admin        = $pi_display_name . ' Admin';
+    $pi_admin = $pi_display_name . ' Admin';
 
     $info = array(
-        'pi_name'         => $pi_name,
+        'pi_name' => $pi_name,
         'pi_display_name' => $pi_display_name,
-        'pi_version'      => '1.1.9',
-        'pi_gl_version'   => DOCUMENTS_MIN_GEEKLOG_VERSION,
-        'pi_homepage'     => 'https://github.com/Geeklog-Plugins/documents'
+        'pi_version' => '1.1.9',
+        'pi_gl_version' => DOCUMENTS_MIN_GEEKLOG_VERSION,
+        'pi_homepage' => 'https://github.com/Geeklog-Plugins/documents'
     );
 
     $groups = array(
-        $pi_admin => 'Users in this group can administer the '
-                     . $pi_display_name . ' plugin'
+        $pi_admin => 'Users in this group can administer the ' . $pi_display_name . ' plugin'
     );
 
     $features = array(
-        $pi_name . '.admin'   => 'Full access to ' . $pi_display_name . ' plugin',
+        $pi_name . '.admin' => 'Full access to ' . $pi_display_name . ' plugin',
         $pi_name . '.publish' => 'Can publish ' . $pi_display_name . ' (skip submission queue)'
     );
 
     $mappings = array(
-        $pi_name . '.admin'   => array($pi_admin),
+        $pi_name . '.admin' => array($pi_admin),
         $pi_name . '.publish' => array($pi_admin)
     );
 
@@ -180,11 +132,11 @@ function plugin_autoinstall_documents($pi_name)
     );
 
     return array(
-        'info'     => $info,
-        'groups'   => $groups,
+        'info' => $info,
+        'groups' => $groups,
         'features' => $features,
         'mappings' => $mappings,
-        'tables'   => $tables
+        'tables' => $tables
     );
 }
 
@@ -193,7 +145,6 @@ function plugin_load_configuration_documents($pi_name)
     global $_CONF;
 
     $base_path = $_CONF['path'] . 'plugins/' . $pi_name . '/';
-
     require_once $_CONF['path_system'] . 'classes/config.class.php';
     require_once $base_path . 'install_defaults.php';
 
@@ -204,8 +155,7 @@ function plugin_compatible_with_this_version_documents($pi_name)
 {
     global $_CONF, $_DB_dbms;
 
-    $dbFile = $_CONF['path'] . 'plugins/' . $pi_name . '/sql/'
-            . $_DB_dbms . '_install.php';
+    $dbFile = $_CONF['path'] . 'plugins/' . $pi_name . '/sql/' . $_DB_dbms . '_install.php';
     if (!file_exists($dbFile)) {
         return false;
     }
