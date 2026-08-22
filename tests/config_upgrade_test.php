@@ -1,9 +1,6 @@
 <?php
 
-/*
- * Standalone regression test for the Documents 1.1.8 configuration upgrade.
- * Compatible with PHP 5.6+ and intentionally independent from Geeklog runtime.
- */
+/* Standalone Documents configuration upgrade regression tests. */
 
 $_SERVER['PHP_SELF'] = 'tests/config_upgrade_test.php';
 require_once dirname(__DIR__) . '/install_defaults.php';
@@ -51,46 +48,63 @@ function documents_test_assert($condition, $message)
     }
 }
 
-/* Existing customized values must never be replaced. */
 $existing = array(
     'fs_images' => null,
     'max_image_width' => 1234,
     'max_image_height' => 2345,
-    'max_image_size' => 3456789,
+    'max_image_size' => 3456789
 );
 $config = new DocumentsConfigUpgradeTestDouble($existing);
 DOCUMENTS_addImageConfigItems($config, 'documents');
-
 documents_test_assert(count($config->adds) === 0, 'existing image settings were re-added');
 documents_test_assert($config->config['max_image_width'] === 1234, 'custom width was changed');
 documents_test_assert($config->config['max_image_height'] === 2345, 'custom height was changed');
 documents_test_assert($config->config['max_image_size'] === 3456789, 'custom file size was changed');
 
-/* A partial configuration receives only the missing keys. */
-$partial = array(
-    'max_image_width' => 1600,
-);
+$partial = array('max_image_width' => 1600);
 $config = new DocumentsConfigUpgradeTestDouble($partial);
 DOCUMENTS_addImageConfigItems($config, 'documents');
-
 documents_test_assert($config->config['max_image_width'] === 1600, 'partial custom width was changed');
 documents_test_assert(in_array('fs_images', $config->adds, true), 'missing image fieldset was not added');
 documents_test_assert(in_array('max_image_height', $config->adds, true), 'missing image height was not added');
 documents_test_assert(in_array('max_image_size', $config->adds, true), 'missing image size was not added');
 documents_test_assert(!in_array('max_image_width', $config->adds, true), 'existing image width was re-added');
 
-/* Empty configuration receives all defaults. */
 $config = new DocumentsConfigUpgradeTestDouble(array());
 DOCUMENTS_addImageConfigItems($config, 'documents');
-
 documents_test_assert(count($config->adds) === 4, 'fresh image configuration is incomplete');
 documents_test_assert($config->config['max_image_width'] === 3000, 'default width mismatch');
 documents_test_assert($config->config['max_image_height'] === 3000, 'default height mismatch');
 documents_test_assert($config->config['max_image_size'] === 4194304, 'default file size mismatch');
-
-/* Rerunning the helper must be idempotent. */
 $firstAdds = count($config->adds);
 DOCUMENTS_addImageConfigItems($config, 'documents');
-documents_test_assert(count($config->adds) === $firstAdds, 'configuration upgrade is not idempotent');
+documents_test_assert(count($config->adds) === $firstAdds, 'image configuration upgrade is not idempotent');
+
+/* 1.1.9 integration settings must also preserve administrator choices. */
+$existing = array(
+    'fs_integrations' => null,
+    'whatsnew_enabled' => 0,
+    'whatsnew_interval' => 604800,
+    'whatsnew_limit' => 5,
+    'stats_visibility' => 2
+);
+$config = new DocumentsConfigUpgradeTestDouble($existing);
+DOCUMENTS_addIntegrationConfigItems($config, 'documents');
+documents_test_assert(count($config->adds) === 0, 'existing integration settings were re-added');
+documents_test_assert($config->config['whatsnew_enabled'] === 0, 'custom What\'s New state was changed');
+documents_test_assert($config->config['whatsnew_interval'] === 604800, 'custom What\'s New interval was changed');
+documents_test_assert($config->config['whatsnew_limit'] === 5, 'custom What\'s New limit was changed');
+documents_test_assert($config->config['stats_visibility'] === 2, 'custom stats visibility was changed');
+
+$config = new DocumentsConfigUpgradeTestDouble(array());
+DOCUMENTS_addIntegrationConfigItems($config, 'documents');
+documents_test_assert(count($config->adds) === 5, 'fresh integration configuration is incomplete');
+documents_test_assert($config->config['whatsnew_enabled'] === 1, 'default What\'s New state mismatch');
+documents_test_assert($config->config['whatsnew_interval'] === 1209600, 'default What\'s New interval mismatch');
+documents_test_assert($config->config['whatsnew_limit'] === 10, 'default What\'s New limit mismatch');
+documents_test_assert($config->config['stats_visibility'] === 1, 'default stats visibility should be admin only');
+$firstAdds = count($config->adds);
+DOCUMENTS_addIntegrationConfigItems($config, 'documents');
+documents_test_assert(count($config->adds) === $firstAdds, 'integration configuration upgrade is not idempotent');
 
 echo "Documents configuration upgrade tests: PASS\n";
