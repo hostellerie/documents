@@ -6,7 +6,7 @@ Documents is a configurable structured-content plugin for Geeklog. A category de
 
 The current development line is **1.1.x**, focused on stabilizing the historical 1.1.0 codebase before the 1.2.0 stable release.
 
-The current stabilization milestone is **1.1.9 release candidate**, dedicated to the final compatibility and regression matrix after the 1.1.8 configuration/language cleanup and the 1.1.7 persistent-data migration work.
+The current stabilization milestone is **1.1.10 release candidate**. This version formalizes the configuration upgrade required for the display/integration settings introduced during the 1.1.9 development cycle and adds an option to expose Documents statistics to anonymous visitors.
 
 See [ROADMAP.md](ROADMAP.md) for the complete stabilization, architecture and feature roadmap.
 
@@ -92,10 +92,20 @@ Current settings include:
 
 - public Documents folder;
 - main header and footer content;
+- Documents integration in Geeklog's What's New block;
+- What's New time window and maximum item count;
+- statistics visibility;
 - maximum image width;
 - maximum image height;
 - maximum image file size;
 - default item permissions.
+
+Statistics visibility supports four levels:
+
+- **Hidden**;
+- **Administrators only** (default);
+- **Logged-in users and administrators**;
+- **Everyone, including anonymous visitors**.
 
 The image limits introduced in the 1.1.8 stabilization work default to:
 
@@ -103,7 +113,7 @@ The image limits introduced in the 1.1.8 stabilization work default to:
 - height: **3000 px**;
 - file size: **4,194,304 bytes**.
 
-During upgrades, existing customized values are preserved. Missing records are added without resetting existing configuration entries.
+During upgrades, existing customized values are preserved. Missing records are added without resetting existing configuration entries. Version 1.1.10 explicitly reruns the idempotent integration/display configuration registration so an installed 1.1.9 site receives any missing settings during the upgrade.
 
 ## Optional integrations
 
@@ -133,18 +143,19 @@ When MediaGallery is missing or inactive, Documents must:
 
 ## Automated checks
 
-The permanent packaging workflow runs the following checks under PHP **5.6** and **8.1**:
+The packaging workflow runs the following checks under PHP **5.6** and **8.1**:
 
 - PHP syntax validation;
 - persistent storage migration tests;
 - multisite storage isolation and migration idempotence;
 - configuration-upgrade idempotence;
-- preservation of customized image limits;
+- preservation of customized image and display/integration settings;
 - English/French language-key synchronization;
+- text-display and statistics-visibility behavior;
 - release-candidate static invariants covering supported versions, TimThumb removal, CSRF/admin protection, optional integrations and persistent storage;
 - verification that packaging does not mutate source files.
 
-The generated release-candidate archive is `documents-1.1.9.zip` while this milestone is active.
+The generated release-candidate archive is `documents-1.1.10.zip` while this milestone is active.
 
 Automated checks complement, but do not replace, the manual Geeklog compatibility matrix required before 1.2.0.
 
@@ -163,6 +174,10 @@ The 1.1.x stabilization line includes:
 - data-integrity checks and safer deletion handling;
 - input/output hardening without changing the historical database model;
 - administrator-configurable image limits;
+- configurable text display normalization without modifying stored values;
+- native Geeklog What's New integration;
+- richer Geeklog search descriptions;
+- configurable Documents statistics visibility, including optional anonymous access;
 - synchronized English and French configuration and integrity-audit labels.
 
 ## Upgrade policy
