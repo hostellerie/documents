@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.9                                                    |
+// | Documents Plugin 1.1.10                                                   |
 // +---------------------------------------------------------------------------+
 // | presentation.php                                                          |
 // |                                                                           |
@@ -98,6 +98,13 @@ function DOCUMENTS_textFormatOptions($selected, $labels)
     return $html;
 }
 
+/**
+ * Statistics visibility levels:
+ * 0 = disabled
+ * 1 = Documents administrators only
+ * 2 = authenticated users and administrators
+ * 3 = everyone, including anonymous visitors
+ */
 function DOCUMENTS_canShowStats()
 {
     global $_DOCUMENTS_CONF;
@@ -109,6 +116,9 @@ function DOCUMENTS_canShowStats()
         return false;
     }
     if (SEC_hasRights('documents.admin')) {
+        return true;
+    }
+    if ($visibility >= 3) {
         return true;
     }
 
