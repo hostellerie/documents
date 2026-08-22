@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.8                                                    |
+// | Documents Plugin 1.1.9                                                    |
 // +---------------------------------------------------------------------------+
 // | english.php                                                               |
 // |                                                                           |
@@ -123,6 +123,11 @@ $LANG_DOCUMENTS_1 = array(
     'document_draft'      => 'This document is in draft mode. Access is reserved to its owner.',
     'document_submit'     => 'This document has not yet been approved and is not currently available.',
     'new_comment'         => 'New comment on',
+    'stats_title'         => 'Document statistics',
+    'stats_documents'     => 'Published documents',
+    'stats_views'         => 'Views',
+    'whatsnew_title'      => 'Recent documents',
+    'whatsnew_none'       => 'No recent documents.',
     'integrity_audit_title'              => 'Data integrity audit',
     'integrity_audit_notice'             => 'This report is read-only. No data or files are modified.',
     'integrity_check'                    => 'Check',
@@ -138,10 +143,8 @@ $LANG_DOCUMENTS_1 = array(
     'integrity_back_admin'               => 'Back to Documents administration'
 );
 
-// Messages for the plugin upgrade.
 $PLG_documents_MESSAGE3002 = $LANG32[9];
 
-// Localization of the Admin Configuration UI.
 $LANG_configsections['documents'] = array(
     'label' => 'Documents',
     'title' => 'Documents Configuration'
@@ -151,6 +154,10 @@ $LANG_confignames['documents'] = array(
     'documents_folder'      => 'Documents folder',
     'documents_main_header' => 'Documents main header',
     'documents_main_footer' => 'Documents main footer',
+    'whatsnew_enabled'      => 'Show Documents in What\'s New',
+    'whatsnew_interval'     => 'What\'s New period (seconds)',
+    'whatsnew_limit'        => 'Maximum recent documents',
+    'stats_visibility'      => 'Statistics visibility',
     'max_image_width'       => 'Maximum image width (pixels)',
     'max_image_height'      => 'Maximum image height (pixels)',
     'max_image_size'        => 'Maximum image file size (bytes)',
@@ -166,13 +173,19 @@ $LANG_tab['documents'] = array(
 );
 
 $LANG_fs['documents'] = array(
-    'fs_main'        => 'Documents Main Settings',
-    'fs_images'      => 'Images',
-    'fs_permissions' => 'Default Permissions'
+    'fs_main'         => 'Documents Main Settings',
+    'fs_integrations' => 'Display and integrations',
+    'fs_images'       => 'Images',
+    'fs_permissions'  => 'Default Permissions'
 );
 
 $LANG_configselects['documents'] = array(
     0  => array('True' => 1, 'False' => 0),
     1  => array('True' => true, 'False' => false),
-    12 => array('No access' => 0, 'Read-Only' => 2, 'Read-Write' => 3)
+    12 => array('No access' => 0, 'Read-Only' => 2, 'Read-Write' => 3),
+    20 => array(
+        'Hidden' => 0,
+        'Administrators only' => 1,
+        'Logged-in users and administrators' => 2
+    )
 );
