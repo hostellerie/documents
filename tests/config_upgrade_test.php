@@ -80,13 +80,13 @@ $firstAdds = count($config->adds);
 DOCUMENTS_addImageConfigItems($config, 'documents');
 documents_test_assert(count($config->adds) === $firstAdds, 'image configuration upgrade is not idempotent');
 
-/* 1.1.9 integration settings must also preserve administrator choices. */
+/* Integration settings must preserve administrator choices, including public stats. */
 $existing = array(
     'fs_integrations' => null,
     'whatsnew_enabled' => 0,
     'whatsnew_interval' => 604800,
     'whatsnew_limit' => 5,
-    'stats_visibility' => 2
+    'stats_visibility' => 3
 );
 $config = new DocumentsConfigUpgradeTestDouble($existing);
 DOCUMENTS_addIntegrationConfigItems($config, 'documents');
@@ -94,7 +94,7 @@ documents_test_assert(count($config->adds) === 0, 'existing integration settings
 documents_test_assert($config->config['whatsnew_enabled'] === 0, 'custom What\'s New state was changed');
 documents_test_assert($config->config['whatsnew_interval'] === 604800, 'custom What\'s New interval was changed');
 documents_test_assert($config->config['whatsnew_limit'] === 5, 'custom What\'s New limit was changed');
-documents_test_assert($config->config['stats_visibility'] === 2, 'custom stats visibility was changed');
+documents_test_assert($config->config['stats_visibility'] === 3, 'public stats visibility was changed');
 
 $config = new DocumentsConfigUpgradeTestDouble(array());
 DOCUMENTS_addIntegrationConfigItems($config, 'documents');
