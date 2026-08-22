@@ -86,11 +86,11 @@ jobs:
             --exclude='.gitkeep' \
             ./ build/documents/
           cd build
-          zip -r ../test-artifacts/documents-1.1.9.zip documents >/dev/null
+          zip -r ../test-artifacts/documents-1.1.10.zip documents >/dev/null
 
       - name: Upload installable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: documents-1.1.9-installable
-          path: test-artifacts/documents-1.1.9.zip
+          name: documents-1.1.10-installable
+          path: test-artifacts/documents-1.1.10.zip
           if-no-files-found: error
