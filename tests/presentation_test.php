@@ -12,19 +12,20 @@ function presentation_assert($condition, $message)
 }
 
 presentation_assert(DOCUMENTS_formatTextDisplay('MiXeD Text', 0) === 'MiXeD Text', 'raw format changed text');
-presentation_assert(DOCUMENTS_formatTextDisplay('MiXeD Text', -1) === 'mixed text', 'lowercase format failed');
-presentation_assert(DOCUMENTS_formatTextDisplay('MiXeD Text', -2) === 'MIXED TEXT', 'uppercase format failed');
-presentation_assert(DOCUMENTS_formatTextDisplay('mIXED TEXT', -3) === 'Mixed text', 'sentence format failed');
-presentation_assert(DOCUMENTS_formatTextDisplay('mIXED tEXT', -4) === 'Mixed Text', 'title format failed');
+presentation_assert(DOCUMENTS_formatTextDisplay('MiXeD Text', 1001) === 'mixed text', 'lowercase format failed');
+presentation_assert(DOCUMENTS_formatTextDisplay('MiXeD Text', 1002) === 'MIXED TEXT', 'uppercase format failed');
+presentation_assert(DOCUMENTS_formatTextDisplay('mIXED TEXT', 1003) === 'Mixed text', 'sentence format failed');
+presentation_assert(DOCUMENTS_formatTextDisplay('mIXED tEXT', 1004) === 'Mixed Text', 'title format failed');
 presentation_assert(DOCUMENTS_formatTextDisplay('unchanged', 99) === 'unchanged', 'unknown format should be raw');
 
-$html = DOCUMENTS_textFormatOptions(-2, array(
+$html = DOCUMENTS_textFormatOptions(1002, array(
     'raw' => 'Raw',
     'lower' => 'Lower',
     'upper' => 'Upper',
     'sentence' => 'Sentence',
     'title' => 'Title'
 ));
-presentation_assert(strpos($html, 'value="-2" selected="selected"') !== false, 'selected format is not preserved');
+presentation_assert(strpos($html, 'value="1002" selected="selected"') !== false, 'selected format is not preserved');
+presentation_assert(strpos($html, 'value="-') === false, 'text format options must survive numeric request filtering');
 
 echo "Documents presentation tests: PASS\n";
