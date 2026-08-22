@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.8                                                    |
+// | Documents Plugin 1.1.9                                                    |
 // +---------------------------------------------------------------------------+
 // | french_france_utf-8.php                                                   |
 // |                                                                           |
@@ -123,6 +123,11 @@ $LANG_DOCUMENTS_1 = array(
     'document_draft'      => 'Ce document est en mode brouillon. Son accès est réservé à son propriétaire.',
     'document_submit'     => 'Ce document n\'a pas encore été approuvé et n\'est donc pas disponible pour le moment.',
     'new_comment'         => 'Nouveau commentaire sur',
+    'stats_title'         => 'Statistiques des documents',
+    'stats_documents'     => 'Documents publiés',
+    'stats_views'         => 'Vues',
+    'whatsnew_title'      => 'Documents récents',
+    'whatsnew_none'       => 'Aucun document récent.',
     'integrity_audit_title'              => 'Audit d\'intégrité des données',
     'integrity_audit_notice'             => 'Ce rapport est en lecture seule. Aucune donnée ni aucun fichier n\'est modifié.',
     'integrity_check'                    => 'Contrôle',
@@ -138,10 +143,8 @@ $LANG_DOCUMENTS_1 = array(
     'integrity_back_admin'               => 'Retour à l\'administration de Documents'
 );
 
-// Messages pour la mise à jour du plugin.
 $PLG_documents_MESSAGE3002 = $LANG32[9];
 
-// Localisation de l'interface de configuration d'administration.
 $LANG_configsections['documents'] = array(
     'label' => 'Documents',
     'title' => 'Configuration de Documents'
@@ -151,6 +154,10 @@ $LANG_confignames['documents'] = array(
     'documents_folder'      => 'Dossier public de Documents',
     'documents_main_header' => 'En-tête principal de Documents',
     'documents_main_footer' => 'Pied de page principal de Documents',
+    'whatsnew_enabled'      => 'Afficher Documents dans Quoi de neuf',
+    'whatsnew_interval'     => 'Période de Quoi de neuf (secondes)',
+    'whatsnew_limit'        => 'Nombre maximum de documents récents',
+    'stats_visibility'      => 'Visibilité des statistiques',
     'max_image_width'       => 'Largeur maximale des images (pixels)',
     'max_image_height'      => 'Hauteur maximale des images (pixels)',
     'max_image_size'        => 'Taille maximale des fichiers image (octets)',
@@ -166,13 +173,19 @@ $LANG_tab['documents'] = array(
 );
 
 $LANG_fs['documents'] = array(
-    'fs_main'        => 'Paramètres principaux de Documents',
-    'fs_images'      => 'Images',
-    'fs_permissions' => 'Permissions par défaut'
+    'fs_main'         => 'Paramètres principaux de Documents',
+    'fs_integrations' => 'Affichage et intégrations',
+    'fs_images'       => 'Images',
+    'fs_permissions'  => 'Permissions par défaut'
 );
 
 $LANG_configselects['documents'] = array(
     0  => array('Oui' => 1, 'Non' => 0),
     1  => array('Oui' => true, 'Non' => false),
-    12 => array('Aucun accès' => 0, 'Lecture seule' => 2, 'Lecture-écriture' => 3)
+    12 => array('Aucun accès' => 0, 'Lecture seule' => 2, 'Lecture-écriture' => 3),
+    20 => array(
+        'Masqué' => 0,
+        'Administrateurs uniquement' => 1,
+        'Utilisateurs connectés et administrateurs' => 2
+    )
 );
