@@ -43,6 +43,7 @@ $functions = DOCUMENTS_rcRead($root, 'functions.inc', $failures);
 $compat = DOCUMENTS_rcRead($root, 'include_compat.php', $failures);
 $integrity = DOCUMENTS_rcRead($root, 'integrity.php', $failures);
 $security = DOCUMENTS_rcRead($root, 'security.php', $failures);
+$presentation = DOCUMENTS_rcRead($root, 'presentation.php', $failures);
 $runtime = DOCUMENTS_rcRead($root, 'runtime.php', $failures);
 $storage = DOCUMENTS_rcRead($root, 'storage.php', $failures);
 $publicIndex = DOCUMENTS_rcRead($root, 'public_html/index.php', $failures);
@@ -53,11 +54,14 @@ $includeEdit = DOCUMENTS_rcRead($root, 'include_edit.php', $failures);
 $includeLists = DOCUMENTS_rcRead($root, 'include_lists.php', $failures);
 
 $checks = array(
-    array($autoinstall, "'pi_version'      => '1.1.9'", 'Plugin metadata is not set to 1.1.9.'),
+    array($autoinstall, "'pi_version' => '1.1.9'", 'Plugin metadata is not set to 1.1.9.'),
     array($autoinstall, "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')", 'Minimum Geeklog version is not 2.1.1.'),
     array($autoinstall, "define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3')", 'Maximum Geeklog range does not stop before 2.2.3.'),
     array($autoinstall, "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')", 'Minimum PHP version is not 5.6.0.'),
     array($autoinstall, "define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0')", 'Maximum PHP range does not stop before 8.2.0.'),
+    array($autoinstall, "version_compare(\$installedVersion, '1.1.9', '<')", '1.1.9 configuration upgrade step is missing.'),
+    array($installUpdates, 'function DOCUMENTS_updateConfig_1_1_9()', '1.1.9 configuration upgrade helper is missing.'),
+    array($installDefaults, "method_exists(\$c, 'get_config')", 'Older Geeklog configuration compatibility fallback is missing.'),
     array($functions, 'function DOCUMENTS_dataDir()', 'Multisite-safe data directory helper is missing.'),
     array($functions, "basename(\$base) . '-documents'", 'Documents data directory is not derived from path_data.'),
     array($storage, 'function DOCUMENTS_migrateLegacyData()', 'Legacy persistent-data migration helper is missing.'),
@@ -71,6 +75,16 @@ $checks = array(
     array($security, 'function DOCUMENTS_normalizeFieldInput(', 'Dynamic scalar field normalizer is missing.'),
     array($security, 'function DOCUMENTS_prepareDocumentFieldRequest(', 'Dynamic field request normalizer is missing.'),
     array($runtime, 'security.php', 'Runtime does not load the security helper module.'),
+    array($runtime, 'presentation.php', 'Runtime does not load presentation helpers.'),
+    array($presentation, 'function DOCUMENTS_formatTextDisplay(', 'Text display normalization helper is missing.'),
+    array($presentation, 'function DOCUMENTS_homeStatsBlock(', 'Documents home statistics helper is missing.'),
+    array($includeEdit, 'DOCUMENTS_textFormatOptions(', 'Text-field display format selector is missing.'),
+    array($includeHtml, 'DOCUMENTS_formatTextDisplay(', 'Text-field display formatting is not applied when rendering.'),
+    array($functions, 'function plugin_whatsnewsupported_documents()', 'Geeklog What\'s New support callback is missing.'),
+    array($functions, 'function plugin_getwhatsnew_documents()', 'Geeklog What\'s New content callback is missing.'),
+    array($functions, ' AS description', 'Geeklog search result description is missing.'),
+    array($functions, "fd.f_type='text'", 'Geeklog search description is not sourced from text fields.'),
+    array($runtime, 'DOCUMENTS_homeStatsBlock()', 'Documents home page does not inject the configured statistics block.'),
     array($publicIndex, 'DOCUMENTS_canViewDocument($documentsViewRow, 2)', 'Public document routes do not use the central visibility guard.'),
     array($publicIndex, 'DOCUMENTS_canEditDocument($documentsExisting)', 'Edit/save routes do not use the central edit guard.'),
     array($publicIndex, '$documentsRequestedCid !== $documentsActualCid', 'Edit/save routes do not bind the submitted category to the real document category.'),
@@ -81,8 +95,8 @@ $checks = array(
     array($imageEndpoint, 'DOCUMENTS_canViewImageReference(', 'Image endpoint does not resolve image references to Documents rows.'),
     array($imageEndpoint, 'DOCUMENTS_canViewDocument($document, 2)', 'Image endpoint does not enforce document visibility.'),
     array($imageEndpoint, 'Cache-Control: private, no-store, max-age=0', 'Image endpoint still permits public caching of protected images.'),
-    array($functions, 'WHERE d.active = 1', 'Plugin search is not restricted to active documents.'),
-    array($functions, "COM_getPermSQL('AND', 0, 2, 'd')", 'Plugin search is missing document permission filtering.'),
+    array($functions, 'WHERE d.active=1', 'Plugin search / What\'s New is not restricted to active documents.'),
+    array($functions, "COM_getPermSQL('AND', 0, 2, 'd')", 'Plugin search / What\'s New is missing document permission filtering.'),
     array($includeLists, '$workflowOwnerFilter = \' AND d.owner_id=\' . (int) $_USER[\'uid\'];', 'Draft/submission lists are not restricted to the current owner for non-admin users.'),
     array($includeLists, '$sql_submissions = ', 'Submission workflow query is missing.'),
     array($includeLists, '$sql_drafts = ', 'Draft workflow query is missing.'),
@@ -96,7 +110,6 @@ foreach ($checks as $check) {
     DOCUMENTS_rcRequireContains($check[0], $check[1], $check[2], $failures);
 }
 
-/* Shared runtime helpers must have exactly one implementation. */
 if (substr_count($compat . $integrity, 'function DOCUMENTS_canViewDocument(') !== 1) {
     $failures[] = 'DOCUMENTS_canViewDocument must have exactly one runtime implementation.';
 }
@@ -104,7 +117,6 @@ if (substr_count($compat . $security, 'function DOCUMENTS_lockSecurityFields(') 
     $failures[] = 'DOCUMENTS_lockSecurityFields must have exactly one runtime implementation.';
 }
 
-/* Both workflow-private queries must append the owner filter. */
 if (substr_count($includeLists, '. $workflowOwnerFilter;') < 2) {
     $failures[] = 'Draft/submission workflow queries do not both apply the owner filter.';
 }
@@ -124,10 +136,6 @@ DOCUMENTS_rcRequireAbsent(
     $failures
 );
 
-/*
- * Telemetry must not exist in installation/upgrade paths. Runtime mail calls
- * used for legitimate document notifications are intentionally not forbidden.
- */
 $installSources = array(
     'autoinstall.php' => $autoinstall,
     'install_defaults.php' => $installDefaults,
@@ -148,6 +156,9 @@ $requiredTests = array(
     'tests/language_sync_test.php',
     'tests/document_visibility_test.php',
     'tests/document_edit_security_test.php',
+    'tests/comment_security_test.php',
+    'tests/presentation_test.php',
+    'tests/integration_surface_test.php',
     'tests/metadata_consistency_test.php'
 );
 foreach ($requiredTests as $requiredTest) {
