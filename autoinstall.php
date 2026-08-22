@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.9                                                    |
+// | Documents Plugin 1.1.10                                                   |
 // +---------------------------------------------------------------------------+
 // | autoinstall.php                                                           |
 // |                                                                           |
@@ -90,6 +90,13 @@ function DOCUMENTS_runUpgradeSteps($installedVersion)
         }
     }
 
+    if (version_compare($installedVersion, '1.1.10', '<')) {
+        require_once $_CONF['path'] . 'plugins/documents/install_updates.php';
+        if (!DOCUMENTS_updateConfig_1_1_10()) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -102,7 +109,7 @@ function plugin_autoinstall_documents($pi_name)
     $info = array(
         'pi_name' => $pi_name,
         'pi_display_name' => $pi_display_name,
-        'pi_version' => '1.1.9',
+        'pi_version' => '1.1.10',
         'pi_gl_version' => DOCUMENTS_MIN_GEEKLOG_VERSION,
         'pi_homepage' => 'https://github.com/Geeklog-Plugins/documents'
     );
