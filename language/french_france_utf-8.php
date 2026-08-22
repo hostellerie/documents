@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.9                                                    |
+// | Documents Plugin 1.1.10                                                   |
 // +---------------------------------------------------------------------------+
 // | french_france_utf-8.php                                                   |
 // |                                                                           |
@@ -186,6 +186,7 @@ $LANG_configselects['documents'] = array(
     20 => array(
         'Masqué' => 0,
         'Administrateurs uniquement' => 1,
-        'Utilisateurs connectés et administrateurs' => 2
+        'Utilisateurs connectés et administrateurs' => 2,
+        'Tout le monde, anonymes inclus' => 3
     )
 );
