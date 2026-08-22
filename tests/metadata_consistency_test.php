@@ -1,6 +1,6 @@
 <?php
 
-/* Documents 1.1.9 metadata and header consistency checks. */
+/* Documents 1.1.10 metadata and header consistency checks. */
 
 $root = dirname(__DIR__);
 $failures = array();
@@ -27,7 +27,7 @@ $readme = DOCUMENTS_metaRead($root, 'README.md', $failures);
 $changelog = DOCUMENTS_metaRead($root, 'CHANGELOG.md', $failures);
 
 $requiredMetadata = array(
-    "'pi_version' => '1.1.9'" => 'Plugin version metadata is not 1.1.9.',
+    "'pi_version' => '1.1.10'" => 'Plugin version metadata is not 1.1.10.',
     "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')" => 'Minimum Geeklog version metadata is inconsistent.',
     "define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3')" => 'Maximum Geeklog version metadata is inconsistent.',
     "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')" => 'Minimum PHP version metadata is inconsistent.',
@@ -40,11 +40,11 @@ foreach ($requiredMetadata as $needle => $message) {
     }
 }
 
-if (strpos($readme, '1.1.9') === false) {
-    $failures[] = 'README does not identify the 1.1.9 release-candidate line.';
+if (strpos($readme, '1.1.10') === false) {
+    $failures[] = 'README does not identify the 1.1.10 release-candidate line.';
 }
-if (strpos($changelog, '## 1.1.9') === false) {
-    $failures[] = 'CHANGELOG does not contain a 1.1.9 section.';
+if (strpos($changelog, '## 1.1.10') === false) {
+    $failures[] = 'CHANGELOG does not contain a 1.1.10 section.';
 }
 
 $allowedLegacyHeaders = array(
