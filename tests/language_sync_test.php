@@ -26,6 +26,8 @@ $english = array(
     'fieldsets' => array_keys($LANG_fs['documents']),
     'configselects' => array_keys($LANG_configselects['documents'])
 );
+$englishStatsVisibility = isset($LANG_configselects['documents'][20])
+    ? $LANG_configselects['documents'][20] : array();
 
 $LANG_DOCUMENTS_1 = array();
 $LANG_configsections = array();
@@ -46,6 +48,8 @@ $french = array(
     'fieldsets' => array_keys($LANG_fs['documents']),
     'configselects' => array_keys($LANG_configselects['documents'])
 );
+$frenchStatsVisibility = isset($LANG_configselects['documents'][20])
+    ? $LANG_configselects['documents'][20] : array();
 
 $errors = array();
 
@@ -94,8 +98,11 @@ foreach ($requiredDocumentLabels as $label) {
 if (!isset($LANG_fs['documents']['fs_integrations'])) {
     $errors[] = 'Missing integration fieldset label.';
 }
-if (!isset($LANG_configselects['documents'][20])) {
-    $errors[] = 'Missing statistics visibility selection labels.';
+if (empty($englishStatsVisibility) || !in_array(3, array_values($englishStatsVisibility), true)) {
+    $errors[] = 'Missing English anonymous/public statistics visibility option.';
+}
+if (empty($frenchStatsVisibility) || !in_array(3, array_values($frenchStatsVisibility), true)) {
+    $errors[] = 'Missing French anonymous/public statistics visibility option.';
 }
 
 if (!empty($errors)) {
