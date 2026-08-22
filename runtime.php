@@ -14,13 +14,13 @@ if (isset($_CONF['path'])) {
     if (is_file($documentsSecurityFile)) {
         require_once $documentsSecurityFile;
     }
+
+    $documentsPresentationFile = $_CONF['path'] . 'plugins/documents/presentation.php';
+    if (is_file($documentsPresentationFile)) {
+        require_once $documentsPresentationFile;
+    }
 }
 
-/**
- * Ensure the configured Documents image upload directory exists and is usable.
- *
- * @return bool
- */
 function DOCUMENTS_ensureImageDirectory()
 {
     global $_DOCUMENTS_CONF;
@@ -59,14 +59,6 @@ function DOCUMENTS_ensureImageDirectory()
     return true;
 }
 
-/**
- * Return the persistent preview cache directory.
- *
- * The cache lives below the Documents image directory so it remains specific
- * to the current Geeklog site and is kept away from the original image files.
- *
- * @return string
- */
 function DOCUMENTS_previewDirectory()
 {
     global $_DOCUMENTS_CONF;
@@ -79,11 +71,6 @@ function DOCUMENTS_previewDirectory()
         . DIRECTORY_SEPARATOR . '_previews' . DIRECTORY_SEPARATOR;
 }
 
-/**
- * Ensure the persistent preview cache directory exists and is writable.
- *
- * @return bool
- */
 function DOCUMENTS_ensurePreviewDirectory()
 {
     $path = DOCUMENTS_previewDirectory();
@@ -110,15 +97,6 @@ function DOCUMENTS_ensurePreviewDirectory()
     return true;
 }
 
-/**
- * Remove all cached previews generated from one original image.
- *
- * Preview filenames start with sha1(original filename), so cleanup does not
- * need to know which dimensions or source modification times were cached.
- *
- * @param string $filename Original image filename
- * @return int Number of preview files removed
- */
 function DOCUMENTS_removeImagePreviews($filename)
 {
     $filename = basename((string) $filename);
