@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.9                                                    |
+// | Documents Plugin 1.1.10                                                   |
 // +---------------------------------------------------------------------------+
 // | english.php                                                               |
 // |                                                                           |
@@ -186,6 +186,7 @@ $LANG_configselects['documents'] = array(
     20 => array(
         'Hidden' => 0,
         'Administrators only' => 1,
-        'Logged-in users and administrators' => 2
+        'Logged-in users and administrators' => 2,
+        'Everyone, including anonymous visitors' => 3
     )
 );
