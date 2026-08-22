@@ -1,28 +1,6 @@
 name: Documents CI
 
 on:
-  push:
-    branches:
-      - modernize-1.1.10
-    paths:
-      - '*.php'
-      - '*.inc'
-      - 'admin/**'
-      - 'language/**'
-      - 'public_html/**'
-      - 'sql/**'
-      - 'tests/**'
-      - '.github/workflows/ci.yml'
-  pull_request:
-    paths:
-      - '*.php'
-      - '*.inc'
-      - 'admin/**'
-      - 'language/**'
-      - 'public_html/**'
-      - 'sql/**'
-      - 'tests/**'
-      - '.github/workflows/ci.yml'
   workflow_dispatch:
 
 permissions:
