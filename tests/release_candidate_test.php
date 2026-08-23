@@ -123,6 +123,13 @@ if (substr_count($includeLists, '. $workflowOwnerFilter;') < 2) {
     $failures[] = 'Draft/submission workflow queries do not both apply the owner filter.';
 }
 
+DOCUMENTS_rcRequireAbsent(
+    $adminAjax,
+    'SEC_checkToken()',
+    'Read-only admin AJAX must not consume the one-time form CSRF token.',
+    $failures
+);
+
 DOCUMENTS_rcRequireAbsent($storage, 'unlink($source', 'Storage migration appears to delete legacy source data.', $failures);
 
 if (is_file($root . '/admin/timthumb.php')) {
