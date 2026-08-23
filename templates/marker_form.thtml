@@ -1,16 +1,15 @@
 <div>
-	<p>
-		<input type="text" style="width:350px" id="geoaddress" name="geoaddress" value="{address}" onkeyup="copyText()"/>
-		<input type="button" value="{go}" onfocus="copyText(); codeAddress();" />
-	</p>
-	
-	<div id="map_contener">
-	    <div id="map_canvas" style="width: 100%; height: 400px">
-		</div>
-	</div>
+    <p>
+        <input type="text" style="width:350px" id="geoaddress" name="address" value="{address}" />
+        <input type="button" value="{go}" onclick="if (typeof codeAddress === 'function') { codeAddress(); } return false;" />
+    </p>
+
+    <div id="map_contener">
+        <div id="map_canvas" style="width: 100%; height: 400px">
+        </div>
+    </div>
 </div>
 
-<input type="hidden" id="address" name="address" value="{address}" size="80" maxlength="255">
-<input type="hidden" id="lat" name="lat" value="{lat_value}" size="25" maxlength="12">
-<input type="hidden" id="lng" name="lng" value="{lng_value}" size="25" maxlength="12">
+<input type="hidden" id="lat" name="lat" value="{lat_value}" size="25" maxlength="20">
+<input type="hidden" id="lng" name="lng" value="{lng_value}" size="25" maxlength="20">
 <input type="hidden" name="mkid" value="{mkid}">
