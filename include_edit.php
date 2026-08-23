@@ -663,11 +663,12 @@ function DOCUMENTS_buildRawForm($field, $doc, &$template, $i)
 
         case 'marker':
             if (DOCUMENTS_hasMaps()) {
-                $markerId = (int) $value;
+                $markerId = trim((string) $value);
                 $marker = array('lat' => '', 'lng' => '', 'address' => '', 'name' => '');
-                if ($markerId > 0 && isset($_TABLES['maps_markers'])) {
+                if ($markerId !== '' && isset($_TABLES['maps_markers'])) {
+                    $markerIdSql = DB_escapeString($markerId);
                     $res = DB_query(
-                        "SELECT * FROM {$_TABLES['maps_markers']} WHERE mkid = " . $markerId
+                        "SELECT * FROM {$_TABLES['maps_markers']} WHERE mkid = '{$markerIdSql}' LIMIT 1"
                     );
                     $row = DB_fetchArray($res);
                     if (is_array($row)) {
@@ -687,25 +688,30 @@ function DOCUMENTS_buildRawForm($field, $doc, &$template, $i)
                 $t->set_var('lat_value', $marker['lat']);
                 $t->set_var('lng_value', $marker['lng']);
                 $t->set_var('var_name', $name);
-                $t->set_var('mkid', $markerId);
+                $t->set_var('mkid', htmlspecialchars($markerId, ENT_QUOTES, 'UTF-8'));
 
-                $js = "var geocoder=new google.maps.Geocoder(),map,infowindow,markers=[];"
-                    . "function initializeGMap(){var p=new google.maps.LatLng("
+                $js = "var map=null,documentMarker=null;"
+                    . "function documentsMapsAvailable(){return typeof google!=='undefined'&&google.maps;}"
+                    . "function initializeGMap(){if(!documentsMapsAvailable()){return false;}"
+                    . "var canvas=document.getElementById('map_canvas');if(!canvas){return false;}"
+                    . "var p=new google.maps.LatLng("
                     . (float) $marker['lat'] . ',' . (float) $marker['lng'] . ");"
-                    . "map=new google.maps.Map(document.getElementById('map_canvas'),"
-                    . "{center:p,zoom:10,mapTypeId:google.maps.MapTypeId.ROADMAP});"
-                    . "var m=new google.maps.Marker({map:map,position:p,draggable:true});markers.push(m);"
-                    . "google.maps.event.addListener(m,'dragend',function(e){"
+                    . "map=new google.maps.Map(canvas,{center:p,zoom:10,mapTypeId:google.maps.MapTypeId.ROADMAP});"
+                    . "documentMarker=new google.maps.Marker({map:map,position:p,draggable:true});"
+                    . "google.maps.event.addListener(documentMarker,'dragend',function(e){"
                     . "document.getElementById('lat').value=e.latLng.lat().toFixed(6);"
-                    . "document.getElementById('lng').value=e.latLng.lng().toFixed(6);});}"
-                    . "function codeAddress(){var a=document.getElementById('geoaddress').value;"
-                    . "geocoder.geocode({address:a},function(r,s){if(s===google.maps.GeocoderStatus.OK){"
-                    . "map.setCenter(r[0].geometry.location);document.getElementById('lat').value="
-                    . "r[0].geometry.location.lat();document.getElementById('lng').value="
-                    . "r[0].geometry.location.lng();}});}"
-                    . "function copyText(){document.getElementById('address').value="
-                    . "document.getElementById('geoaddress').value;}"
-                    . "google.maps.event.addDomListener(window,'load',initializeGMap);";
+                    . "document.getElementById('lng').value=e.latLng.lng().toFixed(6);});return true;}"
+                    . "function codeAddress(){if(!documentsMapsAvailable()){return false;}"
+                    . "if(!map&&!initializeGMap()){return false;}"
+                    . "var a=document.getElementById('geoaddress').value;if(!a){return false;}"
+                    . "var geocoder=new google.maps.Geocoder();"
+                    . "geocoder.geocode({address:a},function(r,s){if(s===google.maps.GeocoderStatus.OK&&r[0]){"
+                    . "var p=r[0].geometry.location;map.setCenter(p);"
+                    . "if(documentMarker){documentMarker.setPosition(p);}"
+                    . "document.getElementById('lat').value=p.lat();"
+                    . "document.getElementById('lng').value=p.lng();}});return false;}"
+                    . "if(window.addEventListener){window.addEventListener('load',initializeGMap);}"
+                    . "else if(window.attachEvent){window.attachEvent('onload',initializeGMap);}";
                 $_SCRIPTS->setJavaScript($js, true);
 
                 $html .= '<p><label class="document_field_edit">' . $label . $required
