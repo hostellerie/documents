@@ -28,11 +28,13 @@ if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST')
     exit;
 }
 
-if (!SEC_checkToken()) {
-    http_response_code(403);
-    echo json_encode(array('error' => 'invalid_token'));
-    exit;
-}
+/*
+ * These AJAX actions are read-only helpers used while editing fields/selects.
+ * Do not call SEC_checkToken() here: Geeklog CSRF tokens are one-time tokens,
+ * and the AJAX request would consume the same token that must subsequently be
+ * submitted by the save_field/save_select form. Mutating save routes remain
+ * protected by SEC_checkToken() in public_html/index.php.
+ */
 
 $vars = array(
     'cat_id'  => 'number',
