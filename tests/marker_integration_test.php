@@ -11,10 +11,10 @@ $markerTemplate = file_get_contents($root . '/templates/marker_form.thtml');
 if ($includeEdit === false) {
     $failures[] = 'Unable to read include_edit.php.';
 } else {
-    if (strpos($includeEdit, "$markerId = trim((string) $value);") === false) {
+    if (strpos($includeEdit, '$markerId = trim((string) $value);') === false) {
         $failures[] = 'Marker IDs must be preserved as strings.';
     }
-    if (strpos($includeEdit, "WHERE mkid = '{$markerIdSql}' LIMIT 1") === false) {
+    if (strpos($includeEdit, "WHERE mkid = '{\$markerIdSql}' LIMIT 1") === false) {
         $failures[] = 'Existing Maps markers are not looked up by their string mkid.';
     }
     if (strpos($includeEdit, '$markerId = (int) $value;') !== false) {
