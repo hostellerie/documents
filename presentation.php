@@ -56,11 +56,6 @@ function DOCUMENTS_stringUcwords($value)
     return ucwords($value);
 }
 
-/**
- * Apply a text field's display convention without changing the stored value.
- * sel_id is unused by text fields. Values 1001-1004 are reserved for text
- * display modes so they survive Geeklog's historical numeric request filter.
- */
 function DOCUMENTS_formatTextDisplay($value, $formatCode)
 {
     switch ((int) $formatCode) {
@@ -98,13 +93,6 @@ function DOCUMENTS_textFormatOptions($selected, $labels)
     return $html;
 }
 
-/**
- * Statistics visibility levels:
- * 0 = disabled
- * 1 = Documents administrators only
- * 2 = authenticated users and administrators
- * 3 = everyone, including anonymous visitors
- */
 function DOCUMENTS_canShowStats()
 {
     global $_DOCUMENTS_CONF;
@@ -156,22 +144,30 @@ function DOCUMENTS_homeStatsBlock()
     return COM_startBlock($title) . $content . COM_endBlock();
 }
 
-/* Public presentation bootstrap. Keep this independent from the administration
- * so themes remain free to override their own admin styles. */
+/* Public presentation bootstrap. Runtime.php is loaded only by Documents
+ * endpoints, so checking index.php + non-admin is enough and also works when
+ * the administrator changes the configured public folder name. */
 $documentsPresentationScript = isset($_SERVER['SCRIPT_NAME'])
     ? str_replace('\\', '/', (string) $_SERVER['SCRIPT_NAME']) : '';
-if ($documentsPresentationScript !== ''
-    && strpos($documentsPresentationScript, '/documents/index.php') !== false
-    && strpos($documentsPresentationScript, '/admin/') === false) {
-    if (isset($_SCRIPTS) && is_object($_SCRIPTS)) {
-        $_SCRIPTS->setCSSFile('documents_public', '/documents/css/documents.css');
+$documentsPresentationIsPublicIndex = $documentsPresentationScript !== ''
+    && basename($documentsPresentationScript) === 'index.php'
+    && strpos($documentsPresentationScript, '/admin/') === false;
+
+if ($documentsPresentationIsPublicIndex) {
+    if (isset($_SCRIPTS) && is_object($_SCRIPTS) && isset($_DOCUMENTS_CONF['site_url'])) {
+        $_SCRIPTS->setCSSFile(
+            'documents_public',
+            rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/css/documents.css'
+        );
     }
 
     if (isset($_CONF['path'])) {
         $documentsSeoFile = $_CONF['path'] . 'plugins/documents/seo.php';
         if (is_file($documentsSeoFile)) {
             require_once $documentsSeoFile;
-            if (function_exists('DOCUMENTS_seoOutputFilter') && ob_get_level() >= 0) {
+            if (function_exists('DOCUMENTS_seoOutputFilter')
+                && !defined('DOCUMENTS_SEO_BUFFER_STARTED')) {
+                define('DOCUMENTS_SEO_BUFFER_STARTED', true);
                 ob_start('DOCUMENTS_seoOutputFilter');
             }
         }
