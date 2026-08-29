@@ -68,17 +68,24 @@ if (is_string($requestPath) && basename($requestPath) === 'document.php') {
     exit;
 }
 
-/* Preserve custom templates and MediaGallery album rendering. Maps marker
- * rendering is delegated to Maps through marker_render and no longer forces
- * the historical renderer. */
-$specializedCount = (int) DB_getItem(
+/* MediaGallery album rendering still has a compatibility fallback. Any
+ * document containing a marker must stay on the modern renderer so Maps keeps
+ * sole ownership of marker storage and rendering, even with a custom template. */
+$albumCount = (int) DB_getItem(
     $_TABLES['documents_fields'],
     'COUNT(*)',
     "cat_id={$categoryId} AND f_type='album'"
 );
+$markerCount = (int) DB_getItem(
+    $_TABLES['documents_fields'],
+    'COUNT(*)',
+    "cat_id={$categoryId} AND f_type='marker'"
+);
 $templateName = isset($category['template']) ? DOCUMENTS_templateName($category['template']) : '';
 $templateDir = ($templateName !== '') ? DOCUMENTS_customTemplateReadDir($templateName) : '';
-$useLegacyRenderer = $templateDir !== '' || $specializedCount > 0 || (int) $document['active'] !== DOCUMENTS_STATUS_ACTIVE;
+$useLegacyRenderer = ($templateDir !== '' && $markerCount === 0)
+    || ($albumCount > 0 && $markerCount === 0)
+    || ((int) $document['active'] !== DOCUMENTS_STATUS_ACTIVE && $markerCount === 0);
 
 $_REQUEST['mode'] = 'view';
 $_REQUEST['cat'] = $categorySlug;
