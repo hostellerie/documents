@@ -61,8 +61,12 @@ documents_public_require($category, 'header(\'Location: \' . $cleanUrl, true, 30
 documents_public_forbid($category, 'ADMIN_list(', 'Modern category view must not depend on ADMIN_list().', $failures);
 
 documents_public_require($document, 'DOCUMENTS_canViewDocument($document, 2)', 'Modern document view does not use the centralized visibility guard.', $failures);
-documents_public_require($document, "f_type IN ('marker','album')", 'Specialized field fallback is missing.', $failures);
-documents_public_require($document, 'require $pluginPath . \'include_html.php\'', 'Legacy compatibility fallback for custom/specialized documents is missing.', $failures);
+documents_public_require($document, "f_type='album'", 'MediaGallery album compatibility fallback is missing.', $failures);
+documents_public_require($document, "PLG_invokeService(\n        'maps',\n        'marker_render'", 'Public marker rendering is not delegated to Maps.', $failures);
+documents_public_require($document, 'function DOCUMENTS_publicMarkerValue(', 'Modern public marker renderer is missing.', $failures);
+documents_public_forbid($document, 'maps_markers', 'Modern public document renderer must not access Maps marker storage.', $failures);
+documents_public_forbid($document, 'maps_maps', 'Modern public document renderer must not access Maps map storage.', $failures);
+documents_public_require($document, 'require $pluginPath . \'include_html.php\'', 'Legacy compatibility fallback for custom/MediaGallery documents is missing.', $failures);
 documents_public_require($document, '<dl class="documents-fields">', 'Modern default document field definition list is missing.', $failures);
 documents_public_require($document, 'htmlspecialchars(stripslashes($value)', 'Modern default document text output is not escaped.', $failures);
 documents_public_require($document, 'CMT_userComments(', 'Modern default document comments integration is missing.', $failures);
