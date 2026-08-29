@@ -2,23 +2,11 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.10                                                   |
+// | Documents Plugin 1.2.0                                                    |
 // +---------------------------------------------------------------------------+
 // | autoinstall.php                                                           |
 // |                                                                           |
 // | This file provides helper functions for the automatic plugin install.     |
-// +---------------------------------------------------------------------------+
-// | Copyright (C) 2012-2026 by the following authors:                         |
-// |                                                                           |
-// | Authors: Ben - ben AT geeklog DOT fr                                      |
-// +---------------------------------------------------------------------------+
-// | Created with the Geeklog Plugin Toolkit.                                  |
-// +---------------------------------------------------------------------------+
-// |                                                                           |
-// | This program is free software; you can redistribute it and/or             |
-// | modify it under the terms of the GNU General Public License               |
-// | as published by the Free Software Foundation; either version 2            |
-// | of the License, or (at your option) any later version.                    |
 // +---------------------------------------------------------------------------+
 
 /** @package Documents */
@@ -97,6 +85,13 @@ function DOCUMENTS_runUpgradeSteps($installedVersion)
         }
     }
 
+    if (version_compare($installedVersion, '1.2.0', '<')) {
+        require_once $_CONF['path'] . 'plugins/documents/install_updates.php';
+        if (!DOCUMENTS_updateSchema_1_2_0()) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -109,7 +104,7 @@ function plugin_autoinstall_documents($pi_name)
     $info = array(
         'pi_name' => $pi_name,
         'pi_display_name' => $pi_display_name,
-        'pi_version' => '1.1.10',
+        'pi_version' => '1.2.0',
         'pi_gl_version' => DOCUMENTS_MIN_GEEKLOG_VERSION,
         'pi_homepage' => 'https://github.com/Geeklog-Plugins/documents'
     );
