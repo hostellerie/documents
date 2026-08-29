@@ -67,9 +67,12 @@ if (in_array($documentsMode, $documentsAdminModes, true)
 
 /* Every mutating form contains a Geeklog CSRF token, including public
  * document create/edit forms. Validate it before any write controller runs. */
-if (in_array($documentsMode, $documentsWriteModes, true) && !SEC_checkToken()) {
-    http_response_code(403);
-    exit;
+if (in_array($documentsMode, $documentsWriteModes, true)) {
+    if (!SEC_checkToken()) {
+        http_response_code(403);
+        exit;
+    }
+    $GLOBALS['DOCUMENTS_CSRF_VALIDATED'] = true;
 }
 
 if ($documentsMode === 'view' || $documentsMode === 'new') {
