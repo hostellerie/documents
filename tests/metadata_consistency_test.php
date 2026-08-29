@@ -31,13 +31,21 @@ $requiredMetadata = array(
     "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')" => 'Minimum Geeklog version metadata is inconsistent.',
     "define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3')" => 'Maximum Geeklog version metadata is inconsistent.',
     "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')" => 'Minimum PHP version metadata is inconsistent.',
-    "define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0')" => 'Maximum PHP version metadata is inconsistent.'
+    "define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0')" => 'Maximum PHP version metadata is inconsistent.',
+    "define('DOCUMENTS_SUPPORTED_DBMS', 'mysql')" => 'Supported database metadata is inconsistent.'
 );
 
 foreach ($requiredMetadata as $needle => $message) {
     if (strpos($autoinstall, $needle) === false) {
         $failures[] = $message;
     }
+}
+
+if (is_file($root . '/sql/mssql_install.php')) {
+    $failures[] = 'MSSQL support must not be shipped with Documents 1.2.0.';
+}
+if (!is_file($root . '/sql/mysql_install.php')) {
+    $failures[] = 'MySQL/MariaDB installation schema is missing.';
 }
 
 if (strpos($readme, 'Documents 1.2.0') === false) {
@@ -48,6 +56,9 @@ if (strpos($readme, 'Geeklog **2.1.1 through 2.2.2**') === false) {
 }
 if (strpos($readme, 'PHP **5.6 through 8.1**') === false) {
     $failures[] = 'README PHP compatibility range is inconsistent.';
+}
+if (strpos($readme, 'MySQL/MariaDB') === false) {
+    $failures[] = 'README does not document the supported database family.';
 }
 if (strpos($testing, '# Documents 1.2.0 release-candidate test matrix') === false) {
     $failures[] = 'TESTING.md is not aligned with the 1.2.0 release candidate.';
