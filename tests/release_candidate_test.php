@@ -1,6 +1,6 @@
 <?php
 
-/* Documents 1.1.10 release-candidate static checks. */
+/* Documents 1.2.0 release-candidate static checks. */
 
 $root = dirname(__DIR__);
 $failures = array();
@@ -39,6 +39,7 @@ function DOCUMENTS_rcRequireAbsent($content, $needle, $label, &$failures)
 $autoinstall = DOCUMENTS_rcRead($root, 'autoinstall.php', $failures);
 $installDefaults = DOCUMENTS_rcRead($root, 'install_defaults.php', $failures);
 $installUpdates = DOCUMENTS_rcRead($root, 'install_updates.php', $failures);
+$mysqlInstall = DOCUMENTS_rcRead($root, 'sql/mysql_install.php', $failures);
 $functions = DOCUMENTS_rcRead($root, 'functions.inc', $failures);
 $compat = DOCUMENTS_rcRead($root, 'include_compat.php', $failures);
 $integrity = DOCUMENTS_rcRead($root, 'integrity.php', $failures);
@@ -46,22 +47,30 @@ $security = DOCUMENTS_rcRead($root, 'security.php', $failures);
 $presentation = DOCUMENTS_rcRead($root, 'presentation.php', $failures);
 $runtime = DOCUMENTS_rcRead($root, 'runtime.php', $failures);
 $storage = DOCUMENTS_rcRead($root, 'storage.php', $failures);
+$interop = DOCUMENTS_rcRead($root, 'interoperability.php', $failures);
+$embeds = DOCUMENTS_rcRead($root, 'embeds.php', $failures);
+$distribution = DOCUMENTS_rcRead($root, 'distribution.php', $failures);
+$seo = DOCUMENTS_rcRead($root, 'seo.php', $failures);
 $publicIndex = DOCUMENTS_rcRead($root, 'public_html/index.php', $failures);
 $imageEndpoint = DOCUMENTS_rcRead($root, 'public_html/image.php', $failures);
 $adminAjax = DOCUMENTS_rcRead($root, 'admin/ajax.php', $failures);
 $includeHtml = DOCUMENTS_rcRead($root, 'include_html.php', $failures);
 $includeEdit = DOCUMENTS_rcRead($root, 'include_edit.php', $failures);
 $includeLists = DOCUMENTS_rcRead($root, 'include_lists.php', $failures);
+$categoryTemplate = DOCUMENTS_rcRead($root, 'templates/cat_form.thtml', $failures);
+$documentTemplate = DOCUMENTS_rcRead($root, 'templates/document.thtml', $failures);
 
 $checks = array(
-    array($autoinstall, "'pi_version' => '1.1.10'", 'Plugin metadata is not set to 1.1.10.'),
+    array($autoinstall, "'pi_version' => '1.2.0'", 'Plugin metadata is not set to 1.2.0.'),
     array($autoinstall, "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')", 'Minimum Geeklog version is not 2.1.1.'),
     array($autoinstall, "define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3')", 'Maximum Geeklog range does not stop before 2.2.3.'),
     array($autoinstall, "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')", 'Minimum PHP version is not 5.6.0.'),
     array($autoinstall, "define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0')", 'Maximum PHP range does not stop before 8.2.0.'),
-    array($autoinstall, "version_compare(\$installedVersion, '1.1.10', '<')", '1.1.10 configuration upgrade step is missing.'),
-    array($installUpdates, 'function DOCUMENTS_updateConfig_1_1_10()', '1.1.10 configuration upgrade helper is missing.'),
-    array($installUpdates, 'DOCUMENTS_addIntegrationConfigItems($c, $me);', '1.1.10 does not register integration/display settings.'),
+    array($autoinstall, "define('DOCUMENTS_SUPPORTED_DBMS', 'mysql')", 'MySQL/MariaDB-only database support is not declared.'),
+    array($autoinstall, '$_DB_dbms !== DOCUMENTS_SUPPORTED_DBMS', 'Unsupported DBMS values are not explicitly rejected.'),
+    array($autoinstall, "version_compare(\$installedVersion, '1.2.0', '<')", '1.2.0 schema upgrade step is missing.'),
+    array($installUpdates, 'function DOCUMENTS_updateSchema_1_2_0()', '1.2.0 schema upgrade helper is missing.'),
+    array($mysqlInstall, 'metadescription varchar(255)', 'Fresh install schema does not include category metadescription.'),
     array($installDefaults, "method_exists(\$c, 'get_config')", 'Older Geeklog configuration compatibility fallback is missing.'),
     array($functions, 'function DOCUMENTS_dataDir()', 'Multisite-safe data directory helper is missing.'),
     array($functions, "basename(\$base) . '-documents'", 'Documents data directory is not derived from path_data.'),
@@ -74,6 +83,7 @@ $checks = array(
     array($compat, 'function DOCUMENTS_normalizeDocumentStatus(', 'Server-side workflow state normalizer is missing.'),
     array($security, 'function DOCUMENTS_lockSecurityFields(', 'Server-side ownership/permission lock helper is missing.'),
     array($security, 'function DOCUMENTS_normalizeFieldInput(', 'Dynamic scalar field normalizer is missing.'),
+    array($security, 'function DOCUMENTS_plainTextInput(', 'Plain-text input sanitizer is missing.'),
     array($security, 'function DOCUMENTS_prepareDocumentFieldRequest(', 'Dynamic field request normalizer is missing.'),
     array($runtime, 'security.php', 'Runtime does not load the security helper module.'),
     array($runtime, 'presentation.php', 'Runtime does not load presentation helpers.'),
@@ -85,7 +95,6 @@ $checks = array(
     array($functions, 'function plugin_whatsnewsupported_documents()', 'Geeklog What\'s New support callback is missing.'),
     array($functions, 'function plugin_getwhatsnew_documents()', 'Geeklog What\'s New content callback is missing.'),
     array($functions, ' AS description', 'Geeklog search result description is missing.'),
-    array($functions, "fd.f_type='text'", 'Geeklog search description is not sourced from text fields.'),
     array($runtime, 'DOCUMENTS_homeStatsBlock()', 'Documents home page does not inject the configured statistics block.'),
     array($publicIndex, 'DOCUMENTS_canViewDocument($documentsViewRow, 2)', 'Public document routes do not use the central visibility guard.'),
     array($publicIndex, 'DOCUMENTS_canEditDocument($documentsExisting)', 'Edit/save routes do not use the central edit guard.'),
@@ -105,7 +114,28 @@ $checks = array(
     array($functions, 'function DOCUMENTS_hasMaps()', 'Optional Maps availability helper is missing.'),
     array($functions, 'function DOCUMENTS_hasMediaGallery()', 'Optional MediaGallery availability helper is missing.'),
     array($includeHtml . $includeEdit, 'DOCUMENTS_hasMaps()', 'Maps integration is not guarded by the optional dependency helper.'),
-    array($includeHtml . $includeEdit, 'DOCUMENTS_hasMediaGallery()', 'MediaGallery integration is not guarded by the optional dependency helper.')
+    array($includeHtml . $includeEdit, 'DOCUMENTS_hasMediaGallery()', 'MediaGallery integration is not guarded by the optional dependency helper.'),
+    array($interop, 'function plugin_getiteminfo_documents(', 'Generic Item Info callback is missing.'),
+    array($interop, 'function plugin_idtourl_documents(', 'Canonical ID-to-URL callback is missing.'),
+    array($interop, 'function plugin_urltoid_documents(', 'Canonical URL-to-ID callback is missing.'),
+    array($interop, 'function plugin_collectSitemapItems_documents(', 'Sitemap collection callback is missing.'),
+    array($interop, 'PLG_itemSaved((string) $id, \'documents\')', 'Documents saved lifecycle event is missing.'),
+    array($interop, 'PLG_itemDeleted((string) $id, \'documents\')', 'Documents deleted lifecycle event is missing.'),
+    array($embeds, 'function plugin_autotags_documents(', 'Documents autotags are missing.'),
+    array($embeds, 'function phpblock_documents_recent()', 'Recent Documents block callback is missing.'),
+    array($embeds, 'function phpblock_documents_popular()', 'Popular Documents block callback is missing.'),
+    array($embeds, "'distribution.php'", 'Syndication/statistics callbacks are not loaded by the plugin API chain.'),
+    array($distribution, 'function plugin_getfeednames_documents()', 'Documents feed names callback is missing.'),
+    array($distribution, 'function plugin_getfeedcontent_documents(', 'Documents feed content callback is missing.'),
+    array($distribution, 'function plugin_feedupdatecheck_documents(', 'Documents feed update callback is missing.'),
+    array($distribution, 'function plugin_statssummary_documents()', 'Documents statistics summary callback is missing.'),
+    array($distribution, 'function plugin_showstats_documents()', 'Documents detailed statistics callback is missing.'),
+    array($seo, 'application/ld+json', 'JSON-LD output is missing.'),
+    array($seo, "'schema_type' => 'CreativeWork'", 'CreativeWork schema is missing.'),
+    array($seo, "'schema_type' => 'CollectionPage'", 'CollectionPage schema is missing.'),
+    array($categoryTemplate, 'name="metadescription"', 'Dedicated category metadescription field is missing.'),
+    array($categoryTemplate, 'name="cat_help"', 'Category help field must remain separate from metadescription.'),
+    array($documentTemplate, '<article', 'Default document template is not semantic article markup.')
 );
 
 foreach ($checks as $check) {
@@ -118,7 +148,6 @@ if (substr_count($compat . $integrity, 'function DOCUMENTS_canViewDocument(') !=
 if (substr_count($compat . $security, 'function DOCUMENTS_lockSecurityFields(') !== 1) {
     $failures[] = 'DOCUMENTS_lockSecurityFields must have exactly one runtime implementation.';
 }
-
 if (substr_count($includeLists, '. $workflowOwnerFilter;') < 2) {
     $failures[] = 'Draft/submission workflow queries do not both apply the owner filter.';
 }
@@ -131,7 +160,11 @@ DOCUMENTS_rcRequireAbsent(
 );
 
 DOCUMENTS_rcRequireAbsent($storage, 'unlink($source', 'Storage migration appears to delete legacy source data.', $failures);
+DOCUMENTS_rcRequireAbsent($documentTemplate, 'plusone.js', 'Obsolete Google+ script remains in default template.', $failures);
 
+if (is_file($root . '/sql/mssql_install.php')) {
+    $failures[] = 'Obsolete MSSQL support is still present.';
+}
 if (is_file($root . '/admin/timthumb.php')) {
     $failures[] = 'Legacy admin TimThumb is still present.';
 }
@@ -168,7 +201,8 @@ $requiredTests = array(
     'tests/comment_security_test.php',
     'tests/presentation_test.php',
     'tests/integration_surface_test.php',
-    'tests/metadata_consistency_test.php'
+    'tests/metadata_consistency_test.php',
+    'tests/seo_interoperability_test.php'
 );
 foreach ($requiredTests as $requiredTest) {
     if (!is_file($root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $requiredTest))) {
@@ -184,4 +218,4 @@ if (!empty($failures)) {
     exit(1);
 }
 
-echo "Documents release-candidate static checks: PASS\n";
+echo "Documents 1.2.0 release-candidate static checks: PASS\n";
