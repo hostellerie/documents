@@ -23,20 +23,11 @@ require_once $pluginPath . 'indexability.php';
 require_once $pluginPath . 'document_images.php';
 require_once $pluginPath . 'document_mutations.php';
 require_once $pluginPath . 'maps_adapter.php';
+require_once $pluginPath . 'document_delete.php';
 
 $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
 $operation = isset($_REQUEST['op']) ? (string) $_REQUEST['op'] : 'save';
-$standardCategory = $categoryId > 0 && DOCUMENTS_documentMutationIsStandardCategory($categoryId);
-$mapsCategory = $categoryId > 0 && DOCUMENTS_mapsCategorySupported($categoryId);
-
-/* Deletion and integrations without an ownership-preserving service contract
- * still use the compatibility path. Marker fields are never delegated to it. */
-if ($operation === 'delete'
-    || $categoryId <= 0
-    || (!$standardCategory && !$mapsCategory)) {
-    require __DIR__ . '/index.php';
-    exit;
-}
+$documentId = isset($_REQUEST['doc_url']) ? trim((string) $_REQUEST['doc_url']) : '';
 
 if (!SEC_checkToken()) {
     if (function_exists('http_response_code')) {
@@ -47,7 +38,42 @@ if (!SEC_checkToken()) {
     exit;
 }
 
-$documentId = isset($_REQUEST['doc_url']) ? trim((string) $_REQUEST['doc_url']) : '';
+if ($operation === 'delete') {
+    if ($documentId === '' || !SEC_hasRights('documents.admin')) {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
+
+    list($deleteOk, $deleteMessage) = DOCUMENTS_deleteDocumentSecure($documentId);
+    if (!$deleteOk) {
+        $returnUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
+            . '/index.php?mode=edit&doc_url=' . rawurlencode($documentId)
+            . '&cat=' . (int) DOCUMENTS_documentMutationDocumentCategoryId($documentId)
+            . '&msg=' . rawurlencode($deleteMessage);
+        echo COM_refresh($returnUrl);
+        exit;
+    }
+
+    echo COM_refresh(
+        rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
+        . '/index.php?msg=' . rawurlencode($deleteMessage)
+    );
+    exit;
+}
+
+$standardCategory = $categoryId > 0 && DOCUMENTS_documentMutationIsStandardCategory($categoryId);
+$mapsCategory = $categoryId > 0 && DOCUMENTS_mapsCategorySupported($categoryId);
+
+/* Integrations without an ownership-preserving service contract still use the
+ * compatibility path. Marker fields are handled exclusively through Maps. */
+if ($categoryId <= 0 || (!$standardCategory && !$mapsCategory)) {
+    /* The token has already been consumed here, so legacy paths cannot safely
+     * handle this request. Reject unsupported mutation types instead of falling
+     * through to the historical controller. */
+    echo COM_refresh($_CONF['site_url'] . '/404.php');
+    exit;
+}
+
 $isCreation = $documentId === '';
 
 if ($isCreation && COM_isAnonUser()) {
