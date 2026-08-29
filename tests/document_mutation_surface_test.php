@@ -5,12 +5,14 @@ $failures = array();
 
 $mutationFile = $root . '/document_mutations.php';
 $imageFile = $root . '/document_images.php';
+$mapsFile = $root . '/maps_adapter.php';
 $endpointFile = $root . '/public_html/document-save.php';
 $rewriteFile = $root . '/rewrite.php';
 $integrityFile = $root . '/integrity.php';
 
 $content = is_file($mutationFile) ? file_get_contents($mutationFile) : false;
 $images = is_file($imageFile) ? file_get_contents($imageFile) : false;
+$maps = is_file($mapsFile) ? file_get_contents($mapsFile) : false;
 $endpoint = is_file($endpointFile) ? file_get_contents($endpointFile) : false;
 $rewrite = is_file($rewriteFile) ? file_get_contents($rewriteFile) : false;
 $integrity = is_file($integrityFile) ? file_get_contents($integrityFile) : false;
@@ -37,7 +39,7 @@ if ($content === false) {
     documents_docmutation_require($content, 'DOCUMENTS_canEditDocument($existing)', 'Existing document edit permission enforcement is missing.', $failures);
     documents_docmutation_require($content, 'DOCUMENTS_normalizeFieldInput', 'Dynamic field normalization is missing.', $failures);
     documents_docmutation_require($content, 's_group={$selectGroupId} AND s_name=\'{$safeValue}\'', 'Select option validation is missing.', $failures);
-    documents_docmutation_require($content, 'in_array($type, array(\'marker\', \'album\', \'file\', \'radio\'), true)', 'Specialized plugin field types are not excluded from the standard mutation path.', $failures);
+    documents_docmutation_require($content, 'in_array($type, array(\'marker\', \'album\', \'file\', \'radio\'), true)', 'Standard mutation path no longer isolates delegated field types.', $failures);
     documents_docmutation_require($content, '$type === \'image\'', 'Image fields are not handled by the standard mutation path.', $failures);
     documents_docmutation_require($content, 'DOCUMENTS_uploadDocumentImages($documentId, $fields)', 'Image upload helper is not used before document persistence.', $failures);
     documents_docmutation_require($content, 'DOCUMENTS_cleanupReplacedImages($oldImages, $documentId)', 'Replaced document images are not cleaned after successful persistence.', $failures);
@@ -59,12 +61,23 @@ documents_docmutation_require($images, 'setMaxFileSize(', 'Image size limit is m
 documents_docmutation_require($images, 'DOCUMENTS_imageDeleteFiles($filenames)', 'Failed uploads are not cleaned up.', $failures);
 documents_docmutation_forbid($images, 'addslashes(', 'Secure image upload helper must not use addslashes().', $failures);
 
+/* Maps is the sole owner of marker creation/update. */
+documents_docmutation_require($maps, 'function DOCUMENTS_mapsSaveMarker(', 'Documents Maps service adapter is missing.', $failures);
+documents_docmutation_require($maps, "PLG_invokeService('maps', 'marker_save'", 'Marker mutations are not delegated to Maps marker_save.', $failures);
+documents_docmutation_require($maps, 'function DOCUMENTS_saveMapsDocument(', 'Delegated marker document save path is missing.', $failures);
+documents_docmutation_require($maps, 'DOCUMENTS_documentMutationUpsertValues(', 'Documents does not retain the Maps-returned marker id in its own value layer.', $failures);
+documents_docmutation_forbid($maps, 'maps_markers', 'Documents adapter must never access Maps marker storage.', $failures);
+documents_docmutation_forbid($maps, 'maps_maps', 'Documents adapter must never access Maps map storage.', $failures);
+documents_docmutation_forbid($maps, 'COM_makeSid(', 'Documents must never allocate a Maps marker id.', $failures);
+documents_docmutation_forbid($maps, 'updateMap(', 'Documents must never rebuild a Maps map.', $failures);
+
 documents_docmutation_require($rewrite, 'mode=save', 'Document save requests are not routed through the secure dispatcher.', $failures);
 documents_docmutation_require($rewrite, 'document-save.php', 'Secure document save rewrite target is missing.', $failures);
 documents_docmutation_require($endpoint, "'document_images.php'", 'Secure document save dispatcher does not load image helpers.', $failures);
+documents_docmutation_require($endpoint, "'maps_adapter.php'", 'Secure document save dispatcher does not load the Maps service adapter.', $failures);
+documents_docmutation_require($endpoint, 'DOCUMENTS_mapsCategorySupported($categoryId)', 'Dispatcher does not identify Maps-delegated categories.', $failures);
+documents_docmutation_require($endpoint, 'DOCUMENTS_saveMapsDocument($_REQUEST)', 'Marker categories are not routed through the Maps-owned save path.', $failures);
 documents_docmutation_require($endpoint, 'SEC_checkToken()', 'Secure document save dispatcher does not validate CSRF.', $failures);
-documents_docmutation_require($endpoint, 'DOCUMENTS_documentMutationIsStandardCategory', 'Dispatcher does not separate standard and specialized categories.', $failures);
-documents_docmutation_require($endpoint, "require __DIR__ . '/index.php';", 'Specialized categories do not fall back to the legacy controller.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_lockSecurityFields(', 'New non-admin document ownership/permissions are not locked.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_isPubliclyIndexable($documentId)', 'Previous anonymous visibility is not captured before a standard save.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_notifyPublicTransition($savedId, $wasPublic, $isPublic)', 'Standard saves do not emit public-only lifecycle events.', $failures);
