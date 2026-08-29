@@ -1,13 +1,17 @@
-.documents-document {
+.documents-document,
+.documents-home,
+.documents-category {
     max-width: 100%;
     margin: 0 0 2rem;
 }
 
-.documents-document__header {
+.documents-document__header,
+.documents-page-header {
     margin-bottom: 1.5rem;
 }
 
-.documents-document__title {
+.documents-document__title,
+.documents-page-header h1 {
     margin: 0 0 .5rem;
     line-height: 1.2;
 }
@@ -22,7 +26,8 @@
     margin: 1.25rem 0;
 }
 
-.documents-document__footer {
+.documents-document__footer,
+.documents-page-footer {
     clear: both;
     margin-top: 1.5rem;
     padding-top: 1rem;
@@ -35,14 +40,47 @@
     margin-top: 2rem;
 }
 
+.documents-page-description,
+.documents-page-intro {
+    max-width: 72ch;
+}
+
+.documents-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin: 1.25rem 0;
+}
+
+.documents-category-card,
+.documents-card {
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid currentColor;
+    border-radius: .35rem;
+}
+
+.documents-category-card__title,
+.documents-card__title {
+    margin: 0 0 .4rem;
+    font-size: 1.05rem;
+}
+
+.documents-category-card__description,
+.documents-card__excerpt {
+    margin: 0;
+}
+
+.documents-card-list {
+    display: grid;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
 .documents-card {
     display: flex;
     gap: 1rem;
     align-items: flex-start;
-    margin: 1rem 0;
-    padding: 1rem;
-    border: 1px solid currentColor;
-    border-radius: .35rem;
 }
 
 .documents-card__image {
@@ -55,18 +93,46 @@
     min-width: 0;
 }
 
-.documents-card__title {
-    margin: 0 0 .4rem;
-    font-size: 1.05rem;
+.documents-category__actions {
+    margin: 1rem 0;
 }
 
-.documents-card__excerpt {
-    margin: 0;
+.documents-action {
+    display: inline-block;
+    padding: .45rem .75rem;
+    border: 1px solid currentColor;
+    border-radius: .3rem;
+    text-decoration: none;
+}
+
+.documents-pagination {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    margin: 1.5rem 0;
+}
+
+.documents-pagination__status {
+    opacity: .8;
+}
+
+.documents-empty {
+    margin: 1rem 0;
+    opacity: .8;
 }
 
 .documents-compact-list {
     margin: .5rem 0 1rem;
     padding-left: 1.25rem;
+}
+
+.documents-stats-list {
+    margin: .5rem 0 1rem;
+}
+
+.documents-stats-count {
+    opacity: .75;
 }
 
 @media (max-width: 640px) {
@@ -78,5 +144,11 @@
         display: block;
         max-width: 100%;
         margin: 0 0 .75rem;
+    }
+
+    .documents-pagination {
+        align-items: stretch;
+        flex-direction: column;
+        text-align: center;
     }
 }
