@@ -20,6 +20,7 @@ require_once $pluginPath . 'include_compat.php';
 require_once $pluginPath . 'integrity.php';
 require_once $pluginPath . 'interoperability.php';
 require_once $pluginPath . 'indexability.php';
+require_once $pluginPath . 'document_images.php';
 require_once $pluginPath . 'document_mutations.php';
 
 $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
