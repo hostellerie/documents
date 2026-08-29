@@ -8,6 +8,7 @@ $files = array(
     'functions' => file_get_contents($root . '/functions.inc'),
     'interop' => file_get_contents($root . '/interoperability.php'),
     'embeds' => file_get_contents($root . '/embeds.php'),
+    'distribution' => file_get_contents($root . '/distribution.php'),
     'seo' => file_get_contents($root . '/seo.php'),
     'runtime' => file_get_contents($root . '/runtime.php'),
     'security' => file_get_contents($root . '/security.php'),
@@ -35,6 +36,12 @@ function documents_test_forbid($content, $needle, $message, &$failures)
 documents_test_require($files['autoinstall'], "'pi_version' => '1.2.0'", 'Plugin metadata is not 1.2.0.', $failures);
 documents_test_require($files['autoinstall'], "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')", 'Geeklog 2.1.1 minimum target is missing.', $failures);
 documents_test_require($files['autoinstall'], "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')", 'PHP 5.6 minimum target is missing.', $failures);
+documents_test_require($files['autoinstall'], "define('DOCUMENTS_SUPPORTED_DBMS', 'mysql')", 'MySQL/MariaDB-only database policy is missing.', $failures);
+documents_test_require($files['autoinstall'], '$_DB_dbms !== DOCUMENTS_SUPPORTED_DBMS', 'Unsupported database backends are not explicitly rejected.', $failures);
+
+if (is_file($root . '/sql/mssql_install.php')) {
+    $failures[] = 'Obsolete MSSQL installation support is still present.';
+}
 
 documents_test_require($files['install'], 'metadescription varchar(255)', 'Fresh-install category metadescription column is missing.', $failures);
 documents_test_require($files['updates'], 'function DOCUMENTS_updateSchema_1_2_0()', '1.2.0 schema upgrade is missing.', $failures);
@@ -51,11 +58,19 @@ documents_test_require($files['interop'], 'function plugin_collectSitemapItems_d
 documents_test_require($files['interop'], "'date-modified'", 'Sitemap/ItemInfo modification date is missing.', $failures);
 documents_test_require($files['interop'], 'PLG_itemSaved((string) $id, \'documents\')', 'Saved lifecycle event is missing.', $failures);
 documents_test_require($files['interop'], 'PLG_itemDeleted((string) $id, \'documents\')', 'Deleted lifecycle event is missing.', $failures);
+documents_test_require($files['interop'], "'embeds.php'", 'Autotag/block layer is not loaded by interoperability.', $failures);
 
 documents_test_require($files['embeds'], 'function plugin_autotags_documents(', 'Documents autotags are missing.', $failures);
 documents_test_require($files['embeds'], "array('document', 'documents')", 'Expected autotag names are missing.', $failures);
 documents_test_require($files['embeds'], 'function phpblock_documents_recent()', 'Recent Documents PHP block is missing.', $failures);
 documents_test_require($files['embeds'], 'function phpblock_documents_popular()', 'Popular Documents PHP block is missing.', $failures);
+documents_test_require($files['embeds'], "'distribution.php'", 'Feed/statistics callbacks are not loaded with plugin API callbacks.', $failures);
+
+documents_test_require($files['distribution'], 'function plugin_getfeednames_documents()', 'Native feed names callback is missing.', $failures);
+documents_test_require($files['distribution'], 'function plugin_getfeedcontent_documents(', 'Native feed content callback is missing.', $failures);
+documents_test_require($files['distribution'], 'function plugin_feedupdatecheck_documents(', 'Native feed update callback is missing.', $failures);
+documents_test_require($files['distribution'], 'function plugin_statssummary_documents()', 'Native statistics summary callback is missing.', $failures);
+documents_test_require($files['distribution'], 'function plugin_showstats_documents()', 'Native detailed statistics callback is missing.', $failures);
 
 documents_test_require($files['seo'], 'rel=\"canonical\"', 'Canonical link generation is missing.', $failures);
 documents_test_require($files['seo'], 'name=\"description\"', 'SEO meta description generation is missing.', $failures);
