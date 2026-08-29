@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.9                                                    |
+// | Documents Plugin 1.2.0                                                    |
 // +---------------------------------------------------------------------------+
 // | security.php                                                              |
 // |                                                                           |
@@ -11,6 +11,16 @@
 
 if (strpos(strtolower(isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : ''), 'security.php') !== false) {
     die('This file can not be used on its own.');
+}
+
+function DOCUMENTS_plainTextInput($value)
+{
+    $value = str_replace("\0", '', (string) $value);
+    if (function_exists('COM_getTextContent')) {
+        return trim(COM_getTextContent($value));
+    }
+
+    return trim(html_entity_decode(strip_tags($value), ENT_QUOTES, 'UTF-8'));
 }
 
 /**
@@ -41,15 +51,23 @@ function DOCUMENTS_normalizeFieldInput($type, $value)
         return ($value !== '' && is_numeric($value)) ? $value : '';
     }
 
-    if ($type === 'album') {
+    if ($type === 'album' || $type === 'marker') {
         return ctype_digit(trim($value)) ? (string) (int) $value : '';
     }
 
-    if ($type === 'date' || $type === 'text' || $type === 'select' || $type === 'radio') {
+    if ($type === 'date' || $type === 'text' || $type === 'textarea') {
+        return DOCUMENTS_plainTextInput($value);
+    }
+
+    if ($type === 'select' || $type === 'radio') {
         return trim($value);
     }
 
-    return $value;
+    if ($type === 'image' || $type === 'file' || $type === 'category') {
+        return basename(trim($value));
+    }
+
+    return DOCUMENTS_plainTextInput($value);
 }
 
 /**
