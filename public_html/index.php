@@ -69,10 +69,28 @@ if (in_array($documentsMode, $documentsAdminModes, true)
  * document create/edit forms. Validate it before any write controller runs. */
 if (in_array($documentsMode, $documentsWriteModes, true)) {
     if (!SEC_checkToken()) {
-        http_response_code(403);
+        if (function_exists('http_response_code')) {
+            http_response_code(403);
+        } else {
+            header('HTTP/1.1 403 Forbidden');
+        }
         exit;
     }
     $GLOBALS['DOCUMENTS_CSRF_VALIDATED'] = true;
+}
+
+/* The 1.2.0 mutation layer supersedes the historical addslashes/interpolated
+ * SQL handlers in include_html.php. Keep those blocks only as dead compatibility
+ * code while all admin save modes are dispatched here after rights + CSRF. */
+$documentsSecureAdminSaveModes = array('save_cat', 'save_field', 'save_group', 'save_select');
+if (in_array($documentsMode, $documentsSecureAdminSaveModes, true)) {
+    require_once $_CONF['path'] . 'plugins/documents/admin_dispatch.php';
+    list($documentsMutationOk, $documentsMutationReturnUrl) = DOCUMENTS_adminDispatchMutation(
+        $documentsMode,
+        $_REQUEST
+    );
+    echo COM_refresh($documentsMutationReturnUrl);
+    exit;
 }
 
 if ($documentsMode === 'view' || $documentsMode === 'new') {
@@ -220,13 +238,6 @@ if (($documentsMode === 'edit' || $documentsMode === 'save') && $documentsDocUrl
     $GLOBALS['DOCUMENTS_AUTHORIZED_EDIT_CID'] = $documentsActualCid;
 }
 
-if ($documentsMode === 'save_cat') {
-    $_REQUEST['cat_url'] = DOCUMENTS_normalizeRouteSlug(
-        DOCUMENTS_requestValue($_REQUEST, 'cat_url', '')
-    );
-    $_POST['cat_url'] = $_REQUEST['cat_url'];
-}
-
 if ($documentsMode === 'save' && $documentsDocUrl === '') {
     if (COM_isAnonUser()) {
         echo COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
@@ -336,20 +347,6 @@ if ($documentsMode === 'save' && $documentsDocUrl !== '' && $documentsOperation 
         $documentsDocUrl,
         $documentsImagesBeforeDelete
     );
-}
-
-if ($documentsMode === 'save_field' && $documentsOperation === 'delete') {
-    $documentsFieldId = DOCUMENTS_requestInt($_REQUEST, 'fid', 0);
-    if ($documentsFieldId > 0) {
-        $documentsFieldImages = DOCUMENTS_fieldImageReferences($documentsFieldId);
-        if (!empty($documentsFieldImages)) {
-            register_shutdown_function(
-                'DOCUMENTS_cleanupDeletedFieldImages',
-                $documentsFieldId,
-                $documentsFieldImages
-            );
-        }
-    }
 }
 
 $requestPath = isset($_SERVER['REQUEST_URI'])
