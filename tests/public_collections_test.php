@@ -35,13 +35,14 @@ function documents_public_forbid($content, $needle, $message, &$failures)
 $rewrite = documents_public_read($root, 'rewrite.php', $failures);
 $home = documents_public_read($root, 'public_html/home.php', $failures);
 $category = documents_public_read($root, 'public_html/category.php', $failures);
+$document = documents_public_read($root, 'public_html/document.php', $failures);
 $seo = documents_public_read($root, 'seo.php', $failures);
 $css = documents_public_read($root, 'public_html/css/documents.css', $failures);
 $updates = documents_public_read($root, 'install_updates.php', $failures);
 
 documents_public_require($rewrite, 'RewriteRule ^$ home.php [L]', 'Documents root is not routed to the modern home page.', $failures);
 documents_public_require($rewrite, 'category.php?cat=$1', 'Clean category routes are not using the modern category view.', $failures);
-documents_public_require($rewrite, 'index.php?mode=view&cat=$1&doc=$2', 'Clean document route compatibility was lost.', $failures);
+documents_public_require($rewrite, 'document.php?cat=$1&doc=$2', 'Clean document routes are not using the modern document view.', $failures);
 documents_public_forbid($rewrite, 'DirectoryIndex home.php', 'Public routing should not require an additional DirectoryIndex override.', $failures);
 
 documents_public_require($updates, 'DOCUMENTS_writeHtaccess(true)', '1.2.0 upgrade does not refresh existing rewrite rules.', $failures);
@@ -59,10 +60,21 @@ documents_public_require($category, 'DOCUMENTS_renderItemCard($item)', 'Modern c
 documents_public_require($category, "header('Location: ' . $cleanUrl, true, 301)", 'Direct category.php URLs are not canonicalized.', $failures);
 documents_public_forbid($category, 'ADMIN_list(', 'Modern category view must not depend on ADMIN_list().', $failures);
 
+documents_public_require($document, 'DOCUMENTS_canViewDocument($document, 2)', 'Modern document view does not use the centralized visibility guard.', $failures);
+documents_public_require($document, "f_type IN ('marker','album')", 'Specialized field fallback is missing.', $failures);
+documents_public_require($document, "require $pluginPath . 'include_html.php'", 'Legacy compatibility fallback for custom/specialized documents is missing.', $failures);
+documents_public_require($document, '<dl class="documents-fields">', 'Modern default document field definition list is missing.', $failures);
+documents_public_require($document, 'htmlspecialchars(stripslashes($value)', 'Modern default document text output is not escaped.', $failures);
+documents_public_require($document, 'CMT_userComments(', 'Modern default document comments integration is missing.', $failures);
+documents_public_require($document, 'SET hits=hits+1', 'Modern default document hit counting is missing.', $failures);
+documents_public_forbid($document, 'addslashes(', 'Modern default document route must not use addslashes().', $failures);
+documents_public_forbid($document, '<table', 'Modern default document route must not build table-based field markup.', $failures);
+
 documents_public_require($seo, 'DOCUMENTS_seoRemoveManagedTags', 'SEO duplicate-tag cleanup is missing.', $failures);
 documents_public_require($seo, "'?page=' . $page", 'Paginated category canonical support is missing.', $failures);
 documents_public_require($css, '.documents-category-grid', 'Modern category-grid CSS is missing.', $failures);
 documents_public_require($css, '.documents-pagination', 'Modern pagination CSS is missing.', $failures);
+documents_public_require($css, '.documents-fields', 'Semantic document-field CSS is missing.', $failures);
 
 if (!empty($failures)) {
     fwrite(STDERR, "Documents public collection checks failed:\n");
