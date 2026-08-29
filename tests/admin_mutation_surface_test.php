@@ -53,7 +53,7 @@ documents_mutation_require($adminEndpoint, "SEC_hasRights('documents.admin')", '
 documents_mutation_require($fieldEndpoint, "SEC_hasRights('documents.admin')", 'Field mutation endpoint must require documents.admin.', $failures);
 documents_mutation_require($adminEndpoint, 'DOCUMENTS_adminMessage($message)', 'General mutation feedback is not localized.', $failures);
 documents_mutation_require($fieldEndpoint, 'DOCUMENTS_adminMessage($message)', 'Field mutation feedback is not localized.', $failures);
-documents_mutation_require($messages, "strpos(strtolower((string) $_CONF['language']), 'french')", 'French mutation-message selection is missing.', $failures);
+documents_mutation_require($messages, 'strpos(strtolower((string) $_CONF[\'language\']), \'french\')', 'French mutation-message selection is missing.', $failures);
 documents_mutation_require($messages, 'Catégorie enregistrée.', 'French category feedback is missing.', $failures);
 documents_mutation_require($messages, 'Champ enregistré.', 'French field feedback is missing.', $failures);
 
