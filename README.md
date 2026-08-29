@@ -15,7 +15,9 @@ See [ROADMAP.md](ROADMAP.md) for the wider roadmap and [TESTING.md](TESTING.md) 
 - Geeklog **2.1.1 through 2.2.2**
 - PHP **5.6 through 8.1**
 - single-site and multisite Geeklog installations
-- MySQL/MariaDB for the 1.2.0 schema migration
+- **MySQL/MariaDB only**
+
+MSSQL support has been removed from Documents 1.2.0. The plugin now explicitly rejects unsupported database backends during compatibility checks instead of relying only on the presence of a legacy SQL file.
 
 The code must remain syntactically compatible with PHP 5.6 throughout the 1.x modernization work unless this policy is explicitly changed in a future major release.
 
@@ -126,6 +128,20 @@ plugin_collectSitemapItems_documents($uid, $limit)
 ```
 
 The collector returns clean permitted URLs and `date-modified` values using the native Geeklog sitemap contract.
+
+## Syndication and statistics
+
+Documents 1.2.0 also exposes native Geeklog feed and statistics callbacks:
+
+```php
+plugin_getfeednames_documents()
+plugin_getfeedcontent_documents()
+plugin_feedupdatecheck_documents()
+plugin_statssummary_documents()
+plugin_showstats_documents()
+```
+
+RSS/Atom feeds and statistics reuse the same permission-aware item layer as Item Info, Hub, Hello and IndexNow instead of duplicating the content model.
 
 ## Hello, Hub and IndexNow
 
@@ -255,10 +271,6 @@ MediaGallery remains optional. When it is missing or inactive, Documents must no
 
 GitHub Actions are intentionally not required for normal Documents development. Standalone regression tests remain in `tests/` and the manual compatibility/release matrix is maintained in [TESTING.md](TESTING.md).
 
-The 1.2.0 regression surface includes `tests/seo_interoperability_test.php`, which checks the static invariants for version metadata, category SEO schema, CSRF enforcement, Item Info, URL resolution, lifecycle events, sitemap contribution, autotags, blocks and the modern default template.
+The 1.2.0 regression surface includes `tests/seo_interoperability_test.php`, which checks the static invariants for version metadata, supported database policy, category SEO schema, CSRF enforcement, Item Info, URL resolution, lifecycle events, sitemap contribution, autotags, blocks, syndication/statistics and the modern default template.
 
 Before a public release, execute syntax lint and the regression suite under PHP 5.6 and PHP 8.1 and complete the supported Geeklog matrix.
-
-## Upgrade policy
-
-The modernization preserves existing Documents content and custom templates. The 1.2.0 database change is intentionally small: it adds only the dedicated category `metadescription` field. Broader database restructuring remains deferred to a later development cycle.
