@@ -88,7 +88,6 @@ function DOCUMENTS_interopRequestedFields($what)
     return array_map('trim', explode(',', $what));
 }
 
-/** Select associative properties for collection responses. */
 function DOCUMENTS_interopSelectFields($item, $what)
 {
     $fields = DOCUMENTS_interopRequestedFields($what);
@@ -106,10 +105,6 @@ function DOCUMENTS_interopSelectFields($item, $what)
     return $result;
 }
 
-/**
- * Geeklog ItemInfo returns a scalar when one property is requested and a
- * numerically indexed array, in requested order, when several are requested.
- */
 function DOCUMENTS_interopSelectSingle($item, $what)
 {
     $fields = DOCUMENTS_interopRequestedFields($what);
@@ -198,6 +193,7 @@ function DOCUMENTS_interopItem($documentId, $uid = 0)
         . "AND first_field.f_order=(SELECT MIN(fmin.f_order) FROM {$_TABLES['documents_fields']} AS fmin "
         . "WHERE fmin.cat_id=c.cid)"
         . COM_getPermSQL('AND', $uid, 2, 'd')
+        . COM_getPermSQL('AND', $uid, 2, 'c')
         . " LIMIT 1";
 
     $row = DB_fetchArray(DB_query($sql));
