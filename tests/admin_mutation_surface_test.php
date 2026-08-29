@@ -35,8 +35,11 @@ function documents_mutation_forbid($content, $needle, $message, &$failures)
 $admin = documents_mutation_read($root, 'admin_mutations.php', $failures);
 $field = documents_mutation_read($root, 'field_mutations.php', $failures);
 $dispatch = documents_mutation_read($root, 'admin_dispatch.php', $failures);
+$editor = documents_mutation_read($root, 'admin_category_editor.php', $failures);
 $messages = documents_mutation_read($root, 'admin_messages.php', $failures);
+$rewrite = documents_mutation_read($root, 'rewrite.php', $failures);
 $publicIndex = documents_mutation_read($root, 'public_html/index.php', $failures);
+$categoryEditorEndpoint = documents_mutation_read($root, 'public_html/category-editor.php', $failures);
 $adminEndpoint = documents_mutation_read($root, 'public_html/admin-save.php', $failures);
 $fieldEndpoint = documents_mutation_read($root, 'public_html/admin-field-save.php', $failures);
 $catTemplate = documents_mutation_read($root, 'templates/cat_form.thtml', $failures);
@@ -75,13 +78,25 @@ documents_mutation_require($field, 'cannot be moved to another category', 'Used 
 documents_mutation_require($field, 'cannot change type directly', 'Used fields must not change type silently.', $failures);
 documents_mutation_forbid($field, 'addslashes(', 'New field mutation layer must not use addslashes().', $failures);
 
+documents_mutation_require($rewrite, 'mode=edit_cat', 'Legacy edit_cat URL is not internally routed to the modern editor.', $failures);
+documents_mutation_require($rewrite, 'category-editor.php', 'Modern category editor rewrite target is missing.', $failures);
+documents_mutation_require($categoryEditorEndpoint, "SEC_hasRights('documents.admin')", 'Category editor endpoint must require documents.admin.', $failures);
+documents_mutation_require($editor, 'metadescription', 'Standalone category editor does not load metadescription directly.', $failures);
+documents_mutation_require($editor, 'DOCUMENTS_renderCategoryEditor', 'Standalone category editor renderer is missing.', $failures);
+
 documents_mutation_require($catTemplate, '/admin-save.php', 'Category form is not using the secure endpoint.', $failures);
 documents_mutation_require($groupTemplate, '/admin-save.php', 'Group form is not using the secure endpoint.', $failures);
 documents_mutation_require($selectTemplate, '/admin-save.php', 'Select form is not using the secure endpoint.', $failures);
 documents_mutation_require($fieldTemplate, '/admin-field-save.php', 'Field form is not using the secure endpoint.', $failures);
 documents_mutation_require($catTemplate, 'maxlength="40"', 'Category form does not reflect the 40-character schema limit.', $failures);
 documents_mutation_require($fieldTemplate, 'maxlength="18"', 'Field variable form does not reflect the 18-character schema limit.', $failures);
-documents_mutation_require($catTemplate, 'submit.disabled = true', 'Existing category metadata preload is not fail-safe.', $failures);
+documents_mutation_require($catTemplate, '>{metadescription}</textarea>', 'Metadescription is not rendered directly into the category form.', $failures);
+documents_mutation_forbid($catTemplate, 'XMLHttpRequest', 'Category editor still depends on AJAX metadata preload.', $failures);
+documents_mutation_forbid($catTemplate, 'category-meta.php', 'Obsolete category meta endpoint is still referenced.', $failures);
+
+if (is_file($root . '/public_html/category-meta.php')) {
+    $failures[] = 'Obsolete category-meta.php endpoint is still present.';
+}
 
 if (!empty($failures)) {
     fwrite(STDERR, "Documents secure mutation checks failed:\n");
