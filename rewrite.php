@@ -54,7 +54,7 @@ if (!function_exists('DOCUMENTS_writeHtaccess')) {
             . "RewriteRule ^$ home.php [L]\n\n"
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
-            . "RewriteRule ^([^/]+)/([^/]+)/?$ index.php?mode=view&cat=$1&doc=$2 [L,QSA]\n\n"
+            . "RewriteRule ^([^/]+)/([^/]+)/?$ document.php?cat=$1&doc=$2 [L,QSA]\n\n"
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
             . "RewriteRule ^([^/]+)/?$ category.php?cat=$1 [L,QSA]\n";
