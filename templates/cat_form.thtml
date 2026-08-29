@@ -1,15 +1,15 @@
-<form action="{doc_url}/index.php?mode=save_cat" method="POST" id="documents-category-form">
+<form action="{doc_url}/admin-save.php" method="POST" id="documents-category-form">
 {cid}
     <fieldset class="documents-form-fieldset">
         <legend><b>{cat_informations}</b></legend>
 
         <div>
             <p><label>{category_label}<span class="documents-required-mark"> *</span></label>
-                <input type="text" name="cat_name" value="{category}" size="80" maxlength="255" {xhtml}></p>
+                <input type="text" name="cat_name" value="{category}" size="80" maxlength="40" {xhtml}></p>
         </div>
         <div>
             <p><label>{cat_url_label}<span class="documents-required-mark"> *</span></label>
-                <input type="text" name="cat_url" value="{cat_url}" size="80" maxlength="255" {xhtml}></p>
+                <input type="text" name="cat_url" value="{cat_url}" size="80" maxlength="40" {xhtml}></p>
         </div>
         <div>
             <p><label>Meta description (SEO)</label>
@@ -23,11 +23,11 @@
         </div>
         <div>
             <p><label>{template_label}</label>
-                <input type="text" name="template" value="{template}" size="80" maxlength="255" {xhtml}></p>
+                <input type="text" name="template" value="{template}" size="80" maxlength="18" {xhtml}></p>
         </div>
         <div>
             <p><label>{css_label}</label>
-                <input type="text" name="css" value="{css}" size="80" maxlength="255" {xhtml}></p>
+                <input type="text" name="css" value="{css}" size="80" maxlength="18" {xhtml}></p>
         </div>
         {map}
         <div>
@@ -64,6 +64,7 @@
     <p class="documents-required-note"><span class="documents-required-mark">*</span><em> {required_field}</em></p>
     {admin_options}
     <input type="submit" name="submit" value="{validate_button}" {xhtml}>
+    <input type="hidden" name="mode" value="save_cat"{xhtml}>
     <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
 
 </form>
