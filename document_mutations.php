@@ -67,7 +67,7 @@ function DOCUMENTS_documentMutationIsStandardCategory($categoryId)
     $fields = DOCUMENTS_documentMutationFields($categoryId);
     foreach ($fields as $field) {
         $type = isset($field['f_type']) ? strtolower((string) $field['f_type']) : '';
-        if (in_array($type, array('image', 'marker', 'album', 'file', 'radio'), true)) {
+        if (in_array($type, array('marker', 'album', 'file', 'radio'), true)) {
             return false;
         }
     }
@@ -145,30 +145,45 @@ function DOCUMENTS_documentMutationUniqueUrl($title)
     return $candidate;
 }
 
-function DOCUMENTS_documentMutationNormalizeValues($request, $fields)
+function DOCUMENTS_documentMutationNormalizeValues($request, $fields, $documentId = '')
 {
     global $_TABLES;
 
     $values = array();
     $errors = array();
+    $documentId = trim((string) $documentId);
 
     foreach ($fields as $field) {
         if (!is_array($field) || empty($field['fid']) || empty($field['var_name'])) {
             continue;
         }
 
+        $fieldId = (int) $field['fid'];
         $type = strtolower((string) $field['f_type']);
         $name = (string) $field['var_name'];
+
+        if ($type === 'image') {
+            $existingImage = function_exists('DOCUMENTS_imageExistingValue')
+                ? DOCUMENTS_imageExistingValue($documentId, $fieldId) : '';
+            $hasUpload = function_exists('DOCUMENTS_imageUploadRequestPresent')
+                && DOCUMENTS_imageUploadRequestPresent($fieldId);
+            if ((int) $field['f_required'] === 1 && $existingImage === '' && !$hasUpload) {
+                $errors[] = stripslashes((string) $field['f_name']);
+            }
+            $values[$fieldId] = $existingImage;
+            continue;
+        }
+
         $submitted = isset($request[$name]) ? $request[$name] : '';
         $value = DOCUMENTS_normalizeFieldInput($type, $submitted);
 
         if ($type === 'select' && $value !== '') {
             $safeValue = DB_escapeString((string) $value);
-            $groupId = isset($field['sel_id']) ? (int) $field['sel_id'] : 0;
+            $selectGroupId = isset($field['sel_id']) ? (int) $field['sel_id'] : 0;
             $valid = DB_getItem(
                 $_TABLES['documents_selects'],
                 'sid',
-                "s_group={$groupId} AND s_name='{$safeValue}'"
+                "s_group={$selectGroupId} AND s_name='{$safeValue}'"
             );
             if ($valid === '') {
                 $value = '';
@@ -182,7 +197,7 @@ function DOCUMENTS_documentMutationNormalizeValues($request, $fields)
             }
         }
 
-        $values[(int) $field['fid']] = $value;
+        $values[$fieldId] = $value;
     }
 
     return array($values, $errors);
@@ -190,7 +205,7 @@ function DOCUMENTS_documentMutationNormalizeValues($request, $fields)
 
 function DOCUMENTS_documentMutationPermissions($request, $existing)
 {
-    global $_DOCUMENTS_CONF, $_USER;
+    global $_DOCUMENTS_CONF, $_USER, $_TABLES;
 
     if (!empty($existing)) {
         $ownerId = (int) $existing['owner_id'];
@@ -218,9 +233,24 @@ function DOCUMENTS_documentMutationPermissions($request, $existing)
 
     $defaults = array();
     SEC_setDefaultPermissions($defaults, $_DOCUMENTS_CONF['default_permissions']);
-    $ownerId = isset($request['owner_id']) ? max(1, (int) $request['owner_id']) : (isset($_USER['uid']) ? (int) $_USER['uid'] : 1);
-    $groupId = isset($request['group_id']) ? max(1, (int) $request['group_id']) : 1;
-    $permissions = DOCUMENTS_requestPermissions($request, $defaults);
+
+    if (SEC_hasRights('documents.admin')) {
+        $ownerId = isset($request['owner_id']) ? max(1, (int) $request['owner_id']) : (isset($_USER['uid']) ? (int) $_USER['uid'] : 1);
+        $groupId = isset($request['group_id']) ? max(1, (int) $request['group_id']) : 1;
+        $permissions = DOCUMENTS_requestPermissions($request, $defaults);
+    } else {
+        $ownerId = isset($_USER['uid']) ? max(1, (int) $_USER['uid']) : 1;
+        $groupId = (int) DB_getItem($_TABLES['groups'], 'grp_id', "grp_name='Documents Admin'");
+        if ($groupId <= 0) {
+            $groupId = 1;
+        }
+        $permissions = array(
+            isset($defaults['perm_owner']) ? (int) $defaults['perm_owner'] : 3,
+            isset($defaults['perm_group']) ? (int) $defaults['perm_group'] : 3,
+            isset($defaults['perm_members']) ? (int) $defaults['perm_members'] : 2,
+            isset($defaults['perm_anon']) ? (int) $defaults['perm_anon'] : 2
+        );
+    }
 
     return array($ownerId, $groupId, $permissions);
 }
@@ -293,11 +323,6 @@ function DOCUMENTS_saveStandardDocument($request)
     }
 
     $fields = DOCUMENTS_documentMutationFields($categoryId);
-    list($values, $missing) = DOCUMENTS_documentMutationNormalizeValues($request, $fields);
-    if (!empty($missing)) {
-        return array(false, 'Missing required fields.', '', (string) $category['cat_url'], $missing);
-    }
-
     $existing = array();
     if ($documentId !== '') {
         $existing = DOCUMENTS_documentMutationExisting($documentId);
@@ -310,10 +335,30 @@ function DOCUMENTS_saveStandardDocument($request)
         if (!DOCUMENTS_canEditDocument($existing)) {
             return array(false, 'Document edit denied.', '', (string) $category['cat_url'], array());
         }
-    } else {
+    }
+
+    list($values, $missing) = DOCUMENTS_documentMutationNormalizeValues($request, $fields, $documentId);
+    if (!empty($missing)) {
+        return array(false, 'Missing required fields.', '', (string) $category['cat_url'], $missing);
+    }
+
+    if ($documentId === '') {
         $firstFieldId = !empty($fields) ? (int) $fields[0]['fid'] : 0;
         $title = ($firstFieldId > 0 && isset($values[$firstFieldId])) ? (string) $values[$firstFieldId] : '';
         $documentId = DOCUMENTS_documentMutationUniqueUrl($title);
+    }
+
+    $oldImages = !empty($existing) && function_exists('DOCUMENTS_documentImageReferences')
+        ? DOCUMENTS_documentImageReferences($documentId) : array();
+    $uploadedImages = array();
+    if (function_exists('DOCUMENTS_uploadDocumentImages')) {
+        list($uploadOk, $uploadedImages, $uploadError) = DOCUMENTS_uploadDocumentImages($documentId, $fields);
+        if (!$uploadOk) {
+            return array(false, $uploadError !== '' ? $uploadError : 'Unable to upload document image.', '', (string) $category['cat_url'], array());
+        }
+        foreach ($uploadedImages as $fieldId => $filename) {
+            $values[(int) $fieldId] = basename((string) $filename);
+        }
     }
 
     list($ownerId, $groupId, $permissions) = DOCUMENTS_documentMutationPermissions($request, $existing);
@@ -332,6 +377,9 @@ function DOCUMENTS_saveStandardDocument($request)
             . "perm_members=" . (int) $permissions[2] . ", perm_anon=" . (int) $permissions[3]
         );
         if (DB_error()) {
+            if (function_exists('DOCUMENTS_imageDeleteFiles')) {
+                DOCUMENTS_imageDeleteFiles(array_values($uploadedImages));
+            }
             return array(false, 'Unable to create document.', '', (string) $category['cat_url'], array());
         }
     } else {
@@ -343,6 +391,9 @@ function DOCUMENTS_saveStandardDocument($request)
             . "WHERE doc_url='{$safeDocument}'"
         );
         if (DB_error()) {
+            if (function_exists('DOCUMENTS_imageDeleteFiles')) {
+                DOCUMENTS_imageDeleteFiles(array_values($uploadedImages));
+            }
             return array(false, 'Unable to update document.', '', (string) $category['cat_url'], array());
         }
     }
@@ -355,11 +406,20 @@ function DOCUMENTS_saveStandardDocument($request)
         $groupId,
         $permissions
     )) {
+        if (function_exists('DOCUMENTS_imageDeleteFiles')) {
+            DOCUMENTS_imageDeleteFiles(array_values($uploadedImages));
+        }
         if (empty($existing)) {
             DB_query("DELETE FROM {$_TABLES['documents_values']} WHERE doc_url='{$safeDocument}'");
             DB_query("DELETE FROM {$_TABLES['documents_docs']} WHERE doc_url='{$safeDocument}'");
         }
         return array(false, 'Unable to save document fields.', '', (string) $category['cat_url'], array());
+    }
+
+    if (!empty($oldImages)
+        && !empty($uploadedImages)
+        && function_exists('DOCUMENTS_cleanupReplacedImages')) {
+        DOCUMENTS_cleanupReplacedImages($oldImages, $documentId);
     }
 
     return array(true, 'Document saved.', $documentId, (string) $category['cat_url'], array('status' => $status));
