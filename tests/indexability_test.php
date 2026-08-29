@@ -23,12 +23,12 @@ function documents_indexability_forbid($content, $needle, $message, &$failures)
 
 documents_indexability_require($indexability, 'function DOCUMENTS_isPubliclyIndexable(', 'Public indexability helper is missing.', $failures);
 documents_indexability_require($indexability, '$anonymousUid = 1;', 'Indexability must explicitly use Geeklog anonymous uid 1.', $failures);
-documents_indexability_require($indexability, "(int) $row['active'] !== DOCUMENTS_STATUS_ACTIVE", 'Inactive/draft/submission content is not excluded from public indexing.', $failures);
+documents_indexability_require($indexability, '(int) $row[\'active\'] !== DOCUMENTS_STATUS_ACTIVE', 'Inactive/draft/submission content is not excluded from public indexing.', $failures);
 documents_indexability_require($indexability, '$documentAccess < 2', 'Anonymous document read permission is not enforced.', $failures);
 documents_indexability_require($indexability, 'return $categoryAccess >= 2;', 'Anonymous category read permission is not enforced.', $failures);
 documents_indexability_require($indexability, 'function DOCUMENTS_notifyPublicTransition(', 'Public lifecycle transition helper is missing.', $failures);
-documents_indexability_require($indexability, "PLG_itemSaved($documentId, 'documents')", 'Public save event is missing.', $failures);
-documents_indexability_require($indexability, "PLG_itemDeleted($documentId, 'documents')", 'Public removal event is missing.', $failures);
+documents_indexability_require($indexability, 'PLG_itemSaved($documentId, \'documents\')', 'Public save event is missing.', $failures);
+documents_indexability_require($indexability, 'PLG_itemDeleted($documentId, \'documents\')', 'Public removal event is missing.', $failures);
 
 documents_indexability_require($runtime, '$wasPublic = ($id !== \'\') ? DOCUMENTS_isPubliclyIndexable($id) : false;', 'Legacy saves do not snapshot anonymous visibility.', $failures);
 documents_indexability_require($runtime, 'DOCUMENTS_notifyPublicTransition($id, $wasPublic, $isPublic);', 'Legacy saves do not use public-only lifecycle transitions.', $failures);
