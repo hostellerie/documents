@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.10                                                   |
+// | Documents Plugin 1.2.0                                                    |
 // +---------------------------------------------------------------------------+
 // | presentation.php                                                          |
 // |                                                                           |
@@ -154,4 +154,26 @@ function DOCUMENTS_homeStatsBlock()
         . COM_numberFormat($views) . '</strong></p>';
 
     return COM_startBlock($title) . $content . COM_endBlock();
+}
+
+/* Public presentation bootstrap. Keep this independent from the administration
+ * so themes remain free to override their own admin styles. */
+$documentsPresentationScript = isset($_SERVER['SCRIPT_NAME'])
+    ? str_replace('\\', '/', (string) $_SERVER['SCRIPT_NAME']) : '';
+if ($documentsPresentationScript !== ''
+    && strpos($documentsPresentationScript, '/documents/index.php') !== false
+    && strpos($documentsPresentationScript, '/admin/') === false) {
+    if (isset($_SCRIPTS) && is_object($_SCRIPTS)) {
+        $_SCRIPTS->setCSSFile('documents_public', '/documents/css/documents.css');
+    }
+
+    if (isset($_CONF['path'])) {
+        $documentsSeoFile = $_CONF['path'] . 'plugins/documents/seo.php';
+        if (is_file($documentsSeoFile)) {
+            require_once $documentsSeoFile;
+            if (function_exists('DOCUMENTS_seoOutputFilter') && ob_get_level() >= 0) {
+                ob_start('DOCUMENTS_seoOutputFilter');
+            }
+        }
+    }
 }
