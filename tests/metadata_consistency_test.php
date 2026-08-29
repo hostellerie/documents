@@ -98,12 +98,11 @@ foreach ($iterator as $fileInfo) {
         continue;
     }
 
-    if (strpos($content, 'Documents Plugin 1.1.2') !== false) {
+    if (preg_match('/Documents Plugin 1\.1\.2(?![0-9])/', $content)) {
         $legacyHeadersFound[] = $path;
     }
 
-    if (strpos($content, 'Documents Plugin 1.1.1') !== false
-        || strpos($content, 'Documents Plugin 1.1.0') !== false) {
+    if (preg_match('/Documents Plugin 1\.1\.(?:0|1)(?![0-9])/', $content)) {
         $failures[] = 'Unexpected older plugin header remains in ' . $path . '.';
     }
 }
