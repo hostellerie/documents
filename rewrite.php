@@ -50,8 +50,8 @@ if (!function_exists('DOCUMENTS_writeHtaccess')) {
             return true;
         }
 
-        $rules = "DirectoryIndex home.php index.php\n\n"
-            . "RewriteEngine On\n\n"
+        $rules = "RewriteEngine On\n\n"
+            . "RewriteRule ^$ home.php [L]\n\n"
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
             . "RewriteRule ^([^/]+)/([^/]+)/?$ index.php?mode=view&cat=$1&doc=$2 [L,QSA]\n\n"
