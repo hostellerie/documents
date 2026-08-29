@@ -51,7 +51,8 @@ documents_docmutation_require($endpoint, 'SEC_checkToken()', 'Secure document sa
 documents_docmutation_require($endpoint, 'DOCUMENTS_documentMutationIsStandardCategory', 'Dispatcher does not separate standard and specialized categories.', $failures);
 documents_docmutation_require($endpoint, "require __DIR__ . '/index.php';", 'Specialized categories do not fall back to the legacy controller.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_lockSecurityFields(', 'New non-admin document ownership/permissions are not locked.', $failures);
-documents_docmutation_require($endpoint, 'DOCUMENTS_interopNotifySaved(', 'Standard saves do not emit lifecycle events.', $failures);
+documents_docmutation_require($endpoint, 'DOCUMENTS_isPubliclyIndexable($documentId)', 'Previous anonymous visibility is not captured before a standard save.', $failures);
+documents_docmutation_require($endpoint, 'DOCUMENTS_notifyPublicTransition($savedId, $wasPublic, $isPublic)', 'Standard saves do not emit public-only lifecycle events.', $failures);
 documents_docmutation_forbid($endpoint, 'runtime.php', 'Secure document dispatcher must not register duplicate runtime lifecycle hooks.', $failures);
 documents_docmutation_require($integrity, '$available = 40 - strlen($prefix);', 'Historical unique-document URL helper still ignores the 40-character schema limit.', $failures);
 
