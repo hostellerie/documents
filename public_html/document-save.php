@@ -21,13 +21,14 @@ require_once $pluginPath . 'integrity.php';
 require_once $pluginPath . 'interoperability.php';
 require_once $pluginPath . 'indexability.php';
 require_once $pluginPath . 'document_images.php';
+require_once $pluginPath . 'maps_adapter.php';
 require_once $pluginPath . 'document_mutations.php';
 
 $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
 $operation = isset($_REQUEST['op']) ? (string) $_REQUEST['op'] : 'save';
 
-/* Deletion and specialized categories still use the mature legacy path.
- * Delegate before SEC_checkToken() so the one-time token is consumed only once. */
+/* Deletion and integrations without a service contract still use the mature
+ * compatibility path. Marker fields are handled through the Maps service. */
 if ($operation === 'delete'
     || $categoryId <= 0
     || !DOCUMENTS_documentMutationIsStandardCategory($categoryId)) {
@@ -72,15 +73,10 @@ if (!$isCreation) {
     }
 }
 
-/* Never trust ownership/permission fields from a normal contributor. */
 if ($isCreation && !SEC_hasRights('documents.admin')) {
     $defaults = array();
     SEC_setDefaultPermissions($defaults, $_DOCUMENTS_CONF['default_permissions']);
-    $defaultGroup = (int) DB_getItem(
-        $_TABLES['groups'],
-        'grp_id',
-        "grp_name='Documents Admin'"
-    );
+    $defaultGroup = (int) DB_getItem($_TABLES['groups'], 'grp_id', "grp_name='Documents Admin'");
     if ($defaultGroup <= 0) {
         $defaultGroup = 1;
     }
@@ -107,7 +103,6 @@ if (!$ok) {
     if (!empty($missing)) {
         $message .= ' ' . implode(', ', $missing);
     }
-
     if ($isCreation) {
         $returnUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
             . '/index.php?mode=new&cat=' . rawurlencode((string) $category['cat_url']);
