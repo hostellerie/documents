@@ -18,18 +18,7 @@
 // | This program is licensed under the terms of the GNU General Public License|
 // | as published by the Free Software Foundation; either version 2            |
 // | of the License, or (at your option) any later version.                    |
-// |                                                                           |
-// | This program is distributed in the hope that it will be useful,           |
-// | but WITHOUT ANY WARRANTY; without even the implied warranty of            |
-// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                      |
-// | See the GNU General Public License for more details.                      |
-// |                                                                           |
-// | You should have received a copy of the GNU General Public License         |
-// | along with this program; if not, write to the Free Software Foundation,   |
-// | Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.           |
-// |                                                                           |
 // +---------------------------------------------------------------------------+
-
 
 $_SQL[] = "
 CREATE TABLE {$_TABLES['documents_cat']} (
@@ -44,6 +33,7 @@ CREATE TABLE {$_TABLES['documents_cat']} (
   list_index tinyint(1) unsigned NOT NULL default '1',
   submitable tinyint(1) unsigned NOT NULL default '1',
   cat_help varchar(255) NOT NULL default '',
+  metadescription varchar(255) NOT NULL default '',
   custom_header varchar(255) NOT NULL default '',
   custom_footer varchar(255) NOT NULL default '',
   
@@ -142,7 +132,6 @@ CREATE TABLE {$_TABLES['documents_selects']} (
   PRIMARY KEY (sid)
 ) ENGINE=MyISAM
 ";
-
 
 $_SQL[] = "CREATE TABLE {$_TABLES['documents_pics']} (
     pi_pid varchar(40) NOT NULL,
