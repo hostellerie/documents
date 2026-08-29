@@ -1,6 +1,6 @@
 <?php
 
-/* Documents 1.1.10 metadata and header consistency checks. */
+/* Documents 1.2.0 metadata and header consistency checks. */
 
 $root = dirname(__DIR__);
 $failures = array();
@@ -24,10 +24,10 @@ function DOCUMENTS_metaRead($root, $path, &$failures)
 
 $autoinstall = DOCUMENTS_metaRead($root, 'autoinstall.php', $failures);
 $readme = DOCUMENTS_metaRead($root, 'README.md', $failures);
-$changelog = DOCUMENTS_metaRead($root, 'CHANGELOG.md', $failures);
+$testing = DOCUMENTS_metaRead($root, 'TESTING.md', $failures);
 
 $requiredMetadata = array(
-    "'pi_version' => '1.1.10'" => 'Plugin version metadata is not 1.1.10.',
+    "'pi_version' => '1.2.0'" => 'Plugin version metadata is not 1.2.0.',
     "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')" => 'Minimum Geeklog version metadata is inconsistent.',
     "define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3')" => 'Maximum Geeklog version metadata is inconsistent.',
     "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')" => 'Minimum PHP version metadata is inconsistent.',
@@ -40,11 +40,17 @@ foreach ($requiredMetadata as $needle => $message) {
     }
 }
 
-if (strpos($readme, '1.1.10') === false) {
-    $failures[] = 'README does not identify the 1.1.10 release-candidate line.';
+if (strpos($readme, 'Documents 1.2.0') === false) {
+    $failures[] = 'README does not identify the Documents 1.2.0 development target.';
 }
-if (strpos($changelog, '## 1.1.10') === false) {
-    $failures[] = 'CHANGELOG does not contain a 1.1.10 section.';
+if (strpos($readme, 'Geeklog **2.1.1 through 2.2.2**') === false) {
+    $failures[] = 'README compatibility range is inconsistent.';
+}
+if (strpos($readme, 'PHP **5.6 through 8.1**') === false) {
+    $failures[] = 'README PHP compatibility range is inconsistent.';
+}
+if (strpos($testing, '# Documents 1.2.0 release-candidate test matrix') === false) {
+    $failures[] = 'TESTING.md is not aligned with the 1.2.0 release candidate.';
 }
 
 $allowedLegacyHeaders = array(
