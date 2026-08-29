@@ -145,13 +145,16 @@ function DOCUMENTS_homeStatsBlock()
 }
 
 /* Public presentation bootstrap. Runtime.php is loaded only by Documents
- * endpoints, so checking index.php + non-admin is enough and also works when
- * the administrator changes the configured public folder name. */
+ * endpoints. SEO must run only on addressable public content surfaces, not on
+ * edit/save/administration modes that happen to use the public entry point. */
 $documentsPresentationScript = isset($_SERVER['SCRIPT_NAME'])
     ? str_replace('\\', '/', (string) $_SERVER['SCRIPT_NAME']) : '';
+$documentsPresentationMode = isset($_REQUEST['mode']) ? trim((string) $_REQUEST['mode']) : '';
 $documentsPresentationIsPublicIndex = $documentsPresentationScript !== ''
     && basename($documentsPresentationScript) === 'index.php'
     && strpos($documentsPresentationScript, '/admin/') === false;
+$documentsPresentationIsSeoView = $documentsPresentationMode === ''
+    || $documentsPresentationMode === 'view';
 
 if ($documentsPresentationIsPublicIndex) {
     if (isset($_SCRIPTS) && is_object($_SCRIPTS) && isset($_DOCUMENTS_CONF['site_url'])) {
@@ -161,7 +164,7 @@ if ($documentsPresentationIsPublicIndex) {
         );
     }
 
-    if (isset($_CONF['path'])) {
+    if ($documentsPresentationIsSeoView && isset($_CONF['path'])) {
         $documentsSeoFile = $_CONF['path'] . 'plugins/documents/seo.php';
         if (is_file($documentsSeoFile)) {
             require_once $documentsSeoFile;
