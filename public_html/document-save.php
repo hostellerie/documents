@@ -19,6 +19,7 @@ require_once $pluginPath . 'security.php';
 require_once $pluginPath . 'include_compat.php';
 require_once $pluginPath . 'integrity.php';
 require_once $pluginPath . 'interoperability.php';
+require_once $pluginPath . 'indexability.php';
 require_once $pluginPath . 'document_mutations.php';
 
 $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
@@ -90,8 +91,13 @@ if ($isCreation && !SEC_hasRights('documents.admin')) {
     );
 }
 
-$previousStatus = !empty($existing) && isset($existing['active'])
-    ? (int) $existing['active'] : DOCUMENTS_STATUS_INACTIVE;
+$wasPublic = !$isCreation && DOCUMENTS_isPubliclyIndexable($documentId);
+if ($wasPublic) {
+    $oldUrl = DOCUMENTS_interopResolveStoredUrl($documentId);
+    if ($oldUrl !== '') {
+        DOCUMENTS_interopRememberUrl($documentId, $oldUrl);
+    }
+}
 
 list($ok, $message, $savedId, $categorySlug, $details) = DOCUMENTS_saveStandardDocument($_REQUEST);
 
@@ -115,7 +121,8 @@ if (!$ok) {
 }
 
 $newStatus = isset($details['status']) ? (int) $details['status'] : DOCUMENTS_STATUS_INACTIVE;
-DOCUMENTS_interopNotifySaved($savedId, $previousStatus, $newStatus);
+$isPublic = DOCUMENTS_isPubliclyIndexable($savedId);
+DOCUMENTS_notifyPublicTransition($savedId, $wasPublic, $isPublic);
 
 if ($isCreation
     && $newStatus === DOCUMENTS_STATUS_SUBMISSION
