@@ -1,4 +1,4 @@
-<form action="{doc_url}/index.php?mode=save_select" method="POST">
+<form action="{doc_url}/admin-save.php" method="POST">
 {sid}
     <fieldset class="documents-form-fieldset">
         <legend><b>{select_informations}</b></legend>
@@ -29,6 +29,7 @@
     <p class="documents-required-note"><span class="documents-required-mark">*</span><em> {required_field}</em></p>
     {admin_options}
     <input type="submit" name="submit" value="{validate_button}" {xhtml}>
+    <input type="hidden" name="mode" value="save_select"{xhtml}>
     <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
 
 </form>
