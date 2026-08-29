@@ -6,7 +6,10 @@ This checklist defines the validation required before promoting Documents 1.2.0.
 
 - Geeklog 2.1.1 through 2.2.2;
 - PHP 5.6 through 8.1;
-- MySQL/MariaDB installation and 1.2.0 schema migration.
+- MySQL/MariaDB only;
+- single-site and multisite installations.
+
+MSSQL is no longer supported and `sql/mssql_install.php` must not be shipped. The compatibility callback must reject every `$_DB_dbms` value other than Geeklog's `mysql` backend.
 
 ## Automated/static checks
 
@@ -15,6 +18,8 @@ Before a release package is considered testable:
 - run PHP syntax lint on all plugin PHP/INC files with PHP 5.6 and PHP 8.1;
 - verify metadata/version consistency reports 1.2.0;
 - verify no PHP syntax introduced after PHP 5.6 is used;
+- verify `sql/mssql_install.php` is absent;
+- verify the compatibility callback explicitly allows only the MySQL/MariaDB backend;
 - verify configuration-upgrade idempotence;
 - verify the 1.2.0 schema migration is idempotent;
 - verify English/French language-key parity where language keys are changed;
@@ -24,14 +29,22 @@ Automated checks do not replace real Geeklog installation tests.
 
 ## Environment matrix
 
-| Geeklog | PHP | Fresh install | Upgrade | Front end | Admin | Status |
-| --- | --- | --- | --- | --- | --- | --- |
-| 2.1.1 | 5.6 | Pending | Pending | Pending | Pending | Pending |
-| 2.1.x | 7.x | Pending | Pending | Pending | Pending | Pending |
-| 2.2.0/2.2.1 | 7.x/8.0 | Pending | Pending | Pending | Pending | Pending |
-| 2.2.2 | 8.1 | Pending | Pending | Pending | Pending | Pending |
+| Geeklog | PHP | Database | Fresh install | Upgrade | Front end | Admin | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2.1.1 | 5.6 | MySQL/MariaDB | Pending | Pending | Pending | Pending | Pending |
+| 2.1.x | 7.x | MySQL/MariaDB | Pending | Pending | Pending | Pending | Pending |
+| 2.2.0/2.2.1 | 7.x/8.0 | MySQL/MariaDB | Pending | Pending | Pending | Pending | Pending |
+| 2.2.2 | 8.1 | MySQL/MariaDB | Pending | Pending | Pending | Pending | Pending |
 
-Only combinations that Geeklog itself can run on need to be tested. Record the exact Geeklog and PHP version used for each manual test.
+Only combinations that Geeklog itself can run on need to be tested. Record the exact Geeklog, PHP and MySQL/MariaDB versions used for each manual test.
+
+## Database compatibility
+
+- confirm a normal Geeklog `$_DB_dbms = 'mysql'` installation is accepted;
+- confirm both MySQL and MariaDB servers execute the install schema successfully;
+- confirm a fake/unsupported DBMS value is rejected by `plugin_compatible_with_this_version_documents()`;
+- confirm no MSSQL SQL file remains in the package;
+- confirm the 1.2.0 `metadescription` migration is valid on MySQL/MariaDB.
 
 ## Fresh installation
 
@@ -173,6 +186,28 @@ With a listener that records Geeklog lifecycle events, validate:
 - confirm `$limit=0` works as the core unlimited-collection convention;
 - compare the result with the Item Info collection fallback.
 
+## Syndication RSS/Atom
+
+Use Geeklog's syndication administration to create an all-Documents feed and a category-specific feed.
+
+Verify:
+
+- `plugin_getfeednames_documents()` exposes `all` plus permitted categories;
+- `plugin_getfeedcontent_documents()` returns only active permitted documents;
+- category feeds contain only that category;
+- numeric limits and `Nh` hour windows work;
+- title, summary, canonical link, author and modification date are valid;
+- `content_length=0` omits the summary as expected;
+- `plugin_feedupdatecheck_documents()` invalidates a feed after a relevant Documents lifecycle change;
+- no feed callback needs Documents-specific duplicated content-selection logic outside the shared item layer.
+
+## Native statistics
+
+- confirm Documents appears in Geeklog site statistics through `plugin_statssummary_documents()`;
+- confirm the summary reports active permitted document count and total views;
+- confirm `plugin_showstats_documents()` shows the most-viewed permitted documents;
+- confirm private/inactive content is absent from statistics visible to unauthorized visitors.
+
 ## Autotags
 
 Validate:
@@ -291,11 +326,12 @@ With MediaGallery active, validate album selection and rendering using MediaGall
 Documents 1.2.0 can be released only when:
 
 - syntax lint passes on PHP 5.6 and PHP 8.1;
+- MySQL and MariaDB installation/upgrade checks pass and unsupported DBMS values are rejected;
 - no blocking PHP warning/fatal error remains in supported test environments;
 - fresh install and upgrade tests pass;
 - the category `metadescription` migration and editing flow are verified;
 - SEO metadata/canonical output is verified on home, category and document pages;
-- Item Info, collection, URL resolution, lifecycle and sitemap tests pass;
+- Item Info, collection, URL resolution, lifecycle, sitemap, syndication and statistics tests pass;
 - Hello, Hub and IndexNow can consume Documents without Documents-specific SQL;
 - multisite isolation is confirmed manually;
 - optional dependency states are validated;
