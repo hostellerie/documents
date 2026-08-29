@@ -54,7 +54,8 @@ documents_test_require($files['updates'], 'function DOCUMENTS_updateSchema_1_2_0
 documents_test_require($files['updates'], "LIKE 'metadescription'", 'Metadescription migration is not idempotence-aware.', $failures);
 
 documents_test_require($files['functions'], 'require_once $plugin_path . \'interoperability.php\'', 'Interoperability callbacks are not loaded by functions.inc.', $failures);
-documents_test_require($files['functions'], 'require_once $plugin_path . \'distribution.php\'', 'Feed/statistics callbacks are not loaded by functions.inc.', $failures);
+documents_test_require($files['interop'], "'embeds.php'", 'Autotag/block layer is not loaded by interoperability.', $failures);
+documents_test_require($files['embeds'], "'distribution.php'", 'Feed/statistics callbacks are not loaded through the interoperability chain.', $failures);
 documents_test_require($files['interop'], 'function plugin_getiteminfo_documents(', 'Item Info callback is missing.', $failures);
 documents_test_require($files['interop'], '(string) $id === \'*\'', 'Item Info collection support is missing.', $failures);
 documents_test_require($files['interop'], "'since'", 'Collection since filtering is missing.', $failures);
@@ -63,15 +64,14 @@ documents_test_require($files['interop'], 'function plugin_idtourl_documents(', 
 documents_test_require($files['interop'], 'function plugin_urltoid_documents(', 'URL-to-ID resolver is missing.', $failures);
 documents_test_require($files['interop'], 'function plugin_collectSitemapItems_documents(', 'Native sitemap collector is missing.', $failures);
 documents_test_require($files['interop'], "'date-modified'", 'Sitemap/ItemInfo modification date is missing.', $failures);
-documents_test_require($files['interop'], "COM_getPermSQL('AND', $uid, 2, 'd')", 'Item Info document permission guard is missing.', $failures);
-documents_test_require($files['interop'], "COM_getPermSQL('AND', $uid, 2, 'c')", 'Item Info category permission guard is missing.', $failures);
-documents_test_require($files['interop'], "'embeds.php'", 'Autotag/block layer is not loaded by interoperability.', $failures);
+documents_test_require($files['interop'], 'COM_getPermSQL(\'AND\', $uid, 2, \'d\')', 'Item Info document permission guard is missing.', $failures);
+documents_test_require($files['interop'], 'COM_getPermSQL(\'AND\', $uid, 2, \'c\')', 'Item Info category permission guard is missing.', $failures);
 
 documents_test_require($files['indexability'], 'function DOCUMENTS_isPubliclyIndexable(', 'Anonymous indexability helper is missing.', $failures);
 documents_test_require($files['indexability'], '$anonymousUid = 1;', 'Indexability does not explicitly use Geeklog anonymous uid 1.', $failures);
 documents_test_require($files['indexability'], 'function DOCUMENTS_notifyPublicTransition(', 'Public lifecycle transition helper is missing.', $failures);
-documents_test_require($files['indexability'], "PLG_itemSaved($documentId, 'documents')", 'Public saved lifecycle event is missing.', $failures);
-documents_test_require($files['indexability'], "PLG_itemDeleted($documentId, 'documents')", 'Public deleted lifecycle event is missing.', $failures);
+documents_test_require($files['indexability'], 'PLG_itemSaved($documentId, \'documents\')', 'Public saved lifecycle event is missing.', $failures);
+documents_test_require($files['indexability'], 'PLG_itemDeleted($documentId, \'documents\')', 'Public deleted lifecycle event is missing.', $failures);
 documents_test_require($files['runtime'], 'DOCUMENTS_isPubliclyIndexable($id)', 'Legacy lifecycle does not test anonymous indexability.', $failures);
 documents_test_require($files['runtime'], 'DOCUMENTS_notifyPublicTransition($id, $wasPublic, $isPublic)', 'Legacy lifecycle does not use public transitions.', $failures);
 documents_test_require($files['document_save'], 'DOCUMENTS_isPubliclyIndexable($documentId)', 'Secure standard save does not snapshot previous public visibility.', $failures);
@@ -89,10 +89,10 @@ documents_test_require($files['distribution'], 'function plugin_feedupdatecheck_
 documents_test_require($files['distribution'], 'function plugin_statssummary_documents()', 'Native statistics summary callback is missing.', $failures);
 documents_test_require($files['distribution'], 'function plugin_showstats_documents()', 'Native detailed statistics callback is missing.', $failures);
 
-documents_test_require($files['seo'], 'rel=\"canonical\"', 'Canonical link generation is missing.', $failures);
-documents_test_require($files['seo'], 'name=\"description\"', 'SEO meta description generation is missing.', $failures);
-documents_test_require($files['seo'], 'property=\"og:title\"', 'OpenGraph metadata is missing.', $failures);
-documents_test_require($files['seo'], 'name=\"twitter:card\"', 'Twitter card metadata is missing.', $failures);
+documents_test_require($files['seo'], 'rel="canonical"', 'Canonical link generation is missing.', $failures);
+documents_test_require($files['seo'], 'name="description"', 'SEO meta description generation is missing.', $failures);
+documents_test_require($files['seo'], 'property="og:title"', 'OpenGraph metadata is missing.', $failures);
+documents_test_require($files['seo'], 'name="twitter:card"', 'Twitter card metadata is missing.', $failures);
 documents_test_require($files['seo'], 'application/ld+json', 'JSON-LD output is missing.', $failures);
 documents_test_require($files['seo'], "'schema_type' => 'CreativeWork'", 'Document CreativeWork schema is missing.', $failures);
 documents_test_require($files['seo'], "'schema_type' => 'CollectionPage'", 'CollectionPage schema is missing.', $failures);
