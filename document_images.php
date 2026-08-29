@@ -24,6 +24,24 @@ function DOCUMENTS_imageUploadRequestPresent($fieldId)
     return true;
 }
 
+function DOCUMENTS_imageEnsureDirectory()
+{
+    global $_DOCUMENTS_CONF;
+
+    if (empty($_DOCUMENTS_CONF['path_images'])) {
+        return false;
+    }
+
+    $path = rtrim((string) $_DOCUMENTS_CONF['path_images'], "/\\") . DIRECTORY_SEPARATOR;
+    if (!is_dir($path)) {
+        if (!@mkdir($path, 0755, true) && !is_dir($path)) {
+            return false;
+        }
+    }
+
+    return is_writable($path);
+}
+
 function DOCUMENTS_imageExistingValue($documentId, $fieldId)
 {
     global $_TABLES;
@@ -84,7 +102,6 @@ function DOCUMENTS_uploadDocumentImages($documentId, $fields)
 
     $imageFields = array();
     $filenames = array();
-    $inputNames = array();
 
     foreach ($fields as $field) {
         if (!is_array($field)
@@ -112,7 +129,6 @@ function DOCUMENTS_uploadDocumentImages($documentId, $fields)
         }
 
         $imageFields[] = $fieldId;
-        $inputNames[] = $input;
         $filenames[] = $baseName . '.' . $extension;
     }
 
@@ -120,7 +136,7 @@ function DOCUMENTS_uploadDocumentImages($documentId, $fields)
         return array(true, array(), '');
     }
 
-    if (function_exists('DOCUMENTS_ensureImageDirectory') && !DOCUMENTS_ensureImageDirectory()) {
+    if (!DOCUMENTS_imageEnsureDirectory()) {
         return array(false, array(), 'Documents image directory is unavailable.');
     }
 
