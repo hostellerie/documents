@@ -15,6 +15,7 @@ define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1');
 define('DOCUMENTS_MAX_GEEKLOG_VERSION_EXCLUSIVE', '2.2.3');
 define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0');
 define('DOCUMENTS_MAX_PHP_VERSION_EXCLUSIVE', '8.2.0');
+define('DOCUMENTS_SUPPORTED_DBMS', 'mysql');
 
 function DOCUMENTS_runStorageMigration()
 {
@@ -157,7 +158,11 @@ function plugin_compatible_with_this_version_documents($pi_name)
 {
     global $_CONF, $_DB_dbms;
 
-    $dbFile = $_CONF['path'] . 'plugins/' . $pi_name . '/sql/' . $_DB_dbms . '_install.php';
+    if ((string) $_DB_dbms !== DOCUMENTS_SUPPORTED_DBMS) {
+        return false;
+    }
+
+    $dbFile = $_CONF['path'] . 'plugins/' . $pi_name . '/sql/mysql_install.php';
     if (!file_exists($dbFile)) {
         return false;
     }
