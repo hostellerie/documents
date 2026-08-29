@@ -1,4 +1,4 @@
-<form action="{doc_url}/index.php?mode=save_field" method="POST">
+<form action="{doc_url}/admin-field-save.php" method="POST">
 {fid}
     <fieldset class="documents-form-fieldset">
         <legend><b>{field_informations}</b></legend>
@@ -30,7 +30,7 @@
 
         <div>
             <p><label>{var_label}<span class="documents-required-mark"> *</span></label>
-                <input type="text" name="var_name" value="{var_name}" size="80" maxlength="255" {xhtml}></p>
+                <input type="text" name="var_name" value="{var_name}" size="80" maxlength="18" pattern="[A-Za-z][A-Za-z0-9_]{0,17}" {xhtml}></p>
         </div>
         <div>
             <p><label>{type_label}</label> {type_select}</p>
@@ -54,6 +54,7 @@
     <p class="documents-required-note"><span class="documents-required-mark">*</span><em> {required_field}</em></p>
     {admin_options}
     <input type="submit" name="submit" value="{validate_button}" {xhtml}>
+    <input type="hidden" name="mode" value="save_field"{xhtml}>
     <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
 
 </form>
