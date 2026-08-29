@@ -46,18 +46,14 @@ function DOCUMENTS_runtimeSaveCategoryMetaDescription()
     global $_TABLES;
 
     if (!SEC_hasRights('documents.admin')
+        || empty($GLOBALS['DOCUMENTS_CSRF_VALIDATED'])
         || !isset($_SERVER['REQUEST_METHOD'])
         || $_SERVER['REQUEST_METHOD'] !== 'POST'
         || !isset($_REQUEST['mode'])
         || $_REQUEST['mode'] !== 'save_cat'
-        || !isset($_REQUEST['op'])
-        || $_REQUEST['op'] === 'delete'
+        || (isset($_REQUEST['op']) && $_REQUEST['op'] === 'delete')
         || !isset($_REQUEST['metadescription_loaded'])
         || (string) $_REQUEST['metadescription_loaded'] !== '1') {
-        return;
-    }
-
-    if (function_exists('SEC_checkToken') && !SEC_checkToken()) {
         return;
     }
 
@@ -160,16 +156,12 @@ function DOCUMENTS_runtimePrepareLifecycle()
     register_shutdown_function('DOCUMENTS_runtimeLifecycleAfterSave', $id, $operation, $before);
 }
 
-/* Register metadata persistence only for the category save path. The legacy
- * controller performs the actual category transaction; this callback runs
- * afterwards and therefore also supports newly-created categories. */
 if (isset($_REQUEST['mode']) && $_REQUEST['mode'] === 'save_cat') {
     register_shutdown_function('DOCUMENTS_runtimeSaveCategoryMetaDescription');
 }
 
 DOCUMENTS_runtimePrepareLifecycle();
 
-/* Add the lightweight statistics block only on the public Documents home. */
 $documentsScript = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\', '/', $_SERVER['SCRIPT_NAME']) : '';
 $documentsMode = isset($_REQUEST['mode']) ? trim((string) $_REQUEST['mode']) : '';
 if ($documentsMode === ''
