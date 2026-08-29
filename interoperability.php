@@ -77,7 +77,7 @@ function DOCUMENTS_interopRememberedUrl($id)
 function DOCUMENTS_interopRequestedFields($what)
 {
     if (is_array($what)) {
-        return $what;
+        return array_values(array_map('trim', $what));
     }
 
     $what = trim((string) $what);
@@ -88,6 +88,7 @@ function DOCUMENTS_interopRequestedFields($what)
     return array_map('trim', explode(',', $what));
 }
 
+/** Select associative properties for collection responses. */
 function DOCUMENTS_interopSelectFields($item, $what)
 {
     $fields = DOCUMENTS_interopRequestedFields($what);
@@ -97,12 +98,31 @@ function DOCUMENTS_interopSelectFields($item, $what)
 
     $result = array();
     foreach ($fields as $field) {
-        if (array_key_exists($field, $item)) {
+        if (array_key_exists($field, $item) && $item[$field] !== '') {
             $result[$field] = $item[$field];
         }
     }
 
     return $result;
+}
+
+/**
+ * Geeklog ItemInfo returns a scalar when one property is requested and a
+ * numerically indexed array, in requested order, when several are requested.
+ */
+function DOCUMENTS_interopSelectSingle($item, $what)
+{
+    $fields = DOCUMENTS_interopRequestedFields($what);
+    if (empty($fields)) {
+        return $item;
+    }
+
+    $values = array();
+    foreach ($fields as $field) {
+        $values[] = array_key_exists($field, $item) ? $item[$field] : '';
+    }
+
+    return count($values) === 1 ? $values[0] : $values;
 }
 
 function DOCUMENTS_interopTimestamp($value)
@@ -255,9 +275,20 @@ function DOCUMENTS_interopItems($what, $uid, $options)
 
     $uid = (int) $uid;
     $options = is_array($options) ? $options : array();
-    $limit = isset($options['limit']) ? (int) $options['limit'] : 20;
-    $limit = max(1, min(200, $limit));
+    $limit = array_key_exists('limit', $options) ? (int) $options['limit'] : 20;
+    if ($limit < 0) {
+        $limit = 20;
+    } elseif ($limit > 1000) {
+        $limit = 1000;
+    }
+
     $since = isset($options['since']) ? DOCUMENTS_interopTimestamp($options['since']) : 0;
+    $createdSince = 0;
+    if (isset($options['filter']) && is_array($options['filter'])
+        && isset($options['filter']['date-created'])) {
+        $createdSince = DOCUMENTS_interopTimestamp($options['filter']['date-created']);
+    }
+
     $order = isset($options['order']) ? strtolower(trim((string) $options['order'])) : 'modified-desc';
 
     $sql = "SELECT DISTINCT d.doc_url FROM {$_TABLES['documents_docs']} AS d "
@@ -266,6 +297,9 @@ function DOCUMENTS_interopItems($what, $uid, $options)
 
     if ($since > 0) {
         $sql .= " AND UNIX_TIMESTAMP(COALESCE(d.modified,d.created)) >= " . (int) $since;
+    }
+    if ($createdSince > 0) {
+        $sql .= " AND UNIX_TIMESTAMP(d.created) >= " . (int) $createdSince;
     }
 
     if ($order === 'created-desc') {
@@ -278,7 +312,10 @@ function DOCUMENTS_interopItems($what, $uid, $options)
         $sql .= " ORDER BY COALESCE(d.modified,d.created) DESC, d.did DESC";
     }
 
-    $sql .= " LIMIT " . $limit;
+    if ($limit > 0) {
+        $sql .= " LIMIT " . $limit;
+    }
+
     $result = DB_query($sql);
     $items = array();
     while ($row = DB_fetchArray($result)) {
@@ -301,7 +338,11 @@ function plugin_getiteminfo_documents($id, $what = '', $uid = 0, $options = arra
     }
 
     $item = DOCUMENTS_interopItem($id, $uid);
-    return empty($item) ? array() : DOCUMENTS_interopSelectFields($item, $what);
+    if (empty($item)) {
+        return false;
+    }
+
+    return DOCUMENTS_interopSelectSingle($item, $what);
 }
 
 function plugin_idtourl_documents($sub_type, $item_id)
@@ -352,9 +393,11 @@ function DOCUMENTS_interopNotifySaved($id, $previousStatus, $newStatus)
     $previousStatus = (int) $previousStatus;
     $newStatus = (int) $newStatus;
 
-    if ($newStatus === 1 && function_exists('PLG_itemSaved')) {
+    if ($newStatus === DOCUMENTS_STATUS_ACTIVE && function_exists('PLG_itemSaved')) {
         PLG_itemSaved((string) $id, 'documents');
-    } elseif ($previousStatus === 1 && $newStatus !== 1 && function_exists('PLG_itemDeleted')) {
+    } elseif ($previousStatus === DOCUMENTS_STATUS_ACTIVE
+        && $newStatus !== DOCUMENTS_STATUS_ACTIVE
+        && function_exists('PLG_itemDeleted')) {
         PLG_itemDeleted((string) $id, 'documents');
     }
 }
@@ -368,8 +411,8 @@ function DOCUMENTS_interopNotifyDeleted($id)
 
 function plugin_collectSitemapItems_documents($uid, $limit)
 {
-    $items = DOCUMENTS_interopItems('id,url,date-modified', (int) $uid, array(
-        'limit' => max(1, (int) $limit),
+    $items = DOCUMENTS_interopItems('url,date-modified', (int) $uid, array(
+        'limit' => (int) $limit,
         'order' => 'modified-desc'
     ));
 
@@ -377,9 +420,8 @@ function plugin_collectSitemapItems_documents($uid, $limit)
     foreach ($items as $item) {
         if (!empty($item['url'])) {
             $result[] = array(
-                'id' => isset($item['id']) ? $item['id'] : '',
                 'url' => $item['url'],
-                'date' => isset($item['date-modified']) ? (int) $item['date-modified'] : 0
+                'date-modified' => isset($item['date-modified']) ? (int) $item['date-modified'] : 0
             );
         }
     }
