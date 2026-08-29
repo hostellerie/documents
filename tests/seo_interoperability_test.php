@@ -40,17 +40,17 @@ documents_test_require($files['install'], 'metadescription varchar(255)', 'Fresh
 documents_test_require($files['updates'], 'function DOCUMENTS_updateSchema_1_2_0()', '1.2.0 schema upgrade is missing.', $failures);
 documents_test_require($files['updates'], "LIKE 'metadescription'", 'Metadescription migration is not idempotence-aware.', $failures);
 
-documents_test_require($files['functions'], "require_once $plugin_path . 'interoperability.php'", 'Interoperability callbacks are not loaded by functions.inc.', $failures);
+documents_test_require($files['functions'], 'require_once $plugin_path . \'interoperability.php\'', 'Interoperability callbacks are not loaded by functions.inc.', $failures);
 documents_test_require($files['interop'], 'function plugin_getiteminfo_documents(', 'Item Info callback is missing.', $failures);
-documents_test_require($files['interop'], "(string) $id === '*'", 'Item Info collection support is missing.', $failures);
+documents_test_require($files['interop'], '(string) $id === \'*\'', 'Item Info collection support is missing.', $failures);
 documents_test_require($files['interop'], "'since'", 'Collection since filtering is missing.', $failures);
 documents_test_require($files['interop'], "'date-created'", 'Core-style date-created filtering is missing.', $failures);
 documents_test_require($files['interop'], 'function plugin_idtourl_documents(', 'ID-to-URL resolver is missing.', $failures);
 documents_test_require($files['interop'], 'function plugin_urltoid_documents(', 'URL-to-ID resolver is missing.', $failures);
 documents_test_require($files['interop'], 'function plugin_collectSitemapItems_documents(', 'Native sitemap collector is missing.', $failures);
 documents_test_require($files['interop'], "'date-modified'", 'Sitemap/ItemInfo modification date is missing.', $failures);
-documents_test_require($files['interop'], "PLG_itemSaved((string) $id, 'documents')", 'Saved lifecycle event is missing.', $failures);
-documents_test_require($files['interop'], "PLG_itemDeleted((string) $id, 'documents')", 'Deleted lifecycle event is missing.', $failures);
+documents_test_require($files['interop'], 'PLG_itemSaved((string) $id, \'documents\')', 'Saved lifecycle event is missing.', $failures);
+documents_test_require($files['interop'], 'PLG_itemDeleted((string) $id, \'documents\')', 'Deleted lifecycle event is missing.', $failures);
 
 documents_test_require($files['embeds'], 'function plugin_autotags_documents(', 'Documents autotags are missing.', $failures);
 documents_test_require($files['embeds'], "array('document', 'documents')", 'Expected autotag names are missing.', $failures);
@@ -75,7 +75,7 @@ documents_test_require($files['runtime'], 'DOCUMENTS_runtimeLifecycleAfterSave',
 documents_test_require($files['runtime'], 'DOCUMENTS_runtimeSaveCategoryMetaDescription', 'Category metadescription persistence is missing.', $failures);
 
 documents_test_require($files['security'], 'DOCUMENTS_plainTextInput', 'Plain-text input normalization is missing.', $failures);
-documents_test_require($files['security'], "($type === 'select' || $type === 'radio')", 'Select/radio forged-value validation is missing.', $failures);
+documents_test_require($files['security'], '($type === \'select\' || $type === \'radio\')', 'Select/radio forged-value validation is missing.', $failures);
 
 documents_test_require($files['template'], '<article', 'Default document template is not semantic article markup.', $failures);
 documents_test_forbid($files['template'], 'plusone.js', 'Obsolete Google+ script remains in default template.', $failures);
