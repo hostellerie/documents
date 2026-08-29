@@ -53,6 +53,8 @@ if (!function_exists('DOCUMENTS_writeHtaccess')) {
         $rules = "RewriteEngine On\n\n"
             . "RewriteCond %{QUERY_STRING} (^|&)mode=edit_cat(&|$)\n"
             . "RewriteRule ^index\\.php$ category-editor.php [L,QSA]\n\n"
+            . "RewriteCond %{QUERY_STRING} (^|&)mode=save(&|$)\n"
+            . "RewriteRule ^index\\.php$ document-save.php [L,QSA]\n\n"
             . "RewriteRule ^$ home.php [L]\n\n"
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
