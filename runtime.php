@@ -24,58 +24,11 @@ if (isset($_CONF['path'])) {
     if (is_file($documentsInteropFile)) {
         require_once $documentsInteropFile;
     }
-}
 
-function DOCUMENTS_runtimeTruncateText($value, $length)
-{
-    $value = trim((string) $value);
-    $length = max(1, (int) $length);
-
-    if (function_exists('MBYTE_strlen') && function_exists('MBYTE_substr')) {
-        return MBYTE_strlen($value) > $length ? MBYTE_substr($value, 0, $length) : $value;
+    $documentsIndexabilityFile = $_CONF['path'] . 'plugins/documents/indexability.php';
+    if (is_file($documentsIndexabilityFile)) {
+        require_once $documentsIndexabilityFile;
     }
-    if (function_exists('mb_strlen') && function_exists('mb_substr')) {
-        return mb_strlen($value, 'UTF-8') > $length ? mb_substr($value, 0, $length, 'UTF-8') : $value;
-    }
-
-    return strlen($value) > $length ? substr($value, 0, $length) : $value;
-}
-
-function DOCUMENTS_runtimeSaveCategoryMetaDescription()
-{
-    global $_TABLES;
-
-    if (!SEC_hasRights('documents.admin')
-        || empty($GLOBALS['DOCUMENTS_CSRF_VALIDATED'])
-        || !isset($_SERVER['REQUEST_METHOD'])
-        || $_SERVER['REQUEST_METHOD'] !== 'POST'
-        || !isset($_REQUEST['mode'])
-        || $_REQUEST['mode'] !== 'save_cat'
-        || (isset($_REQUEST['op']) && $_REQUEST['op'] === 'delete')
-        || !isset($_REQUEST['metadescription_loaded'])
-        || (string) $_REQUEST['metadescription_loaded'] !== '1') {
-        return;
-    }
-
-    $meta = isset($_REQUEST['metadescription']) ? $_REQUEST['metadescription'] : '';
-    if (is_array($meta) || is_object($meta)) {
-        return;
-    }
-    $meta = DOCUMENTS_runtimeTruncateText(strip_tags((string) $meta), 255);
-    $metaSql = DB_escapeString($meta);
-
-    $cid = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
-    if ($cid > 0) {
-        DB_query("UPDATE {$_TABLES['documents_cat']} SET metadescription='{$metaSql}' WHERE cid={$cid}");
-        return;
-    }
-
-    $slug = isset($_REQUEST['cat_url']) ? trim((string) $_REQUEST['cat_url']) : '';
-    if ($slug === '') {
-        return;
-    }
-    $slugSql = DB_escapeString($slug);
-    DB_query("UPDATE {$_TABLES['documents_cat']} SET metadescription='{$metaSql}' WHERE cat_url='{$slugSql}'");
 }
 
 function DOCUMENTS_runtimeDocumentSnapshot($id)
@@ -96,7 +49,7 @@ function DOCUMENTS_runtimeDocumentSnapshot($id)
     return is_array($row) ? $row : array();
 }
 
-function DOCUMENTS_runtimeLifecycleAfterSave($requestedId, $operation, $before)
+function DOCUMENTS_runtimeLifecycleAfterSave($requestedId, $operation, $before, $wasPublic)
 {
     $id = trim((string) $requestedId);
     if ($id === '' && defined('DOC_URL')) {
@@ -106,13 +59,12 @@ function DOCUMENTS_runtimeLifecycleAfterSave($requestedId, $operation, $before)
         return;
     }
 
-    $previousStatus = is_array($before) && isset($before['active'])
-        ? (int) $before['active'] : DOCUMENTS_STATUS_INACTIVE;
+    $wasPublic = (bool) $wasPublic;
 
     if ($operation === 'delete') {
         $after = DOCUMENTS_runtimeDocumentSnapshot($id);
-        if (empty($after) && $previousStatus === DOCUMENTS_STATUS_ACTIVE) {
-            DOCUMENTS_interopNotifyDeleted($id);
+        if (empty($after)) {
+            DOCUMENTS_notifyPublicTransition($id, $wasPublic, false);
         }
         return;
     }
@@ -122,6 +74,8 @@ function DOCUMENTS_runtimeLifecycleAfterSave($requestedId, $operation, $before)
         return;
     }
 
+    $previousStatus = is_array($before) && isset($before['active'])
+        ? (int) $before['active'] : DOCUMENTS_STATUS_INACTIVE;
     $newStatus = isset($after['active']) ? (int) $after['active'] : DOCUMENTS_STATUS_INACTIVE;
     $beforeModified = is_array($before) && isset($before['modified']) ? (string) $before['modified'] : '';
     $afterModified = isset($after['modified']) ? (string) $after['modified'] : '';
@@ -132,7 +86,8 @@ function DOCUMENTS_runtimeLifecycleAfterSave($requestedId, $operation, $before)
         return;
     }
 
-    DOCUMENTS_interopNotifySaved($id, $previousStatus, $newStatus);
+    $isPublic = DOCUMENTS_isPubliclyIndexable($id);
+    DOCUMENTS_notifyPublicTransition($id, $wasPublic, $isPublic);
 }
 
 function DOCUMENTS_runtimePrepareLifecycle()
@@ -145,19 +100,22 @@ function DOCUMENTS_runtimePrepareLifecycle()
     $operation = isset($_REQUEST['op']) ? (string) $_REQUEST['op'] : 'save';
     $id = isset($_REQUEST['doc_url']) ? trim((string) $_REQUEST['doc_url']) : '';
     $before = ($id !== '') ? DOCUMENTS_runtimeDocumentSnapshot($id) : array();
+    $wasPublic = ($id !== '') ? DOCUMENTS_isPubliclyIndexable($id) : false;
 
-    if (!empty($before) && isset($before['active']) && (int) $before['active'] === DOCUMENTS_STATUS_ACTIVE) {
+    if ($wasPublic) {
         $url = DOCUMENTS_interopResolveStoredUrl($id);
         if ($url !== '') {
             DOCUMENTS_interopRememberUrl($id, $url);
         }
     }
 
-    register_shutdown_function('DOCUMENTS_runtimeLifecycleAfterSave', $id, $operation, $before);
-}
-
-if (isset($_REQUEST['mode']) && $_REQUEST['mode'] === 'save_cat') {
-    register_shutdown_function('DOCUMENTS_runtimeSaveCategoryMetaDescription');
+    register_shutdown_function(
+        'DOCUMENTS_runtimeLifecycleAfterSave',
+        $id,
+        $operation,
+        $before,
+        $wasPublic
+    );
 }
 
 DOCUMENTS_runtimePrepareLifecycle();
