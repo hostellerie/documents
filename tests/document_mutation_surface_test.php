@@ -2,8 +2,16 @@
 
 $root = dirname(__DIR__);
 $failures = array();
-$file = $root . '/document_mutations.php';
-$content = is_file($file) ? file_get_contents($file) : false;
+
+$mutationFile = $root . '/document_mutations.php';
+$endpointFile = $root . '/public_html/document-save.php';
+$rewriteFile = $root . '/rewrite.php';
+$integrityFile = $root . '/integrity.php';
+
+$content = is_file($mutationFile) ? file_get_contents($mutationFile) : false;
+$endpoint = is_file($endpointFile) ? file_get_contents($endpointFile) : false;
+$rewrite = is_file($rewriteFile) ? file_get_contents($rewriteFile) : false;
+$integrity = is_file($integrityFile) ? file_get_contents($integrityFile) : false;
 
 function documents_docmutation_require($content, $needle, $message, &$failures)
 {
@@ -36,6 +44,16 @@ if ($content === false) {
     documents_docmutation_require($content, 'DELETE FROM {$_TABLES[\'documents_values\']}', 'New-document cleanup on partial failure is missing.', $failures);
     documents_docmutation_forbid($content, 'addslashes(', 'Standard document mutation layer must not use addslashes().', $failures);
 }
+
+documents_docmutation_require($rewrite, 'mode=save', 'Document save requests are not routed through the secure dispatcher.', $failures);
+documents_docmutation_require($rewrite, 'document-save.php', 'Secure document save rewrite target is missing.', $failures);
+documents_docmutation_require($endpoint, 'SEC_checkToken()', 'Secure document save dispatcher does not validate CSRF.', $failures);
+documents_docmutation_require($endpoint, 'DOCUMENTS_documentMutationIsStandardCategory', 'Dispatcher does not separate standard and specialized categories.', $failures);
+documents_docmutation_require($endpoint, "require __DIR__ . '/index.php';", 'Specialized categories do not fall back to the legacy controller.', $failures);
+documents_docmutation_require($endpoint, 'DOCUMENTS_lockSecurityFields(', 'New non-admin document ownership/permissions are not locked.', $failures);
+documents_docmutation_require($endpoint, 'DOCUMENTS_interopNotifySaved(', 'Standard saves do not emit lifecycle events.', $failures);
+documents_docmutation_forbid($endpoint, "require_once $pluginPath . 'runtime.php'", 'Secure document dispatcher must not register duplicate runtime lifecycle hooks.', $failures);
+documents_docmutation_require($integrity, '$available = 40 - strlen($prefix);', 'Historical unique-document URL helper still ignores the 40-character schema limit.', $failures);
 
 if (!empty($failures)) {
     fwrite(STDERR, "Documents standard mutation checks failed:\n");
