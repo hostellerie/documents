@@ -1,6 +1,6 @@
 <?php
 // +--------------------------------------------------------------------------+
-// | Documents Plugin 1.1.9 - Geeklog CMS                                    |
+// | Documents Plugin 1.2.0 - Geeklog CMS                                    |
 // +--------------------------------------------------------------------------+
 // | ajax.php                                                                 |
 // +--------------------------------------------------------------------------+
@@ -30,10 +30,9 @@ if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST')
 
 /*
  * These AJAX actions are read-only helpers used while editing fields/selects.
- * Do not call SEC_checkToken() here: Geeklog CSRF tokens are one-time tokens,
- * and the AJAX request would consume the same token that must subsequently be
- * submitted by the save_field/save_select form. Mutating save routes remain
- * protected by SEC_checkToken() in public_html/index.php.
+ * Do not consume the form's one-time Geeklog CSRF token here: the same token
+ * must subsequently be submitted by the save_field/save_select form.
+ * Mutating save routes perform the normal token validation themselves.
  */
 
 $vars = array(
