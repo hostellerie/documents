@@ -68,11 +68,13 @@ if (is_string($requestPath) && basename($requestPath) === 'document.php') {
     exit;
 }
 
-/* Preserve custom templates and specialized Maps/MediaGallery field rendering. */
+/* Preserve custom templates and MediaGallery album rendering. Maps marker
+ * rendering is delegated to Maps through marker_render and no longer forces
+ * the historical renderer. */
 $specializedCount = (int) DB_getItem(
     $_TABLES['documents_fields'],
     'COUNT(*)',
-    "cat_id={$categoryId} AND f_type IN ('marker','album')"
+    "cat_id={$categoryId} AND f_type='album'"
 );
 $templateName = isset($category['template']) ? DOCUMENTS_templateName($category['template']) : '';
 $templateDir = ($templateName !== '') ? DOCUMENTS_customTemplateReadDir($templateName) : '';
@@ -124,6 +126,31 @@ function DOCUMENTS_publicDocumentSelectValue($groupId, $storedValue)
     return $value === '' ? $storedValue : (string) $value;
 }
 
+function DOCUMENTS_publicMarkerValue($markerId)
+{
+    $markerId = preg_replace('/[^0-9]/', '', (string) $markerId);
+    if ($markerId === '' || !DOCUMENTS_hasMaps() || !function_exists('PLG_invokeService')) {
+        return '';
+    }
+
+    $output = '';
+    $svcMsg = array();
+    $result = PLG_invokeService(
+        'maps',
+        'marker_render',
+        array(
+            'marker_id' => $markerId,
+            'width' => '100%',
+            'height' => '400px',
+            'zoom' => 14
+        ),
+        $output,
+        $svcMsg
+    );
+
+    return ($result === PLG_RET_OK) ? (string) $output : '';
+}
+
 function DOCUMENTS_publicDocumentValue($field, $value, $title)
 {
     global $_DOCUMENTS_CONF;
@@ -139,6 +166,10 @@ function DOCUMENTS_publicDocumentValue($field, $value, $title)
 
     if ($value === '') {
         return '';
+    }
+
+    if ($type === 'marker') {
+        return DOCUMENTS_publicMarkerValue($value);
     }
 
     if ($type === 'select') {
@@ -271,17 +302,16 @@ $template->set_var(
     )
 );
 
-$content = '';
+$body = '';
 if (!empty($category['custom_header'])) {
-    $content .= '<div class="documents-category__custom-header">'
-        . (string) $category['custom_header'] . '</div>';
+    $body .= '<div class="documents-category-header">'
+        . PLG_replaceTags((string) $category['custom_header']) . '</div>';
 }
-$content .= $template->finish($template->parse('output', 'doc'));
+$body .= $template->finish($template->parse('output', 'doc'));
 if (!empty($category['custom_footer'])) {
-    $content .= '<div class="documents-category__custom-footer">'
-        . (string) $category['custom_footer'] . '</div>';
+    $body .= '<div class="documents-category-footer">'
+        . PLG_replaceTags((string) $category['custom_footer']) . '</div>';
 }
 
-$pageTitle = $title . ' - ' . stripslashes((string) $category['cat_name']);
-$page = COM_createHTMLDocument($content, array('pagetitle' => $pageTitle));
-COM_output($page);
+DOCUMENTS_applyDocumentSeo($documentSlug);
+COM_output(COM_createHTMLDocument($body, array('pagetitle' => $title)));
