@@ -36,6 +36,7 @@ if ($operation !== 'delete') {
     $standardCategory = $categoryId > 0 && DOCUMENTS_documentMutationIsStandardCategory($categoryId);
     $mapsCategory = $categoryId > 0 && DOCUMENTS_mapsCategorySupported($categoryId);
     if ($categoryId <= 0 || (!$standardCategory && !$mapsCategory)) {
+        $GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'] = true;
         require __DIR__ . '/index.php';
         exit;
     }
