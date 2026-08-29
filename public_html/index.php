@@ -45,6 +45,15 @@ $documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
 $documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
 $documentsOperation = (string) DOCUMENTS_requestValue($_REQUEST, 'op', '');
 
+/* Never let a direct index.php?mode=save request reach the historical save
+ * controller. document-save.php owns modern document mutations and delegates
+ * marker operations to Maps. Only an explicit internal compatibility fallback
+ * may continue below. */
+if ($documentsMode === 'save' && empty($GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'])) {
+    require __DIR__ . '/document-save.php';
+    exit;
+}
+
 $documentsWriteModes = array('save', 'save_cat', 'save_field', 'save_group', 'save_select');
 if (in_array($documentsMode, $documentsWriteModes, true)) {
     if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
