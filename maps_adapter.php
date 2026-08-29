@@ -6,6 +6,18 @@ if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'map
     die('This file can not be used on its own.');
 }
 
+function DOCUMENTS_mapsCategoryHasMarker($categoryId)
+{
+    $fields = DOCUMENTS_documentMutationFields($categoryId);
+    foreach ($fields as $field) {
+        if (isset($field['f_type']) && strtolower((string) $field['f_type']) === 'marker') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function DOCUMENTS_mapsCategorySupported($categoryId)
 {
     $fields = DOCUMENTS_documentMutationFields($categoryId);
