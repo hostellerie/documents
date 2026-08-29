@@ -29,12 +29,20 @@ $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
 $operation = isset($_REQUEST['op']) ? (string) $_REQUEST['op'] : 'save';
 $documentId = isset($_REQUEST['doc_url']) ? trim((string) $_REQUEST['doc_url']) : '';
 
-/* Decide ownership before consuming Geeklog's one-time token. Specialized
- * integrations that do not yet have a service contract may still use the
- * compatibility controller. Marker categories never take that path. */
+/* Decide ownership before consuming Geeklog's one-time token. Non-marker
+ * integrations without a service contract may still use the compatibility
+ * controller. Any category containing a marker is forbidden from doing so. */
 if ($operation !== 'delete') {
     $standardCategory = $categoryId > 0 && DOCUMENTS_documentMutationIsStandardCategory($categoryId);
+    $hasMarkerCategory = $categoryId > 0 && DOCUMENTS_mapsCategoryHasMarker($categoryId);
     $mapsCategory = $categoryId > 0 && DOCUMENTS_mapsCategorySupported($categoryId);
+
+    if ($hasMarkerCategory && !$mapsCategory) {
+        COM_errorLog('DOCUMENTS: marker category refused legacy save fallback; Maps service ownership is mandatory.');
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
+
     if ($categoryId <= 0 || (!$standardCategory && !$mapsCategory)) {
         $GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'] = true;
         require __DIR__ . '/index.php';
@@ -42,6 +50,7 @@ if ($operation !== 'delete') {
     }
 } else {
     $standardCategory = false;
+    $hasMarkerCategory = false;
     $mapsCategory = false;
 }
 
