@@ -89,14 +89,14 @@ documents_docmutation_require($endpoint, "'document_delete.php'", 'Secure docume
 documents_docmutation_require($endpoint, 'DOCUMENTS_mapsCategorySupported($categoryId)', 'Dispatcher does not identify Maps-delegated categories.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_saveMapsDocument($_REQUEST)', 'Marker categories are not routed through the Maps-owned save path.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_deleteDocumentSecure($documentId)', 'Document deletion is not routed through the secure ownership boundary.', $failures);
-documents_docmutation_require($endpoint, "$GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'] = true", 'Intentional legacy fallback is not explicitly marked.', $failures);
+documents_docmutation_require($endpoint, '$GLOBALS[\'DOCUMENTS_LEGACY_SAVE_DISPATCH\'] = true', 'Intentional legacy fallback is not explicitly marked.', $failures);
 documents_docmutation_require($endpoint, 'SEC_checkToken()', 'Secure document save dispatcher does not validate CSRF.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_lockSecurityFields(', 'New non-admin document ownership/permissions are not locked.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_isPubliclyIndexable($documentId)', 'Previous anonymous visibility is not captured before a standard save.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_notifyPublicTransition($savedId, $wasPublic, $isPublic)', 'Standard saves do not emit public-only lifecycle events.', $failures);
 documents_docmutation_forbid($endpoint, 'runtime.php', 'Secure document dispatcher must not register duplicate runtime lifecycle hooks.', $failures);
 
-documents_docmutation_require($index, "$documentsMode === 'save' && empty($GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'])", 'Direct index.php document saves can still reach the historical controller.', $failures);
+documents_docmutation_require($index, '$documentsMode === \'save\' && empty($GLOBALS[\'DOCUMENTS_LEGACY_SAVE_DISPATCH\'])', 'Direct index.php document saves can still reach the historical controller.', $failures);
 documents_docmutation_require($index, "require __DIR__ . '/document-save.php';", 'Direct index.php saves are not delegated to the secure dispatcher.', $failures);
 
 documents_docmutation_require($integrity, '$available = 40 - strlen($prefix);', 'Historical unique-document URL helper still ignores the 40-character schema limit.', $failures);
