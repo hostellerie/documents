@@ -54,15 +54,15 @@ documents_public_forbid($home, 'ADMIN_list(', 'Modern home must not depend on AD
 
 documents_public_require($category, '<main class="documents-category">', 'Modern category semantic main element is missing.', $failures);
 documents_public_require($category, 'COUNT(DISTINCT d.doc_url)', 'Modern category pagination count is missing.', $failures);
-documents_public_require($category, "d.active=1", 'Modern category view is not restricted to active documents.', $failures);
+documents_public_require($category, 'd.active=1', 'Modern category view is not restricted to active documents.', $failures);
 documents_public_require($category, "COM_getPermSQL('AND', 0, 2, 'd')", 'Modern category document permissions are not enforced.', $failures);
 documents_public_require($category, 'DOCUMENTS_renderItemCard($item)', 'Modern category cards are not using the common item renderer.', $failures);
-documents_public_require($category, "header('Location: ' . $cleanUrl, true, 301)", 'Direct category.php URLs are not canonicalized.', $failures);
+documents_public_require($category, 'header(\'Location: \' . $cleanUrl, true, 301)', 'Direct category.php URLs are not canonicalized.', $failures);
 documents_public_forbid($category, 'ADMIN_list(', 'Modern category view must not depend on ADMIN_list().', $failures);
 
 documents_public_require($document, 'DOCUMENTS_canViewDocument($document, 2)', 'Modern document view does not use the centralized visibility guard.', $failures);
 documents_public_require($document, "f_type IN ('marker','album')", 'Specialized field fallback is missing.', $failures);
-documents_public_require($document, "require $pluginPath . 'include_html.php'", 'Legacy compatibility fallback for custom/specialized documents is missing.', $failures);
+documents_public_require($document, 'require $pluginPath . \'include_html.php\'', 'Legacy compatibility fallback for custom/specialized documents is missing.', $failures);
 documents_public_require($document, '<dl class="documents-fields">', 'Modern default document field definition list is missing.', $failures);
 documents_public_require($document, 'htmlspecialchars(stripslashes($value)', 'Modern default document text output is not escaped.', $failures);
 documents_public_require($document, 'CMT_userComments(', 'Modern default document comments integration is missing.', $failures);
@@ -71,7 +71,7 @@ documents_public_forbid($document, 'addslashes(', 'Modern default document route
 documents_public_forbid($document, '<table', 'Modern default document route must not build table-based field markup.', $failures);
 
 documents_public_require($seo, 'DOCUMENTS_seoRemoveManagedTags', 'SEO duplicate-tag cleanup is missing.', $failures);
-documents_public_require($seo, "'?page=' . $page", 'Paginated category canonical support is missing.', $failures);
+documents_public_require($seo, '\'?page=\' . $page', 'Paginated category canonical support is missing.', $failures);
 documents_public_require($css, '.documents-category-grid', 'Modern category-grid CSS is missing.', $failures);
 documents_public_require($css, '.documents-pagination', 'Modern pagination CSS is missing.', $failures);
 documents_public_require($css, '.documents-fields', 'Semantic document-field CSS is missing.', $failures);
