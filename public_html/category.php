@@ -45,6 +45,19 @@ if ($access < 2) {
     exit;
 }
 
+$pageNumber = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+$requestPath = isset($_SERVER['REQUEST_URI'])
+    ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH)
+    : '';
+if (is_string($requestPath) && basename($requestPath) === 'category.php') {
+    $cleanUrl = DOCUMENTS_interopCanonicalUrl($categorySlug);
+    if ($pageNumber > 1) {
+        $cleanUrl .= '?page=' . $pageNumber;
+    }
+    header('Location: ' . $cleanUrl, true, 301);
+    exit;
+}
+
 $_REQUEST['mode'] = 'view';
 $_REQUEST['cat'] = $categorySlug;
 $_REQUEST['doc'] = '';
@@ -61,7 +74,6 @@ if (!defined('DOCUMENTS_SEO_BUFFER_STARTED')) {
     ob_start('DOCUMENTS_seoOutputFilter');
 }
 
-$pageNumber = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $perPage = 20;
 $offset = ($pageNumber - 1) * $perPage;
 $categoryId = (int) $category['cid'];
@@ -74,6 +86,12 @@ $countSql = "SELECT COUNT(DISTINCT d.doc_url) AS total "
     . COM_getPermSQL('AND', 0, 2, 'd');
 $countRow = DB_fetchArray(DB_query($countSql));
 $total = is_array($countRow) && isset($countRow['total']) ? (int) $countRow['total'] : 0;
+$totalPages = ($total > 0) ? (int) ceil($total / $perPage) : 1;
+
+if ($pageNumber > $totalPages) {
+    echo COM_refresh($_CONF['site_url'] . '/404.php');
+    exit;
+}
 
 $sql = "SELECT DISTINCT d.doc_url, COALESCE(d.modified,d.created) AS changed_at "
     . "FROM {$_TABLES['documents_docs']} AS d "
@@ -129,7 +147,6 @@ if (empty($cards)) {
     $content .= '<div class="documents-card-list">' . implode('', $cards) . '</div>';
 }
 
-$totalPages = ($total > 0) ? (int) ceil($total / $perPage) : 1;
 if ($totalPages > 1) {
     $baseUrl = DOCUMENTS_interopCanonicalUrl($categorySlug);
     $content .= '<nav class="documents-pagination" aria-label="Pagination">';
