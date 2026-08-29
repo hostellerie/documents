@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.9                                                    |
+// | Documents Plugin 1.2.0                                                    |
 // +---------------------------------------------------------------------------+
 // | index.php                                                                 |
 // |                                                                           |
@@ -65,8 +65,9 @@ if (in_array($documentsMode, $documentsAdminModes, true)
     exit;
 }
 
-$documentsAdminSaveModes = array('save_cat', 'save_field', 'save_group', 'save_select');
-if (in_array($documentsMode, $documentsAdminSaveModes, true) && !SEC_checkToken()) {
+/* Every mutating form contains a Geeklog CSRF token, including public
+ * document create/edit forms. Validate it before any write controller runs. */
+if (in_array($documentsMode, $documentsWriteModes, true) && !SEC_checkToken()) {
     http_response_code(403);
     exit;
 }
