@@ -82,6 +82,38 @@ function DOCUMENTS_mapsSaveMarker($documentId, $categorySlug, $field, $request, 
 }
 
 /**
+ * Ask Maps to withdraw a marker when its source document disappears.
+ * The marker is not deleted by Documents; Maps remains its sole owner.
+ */
+function DOCUMENTS_mapsDeactivateMarker($documentId, $markerId)
+{
+    if (!DOCUMENTS_hasMaps() || !function_exists('PLG_invokeService')) {
+        return array(false, 'Maps marker service is unavailable.');
+    }
+
+    $markerId = DOCUMENTS_normalizeFieldInput('marker', $markerId);
+    if ($markerId === '') {
+        return array(true, '');
+    }
+
+    $args = array(
+        'source' => 'documents',
+        'source_id' => (string) $documentId,
+        'marker_id' => $markerId,
+        'active' => 0,
+        'hidden' => 1
+    );
+    $output = array();
+    $svcMsg = array();
+    $result = PLG_invokeService('maps', 'marker_save', $args, $output, $svcMsg);
+    if ($result !== PLG_RET_OK) {
+        return array(false, isset($svcMsg['error_desc']) ? (string) $svcMsg['error_desc'] : 'Maps marker deactivation failed.');
+    }
+
+    return array(true, '');
+}
+
+/**
  * Save a Documents item whose marker fields are delegated to Maps.
  * Only Documents tables are mutated here; marker persistence belongs to Maps.
  */
