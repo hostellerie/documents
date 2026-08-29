@@ -24,10 +24,24 @@ if ($categorySlug === '' || $documentSlug === '') {
 $safeCategory = DB_escapeString($categorySlug);
 $safeDocument = DB_escapeString($documentSlug);
 $category = DB_fetchArray(DB_query(
-    "SELECT cid, cat_name, cat_url, template, custom_header, custom_footer "
+    "SELECT cid, cat_name, cat_url, template, custom_header, custom_footer, "
+    . "owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
     . "FROM {$_TABLES['documents_cat']} WHERE cat_url='{$safeCategory}' LIMIT 1"
 ));
 if (!is_array($category) || empty($category['cid'])) {
+    echo COM_refresh($_CONF['site_url'] . '/404.php');
+    exit;
+}
+
+$categoryAccess = SEC_hasAccess(
+    (int) $category['owner_id'],
+    (int) $category['group_id'],
+    (int) $category['perm_owner'],
+    (int) $category['perm_group'],
+    (int) $category['perm_members'],
+    (int) $category['perm_anon']
+);
+if ($categoryAccess < 2) {
     echo COM_refresh($_CONF['site_url'] . '/404.php');
     exit;
 }
@@ -61,7 +75,8 @@ $specializedCount = (int) DB_getItem(
     "cat_id={$categoryId} AND f_type IN ('marker','album')"
 );
 $templateName = isset($category['template']) ? DOCUMENTS_templateName($category['template']) : '';
-$useLegacyRenderer = $templateName !== '' || $specializedCount > 0 || (int) $document['active'] !== DOCUMENTS_STATUS_ACTIVE;
+$templateDir = ($templateName !== '') ? DOCUMENTS_customTemplateReadDir($templateName) : '';
+$useLegacyRenderer = $templateDir !== '' || $specializedCount > 0 || (int) $document['active'] !== DOCUMENTS_STATUS_ACTIVE;
 
 $_REQUEST['mode'] = 'view';
 $_REQUEST['cat'] = $categorySlug;
