@@ -13,6 +13,7 @@ $files = array(
     'runtime' => file_get_contents($root . '/runtime.php'),
     'security' => file_get_contents($root . '/security.php'),
     'public' => file_get_contents($root . '/public_html/index.php'),
+    'document' => file_get_contents($root . '/public_html/document.php'),
     'template' => file_get_contents($root . '/templates/document.thtml'),
     'category_template' => file_get_contents($root . '/templates/cat_form.thtml')
 );
@@ -48,6 +49,7 @@ documents_test_require($files['updates'], 'function DOCUMENTS_updateSchema_1_2_0
 documents_test_require($files['updates'], "LIKE 'metadescription'", 'Metadescription migration is not idempotence-aware.', $failures);
 
 documents_test_require($files['functions'], 'require_once $plugin_path . \'interoperability.php\'', 'Interoperability callbacks are not loaded by functions.inc.', $failures);
+documents_test_require($files['functions'], 'require_once $plugin_path . \'distribution.php\'', 'Feed/statistics callbacks are not loaded by functions.inc.', $failures);
 documents_test_require($files['interop'], 'function plugin_getiteminfo_documents(', 'Item Info callback is missing.', $failures);
 documents_test_require($files['interop'], '(string) $id === \'*\'', 'Item Info collection support is missing.', $failures);
 documents_test_require($files['interop'], "'since'", 'Collection since filtering is missing.', $failures);
@@ -56,6 +58,8 @@ documents_test_require($files['interop'], 'function plugin_idtourl_documents(', 
 documents_test_require($files['interop'], 'function plugin_urltoid_documents(', 'URL-to-ID resolver is missing.', $failures);
 documents_test_require($files['interop'], 'function plugin_collectSitemapItems_documents(', 'Native sitemap collector is missing.', $failures);
 documents_test_require($files['interop'], "'date-modified'", 'Sitemap/ItemInfo modification date is missing.', $failures);
+documents_test_require($files['interop'], "COM_getPermSQL('AND', $uid, 2, 'd')", 'Item Info document permission guard is missing.', $failures);
+documents_test_require($files['interop'], "COM_getPermSQL('AND', $uid, 2, 'c')", 'Item Info category permission guard is missing.', $failures);
 documents_test_require($files['interop'], 'PLG_itemSaved((string) $id, \'documents\')', 'Saved lifecycle event is missing.', $failures);
 documents_test_require($files['interop'], 'PLG_itemDeleted((string) $id, \'documents\')', 'Deleted lifecycle event is missing.', $failures);
 documents_test_require($files['interop'], "'embeds.php'", 'Autotag/block layer is not loaded by interoperability.', $failures);
@@ -64,7 +68,6 @@ documents_test_require($files['embeds'], 'function plugin_autotags_documents(', 
 documents_test_require($files['embeds'], "array('document', 'documents')", 'Expected autotag names are missing.', $failures);
 documents_test_require($files['embeds'], 'function phpblock_documents_recent()', 'Recent Documents PHP block is missing.', $failures);
 documents_test_require($files['embeds'], 'function phpblock_documents_popular()', 'Popular Documents PHP block is missing.', $failures);
-documents_test_require($files['embeds'], "'distribution.php'", 'Feed/statistics callbacks are not loaded with plugin API callbacks.', $failures);
 
 documents_test_require($files['distribution'], 'function plugin_getfeednames_documents()', 'Native feed names callback is missing.', $failures);
 documents_test_require($files['distribution'], 'function plugin_getfeedcontent_documents(', 'Native feed content callback is missing.', $failures);
@@ -86,8 +89,10 @@ documents_test_require($files['category_template'], 'name="cat_help"', 'cat_help
 
 documents_test_require($files['public'], 'SEC_checkToken()', 'Mutating public document routes do not validate CSRF.', $failures);
 documents_test_require($files['public'], 'DOCUMENTS_CSRF_VALIDATED', 'Validated CSRF state is not exposed to deferred persistence.', $failures);
+documents_test_require($files['document'], '$categoryAccess = SEC_hasAccess(', 'Public document category permission guard is missing.', $failures);
+documents_test_require($files['document'], 'if ($categoryAccess < 2)', 'Public document category access is not enforced.', $failures);
 documents_test_require($files['runtime'], 'DOCUMENTS_runtimeLifecycleAfterSave', 'Runtime lifecycle integration is missing.', $failures);
-documents_test_require($files['runtime'], 'DOCUMENTS_runtimeSaveCategoryMetaDescription', 'Category metadescription persistence is missing.', $failures);
+documents_test_require($files['runtime'], 'DOCUMENTS_runtimeSaveCategoryMetaDescription', 'Legacy category metadescription compatibility persistence is missing.', $failures);
 
 documents_test_require($files['security'], 'DOCUMENTS_plainTextInput', 'Plain-text input normalization is missing.', $failures);
 documents_test_require($files['security'], '($type === \'select\' || $type === \'radio\')', 'Select/radio forged-value validation is missing.', $failures);
