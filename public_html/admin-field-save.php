@@ -35,8 +35,10 @@ if (!function_exists('DOCUMENTS_requestPermissions')) {
 require_once $pluginPath . 'integrity.php';
 require_once $pluginPath . 'admin_mutations.php';
 require_once $pluginPath . 'field_mutations.php';
+require_once $pluginPath . 'admin_messages.php';
 
 list($ok, $message, $categoryId) = DOCUMENTS_adminSaveField($_REQUEST);
+$message = DOCUMENTS_adminMessage($message);
 
 $returnUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/index.php?mode=list_fields';
 if ($categoryId > 0) {
