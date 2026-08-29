@@ -32,6 +32,34 @@ function DOCUMENTS_interopCanonicalUrl($categorySlug, $documentSlug = '')
     return $url;
 }
 
+function DOCUMENTS_interopRememberUrl($id, $url)
+{
+    $id = trim((string) $id);
+    $url = trim((string) $url);
+    if ($id === '' || $url === '') {
+        return;
+    }
+
+    if (!isset($GLOBALS['DOCUMENTS_INTEROP_URL_CACHE'])
+        || !is_array($GLOBALS['DOCUMENTS_INTEROP_URL_CACHE'])) {
+        $GLOBALS['DOCUMENTS_INTEROP_URL_CACHE'] = array();
+    }
+
+    $GLOBALS['DOCUMENTS_INTEROP_URL_CACHE'][$id] = $url;
+}
+
+function DOCUMENTS_interopRememberedUrl($id)
+{
+    $id = trim((string) $id);
+    if ($id === '' || !isset($GLOBALS['DOCUMENTS_INTEROP_URL_CACHE'])
+        || !is_array($GLOBALS['DOCUMENTS_INTEROP_URL_CACHE'])
+        || !isset($GLOBALS['DOCUMENTS_INTEROP_URL_CACHE'][$id])) {
+        return '';
+    }
+
+    return (string) $GLOBALS['DOCUMENTS_INTEROP_URL_CACHE'][$id];
+}
+
 function DOCUMENTS_interopRequestedFields($what)
 {
     if (is_array($what)) {
@@ -109,7 +137,6 @@ function DOCUMENTS_interopItem($documentId, $uid = 0)
 
     $sql = "SELECT d.doc_url, d.created, d.modified, d.owner_id, d.hits, "
         . "c.cid AS category_id, c.cat_name AS category, c.cat_url AS category_slug, "
-        . "c.metadescription AS category_metadescription, "
         . "title_value.v_value AS title, description_value.v_value AS description, "
         . "image_value.v_value AS image "
         . "FROM {$_TABLES['documents_docs']} AS d "
@@ -125,7 +152,7 @@ function DOCUMENTS_interopItem($documentId, $uid = 0)
         . "LEFT JOIN {$_TABLES['documents_values']} AS description_value "
         . "ON description_value.doc_url=d.doc_url AND description_value.field_id=("
         . "SELECT fd.fid FROM {$_TABLES['documents_fields']} AS fd "
-        . "WHERE fd.cat_id=c.cid AND fd.f_type='text' "
+        . "WHERE fd.cat_id=c.cid AND fd.f_type IN ('text','textarea') "
         . "AND fd.fid<>(SELECT ftitle.fid FROM {$_TABLES['documents_fields']} AS ftitle "
         . "WHERE ftitle.cat_id=c.cid ORDER BY ftitle.f_order ASC, ftitle.fid ASC LIMIT 1) "
         . "ORDER BY fd.f_order ASC, fd.fid ASC LIMIT 1) "
@@ -161,12 +188,15 @@ function DOCUMENTS_interopItem($documentId, $uid = 0)
         $modified = $created;
     }
 
+    $url = DOCUMENTS_interopCanonicalUrl($row['category_slug'], $row['doc_url']);
+    DOCUMENTS_interopRememberUrl($row['doc_url'], $url);
+
     return array(
         'id' => (string) $row['doc_url'],
         'type' => 'documents',
         'subtype' => 'document',
         'title' => $title,
-        'url' => DOCUMENTS_interopCanonicalUrl($row['category_slug'], $row['doc_url']),
+        'url' => $url,
         'description' => $description,
         'excerpt' => DOCUMENTS_interopExcerpt($description),
         'date-created' => $created,
@@ -179,6 +209,30 @@ function DOCUMENTS_interopItem($documentId, $uid = 0)
         'category-slug' => (string) $row['category_slug'],
         'hits' => isset($row['hits']) ? (int) $row['hits'] : 0
     );
+}
+
+function DOCUMENTS_interopResolveStoredUrl($documentId)
+{
+    global $_TABLES;
+
+    $remembered = DOCUMENTS_interopRememberedUrl($documentId);
+    if ($remembered !== '') {
+        return $remembered;
+    }
+
+    $safeId = DB_escapeString((string) $documentId);
+    $sql = "SELECT c.cat_url FROM {$_TABLES['documents_values']} AS v "
+        . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
+        . "INNER JOIN {$_TABLES['documents_cat']} AS c ON c.cid=f.cat_id "
+        . "WHERE v.doc_url='{$safeId}' ORDER BY f.f_order ASC, f.fid ASC LIMIT 1";
+    $row = DB_fetchArray(DB_query($sql));
+    if (!is_array($row) || empty($row['cat_url'])) {
+        return '';
+    }
+
+    $url = DOCUMENTS_interopCanonicalUrl($row['cat_url'], $documentId);
+    DOCUMENTS_interopRememberUrl($documentId, $url);
+    return $url;
 }
 
 function DOCUMENTS_interopItems($what, $uid, $options)
@@ -238,8 +292,17 @@ function plugin_getiteminfo_documents($id, $what = '', $uid = 0, $options = arra
 
 function plugin_idtourl_documents($sub_type, $item_id)
 {
+    $url = DOCUMENTS_interopRememberedUrl($item_id);
+    if ($url !== '') {
+        return $url;
+    }
+
     $item = DOCUMENTS_interopItem($item_id, 0);
-    return isset($item['url']) ? $item['url'] : '';
+    if (isset($item['url']) && $item['url'] !== '') {
+        return $item['url'];
+    }
+
+    return DOCUMENTS_interopResolveStoredUrl($item_id);
 }
 
 function plugin_urltoid_documents($url)
@@ -262,8 +325,8 @@ function plugin_urltoid_documents($url)
 
     $category = rawurldecode($parts[0]);
     $id = rawurldecode($parts[1]);
-    $item = DOCUMENTS_interopItem($id, 0);
-    if (empty($item) || !isset($item['category-slug']) || $item['category-slug'] !== $category) {
+    $storedUrl = DOCUMENTS_interopResolveStoredUrl($id);
+    if ($storedUrl === '' || DOCUMENTS_interopCanonicalUrl($category, $id) !== $storedUrl) {
         return array();
     }
 
