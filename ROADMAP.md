@@ -2,175 +2,196 @@
 
 ## Compatibility target
 
-Documents is being stabilized with the following compatibility target:
+Documents 1.2.0 targets:
 
-- Geeklog 2.1.1 through 2.2.2
-- PHP 5.6 through 8.1
-- Maps plugin: optional integration only
-- MediaGallery plugin: optional integration only
-- Multisite-safe persistent storage: the Documents data directory must be derived from the current site's `$_CONF['path_data']`, using a sibling directory named `<basename(path_data)>-documents`.
+- Geeklog 2.1.1 through 2.2.2;
+- PHP 5.6 through 8.1;
+- MySQL/MariaDB only;
+- Maps plugin as an optional integration;
+- MediaGallery plugin as an optional integration;
+- multisite-safe persistent storage derived from the current site's `$_CONF['path_data']`.
 
-If Maps or MediaGallery is missing or inactive, Documents must not load their files, query their tables, enqueue their JavaScript, or render related controls/output.
+MSSQL support has been removed. PHP 5.6 compatibility remains a hard requirement, so the plugin must not introduce PHP 7+ syntax in runtime code.
 
-For Geeklog 2.2.2 and multisite deployments, persistent Documents data must be kept outside disposable cache-style locations. The directory must be unique for every site and must also work unchanged in a normal single-site installation.
+## 1.2.0 — SEO, security and interoperability modernization
 
-The reference logic is:
+### Completed in the current development branch
 
-```php
-function DOCUMENTS_dataDir()
-{
-    global $_CONF;
+#### Database and upgrade path
 
-    $base = isset($_CONF['path_data']) ? rtrim($_CONF['path_data'], "/\\") : '';
-    if ($base === '') {
-        return '';
-    }
+- Plugin development metadata moved to 1.2.0.
+- Added a dedicated `documents_cat.metadescription VARCHAR(255)` column.
+- `cat_help` remains an independent field and is not reused as SEO metadata.
+- Added an idempotent 1.2.0 MySQL/MariaDB schema migration.
+- Removed the legacy MSSQL installation schema and reject unsupported database backends explicitly.
+- The 1.2.0 upgrade forces regeneration of Documents rewrite rules.
+- Document route IDs are constrained to the historical `VARCHAR(40)` schema limit before persistence.
 
-    return dirname($base) . DIRECTORY_SEPARATOR
-        . basename($base) . '-documents' . DIRECTORY_SEPARATOR;
-}
-```
+#### Public SEO
 
-Examples:
+- Added canonical URLs for home, category and document pages.
+- Added dedicated meta descriptions, with the category `metadescription` field taking priority for category pages.
+- Added OpenGraph and Twitter Card metadata.
+- Added JSON-LD using `CollectionPage` for collection pages and `CreativeWork` for document pages.
+- Removed obsolete Google+ output from the default template.
+- Added duplicate managed-meta cleanup to avoid multiple canonical/description/social tags.
+- Paginated category pages retain a distinct canonical URL using `?page=N`.
 
-- `/home/site/data/` -> `/home/site/data-documents/`
-- `/home/site/data-site2/` -> `/home/site/data-site2-documents/`
+#### Public rendering
 
-This mirrors the multisite-safe storage pattern already used by other Geeklog components such as AmazonLinks. A fixed `site-documents/` directory must not be used because it would not guarantee isolation between sites.
+- Added a semantic public home page with responsive category cards.
+- Added a semantic category page with responsive document cards and pagination.
+- Added a modern default document renderer using `<article>` and `<dl>/<dt>/<dd>` rather than table layout.
+- Public category/document output consistently escapes dynamic text.
+- Custom document templates remain supported through the historical renderer.
+- Maps and MediaGallery specialized rendering remains available through the historical compatibility path.
+- Public CSS is separate from administration CSS.
 
-Existing installations using the legacy `$_CONF['path_data'] . 'data_documents/'` location must be migrated safely to the new derived directory without losing custom templates or other stored plugin data. The migration must be idempotent and preserve backward compatibility during the transition.
+#### Category editor
 
-## 1.1.x — Stabilization work
+- Added a standalone 1.2.0 category editor.
+- `metadescription` is loaded directly with the category and rendered directly in the form.
+- Removed the temporary `category-meta.php` AJAX endpoint and its client-side preload.
+- Existing `index.php?mode=edit_cat` URLs are internally routed to the new editor.
 
-### 1.1.1 — Critical security and optional dependencies
+#### Secure administration mutations
 
-- Remove legacy install/upgrade telemetry email.
-- Remove TimThumb and replace legacy dynamic image handling with a local-only safe image pipeline.
-- Audit and secure image upload validation and paths.
-- Protect admin AJAX actions with Documents admin rights and proper JSON responses.
-- Centralize optional dependency checks for Maps and MediaGallery.
-- Never load Maps or MediaGallery resources unless the integration is both active and required by the current document/form.
-- Audit direct request input used in SQL, paths and HTML.
-- Keep compatibility with PHP 5.6; do not introduce PHP 7+ syntax.
-- Introduce a central multisite-safe `DOCUMENTS_dataDir()` helper derived from the current site's `$_CONF['path_data']`; do not hard-code `site-documents`.
-- Retain a safe legacy lookup path until migration is complete.
+- Added dedicated mutation layers for categories, fields, selection groups and selection values.
+- Default admin forms use dedicated POST endpoints protected by `documents.admin` and Geeklog CSRF validation.
+- Historical `save_cat`, `save_field`, `save_group` and `save_select` requests are intercepted after authorization and routed to the secure mutation layer, so their old SQL blocks are no longer reachable through normal requests.
+- Dynamic text values are normalized and SQL values use `DB_escapeString()` rather than new `addslashes()` usage.
+- Field types use an explicit allowlist.
+- Used fields cannot silently change category or type.
+- Deleting categories, fields, groups and selections applies integrity guards and cleanup rules.
+- Read-only admin AJAX requires `documents.admin` but deliberately does not consume the one-time form CSRF token.
 
-### 1.1.2 — PHP and logic fixes
+#### Document saves
 
-- Fix menu mode comparisons.
-- Fix category reorder field-name mismatch.
-- Initialize variables and arrays before use.
-- Remove normal-use PHP notices/warnings across PHP 5.6–8.1.
-- Replace numeric document-status magic values with constants.
+- Added a progressive secure document save dispatcher.
+- Standard categories now save through a dedicated mutation layer instead of the historical controller.
+- Supported secure-path field types currently include text, textarea, decimal, date, checkbox, select, category and image.
+- Required fields and select options are validated server-side.
+- Existing document/category binding and edit permissions are verified before mutation.
+- Non-admin users cannot forge owner, group or permission values; this is enforced both by the dispatcher and the document mutation layer.
+- Workflow states are normalized server-side.
+- New document URLs are deterministic, unique and constrained to 40 characters.
+- New image uploads use Geeklog's upload class with MIME, extension, dimension and file-size restrictions.
+- Image uploads are separated from database writes; failed mutations remove newly uploaded files and successful replacements remove obsolete images/previews.
+- Document deletion remains on the historical path for now so existing image/integration cleanup behavior is preserved.
 
-### 1.1.3 — Data integrity
+#### Interoperability with Hello, Hub, IndexNow and XML Sitemap
 
-- Validate and normalize category/document slugs.
-- Detect duplicate slugs before later SQL constraints.
-- Detect orphan documents, values, fields and pictures.
-- Make delete operations clean related data consistently.
+- Added `plugin_getiteminfo_documents()` for single documents and `id='*'` collections.
+- Added collection options including `since`, `limit`, ordering and `filter[date-created]`.
+- Added `plugin_idtourl_documents()` and `plugin_urltoid_documents()`.
+- Added `plugin_collectSitemapItems_documents()`.
+- Added normalized fields including ID, type, subtype, title, canonical URL, description, excerpt, creation/modification dates, owner/author, primary image, category and hit count.
+- Item Info enforces both document and category permissions.
+- Added anonymous-public indexability checks: active state alone is not enough; document and category must both grant read access to Geeklog anonymous user ID 1.
+- Lifecycle notifications now describe public-indexing transitions:
+  - private -> public: `PLG_itemSaved`;
+  - public -> public modification: `PLG_itemSaved`;
+  - public -> private/inactive/deleted: `PLG_itemDeleted`;
+  - private -> private: no public indexing event.
+- This prevents active but private content from being submitted to generic IndexNow listeners.
+- XML Sitemap compatibility follows Geeklog core, which calls plugin sitemap collectors with anonymous user ID 1.
+- Hello and Hub can consume Documents through Item Info rather than Documents-specific SQL.
 
-### 1.1.4 — Permissions, forms and CSRF
+#### Autotags, blocks, feeds and statistics
 
-- Audit documents.admin and documents.publish coverage.
-- Add Geeklog CSRF token checks to all mutating admin operations.
-- Ensure category/document permissions apply to listings, search and submissions.
-- Verify drafts, submissions and disabled documents never leak through search.
+- Added document and category autotags.
+- Added recent and popular PHP blocks.
+- Added native Geeklog feed callbacks.
+- Added native statistics summary/detail callbacks.
+- These surfaces reuse the common content/interoperability layer instead of creating separate content models.
 
-### 1.1.5 — Images and media
+#### Compatibility CI
 
-- Centralize image validation/storage/thumbnail generation/deletion.
-- Store persistent thumbnails instead of dynamic legacy resizing.
-- Keep Documents image management independent from MediaGallery.
+A GitHub Actions compatibility workflow now runs on the development branch and pull requests:
 
-### 1.1.6 — Templates and interface
+- PHP 5.6 syntax lint for all `.php` and `.inc` files;
+- PHP 8.1 syntax lint for all `.php` and `.inc` files;
+- all autonomous `tests/*_test.php` regression checks on both PHP versions.
 
-- Move generated markup from PHP to .thtml where practical.
-- Reduce inline styles and obsolete XHTML-era markup.
-- Modernize admin navigation and document-state indicators.
+The current branch passes this CI on both PHP 5.6 and PHP 8.1.
 
-### 1.1.7 — Installation, upgrades and persistent-data migration
+### Remaining before 1.2.0 release
 
-- Rework the upgrade chain into explicit version steps.
-- Test clean install, uninstall/reinstall and upgrade from 1.1.0.
-- Declare the supported Geeklog range accurately.
-- Derive the target directory from `$_CONF['path_data']` as a sibling `<basename(path_data)>-documents/` directory.
-- Migrate legacy `$_CONF['path_data'] . 'data_documents/'` content to that derived site-specific target.
-- Preserve custom templates and any other persistent Documents data during migration.
-- Make the migration idempotent: rerunning an upgrade must not overwrite newer files or duplicate data.
-- Keep a temporary read fallback to the legacy directory only while migration compatibility is needed; new writes must target the derived site-specific directory.
-- Verify one multisite instance can never read or overwrite another site's Documents data directory.
-- Verify the new directory is not treated as disposable cache data in Geeklog 2.2.2 cleanup routines.
+#### Manual Geeklog validation
 
-### 1.1.8 — Configuration, language and cleanup
+Static CI is not a substitute for real installations. Validate at minimum:
 
-- Move image limits to Geeklog configuration.
-- Synchronize English and French language keys.
-- Update file headers, documentation and stale comments.
+- Geeklog 2.1.1 with a viable PHP 5.6 environment;
+- Geeklog 2.2.2 with PHP 8.1;
+- fresh installation;
+- upgrade from an existing 1.1.x site;
+- single-site and multisite storage isolation;
+- anonymous, authenticated, publisher and administrator permissions;
+- drafts, submissions, publication, depublication and deletion;
+- comments;
+- search, What's New, feeds, sitemap and statistics;
+- Hello/Hub/IndexNow integration where those plugins are available.
 
-### 1.1.9 — Release candidate
+#### Maps integration
 
-Test the complete matrix:
+Documents still uses its historical Maps marker mutation path for categories containing a `marker` field.
 
-- Geeklog 2.1.1 through 2.2.2
-- PHP 5.6 through 8.1 where the Geeklog/PHP combination itself is viable
-- single-site and multisite installations
-- at least two multisite instances with distinct `$_CONF['path_data']` values
-- fresh site-specific `*-documents/` storage and migration from legacy `data_documents/`
-- Maps active / inactive / not installed
-- MediaGallery active / inactive / not installed
-- installation, upgrade, categories, fields, documents, drafts, submissions, permissions, search, images, comments and deletion
+Do **not** duplicate this SQL into a new Documents module. Maps 1.6.0 already exposes internal marker read/render/validity services, but its current `services.inc.php` does not expose a general marker create/update service. The preferred next step is:
 
-## 1.2.0 — Stable release
+1. add a trusted `marker_save`/create-update service to Maps;
+2. call it through `PLG_invokeService()` from Documents;
+3. remove Documents-specific writes to Maps tables;
+4. keep Maps responsible for marker validation, URL, lifecycle and map recalculation.
 
-1.2.0 is the stabilization milestone. It should add no large new feature set. Release criteria:
+Until that service exists, Maps categories remain on the tested legacy compatibility path.
 
-- no TimThumb
-- no install/upgrade telemetry
-- secured uploads and admin AJAX
-- no normal-use PHP warnings on supported environments
-- reliable upgrade from 1.1.0
-- persistent data stored in a site-specific sibling `<basename(path_data)>-documents/` directory
-- no persistent Documents data removed by Geeklog 2.2.2 cache/data cleanup
-- correct isolation between sites in multisite installations
-- Maps and MediaGallery fully optional
-- complete README and upgrade notes
+#### MediaGallery integration
+
+Categories containing an `album` field remain on the historical compatibility path. Keep MediaGallery optional and avoid duplicating its internal database logic in Documents. A future adapter/service should own this integration boundary.
+
+#### Legacy controller reduction
+
+- Physically remove unreachable `save_cat`, `save_field`, `save_group` and `save_select` blocks from `include_html.php` after final manual regression tests.
+- Move remaining document deletion and specialized integration mutations out of `include_html.php`.
+- Continue reducing `include_html.php` without breaking custom templates or old administration URLs.
+
+#### Collection query refinement
+
+Item Info currently rechecks category permissions for every returned item, so it is secure. For collection efficiency and exact `limit` fulfillment, move category permission filtering into the collection query before `LIMIT`, and apply the same optimization to blocks/feed queries.
 
 ## 1.3.0 — Architecture modernization
 
-- Use numeric document IDs (`did`) for internal relations instead of `doc_url`.
-- Add an explicit category ID to documents.
-- Link pictures and values to `did`.
-- Migrate MySQL tables from MyISAM to InnoDB.
-- Add useful indexes and carefully introduced uniqueness constraints.
-- Separate document/category/field/storage/rendering/integration responsibilities.
-- Isolate Maps and MediaGallery adapters from the core plugin.
-- Define a consistent internal field-type API: render, edit, validate, normalize, search and export.
-- Improve routing while retaining compatibility with Geeklog URL handling.
-- Centralize filesystem/storage access behind a Documents storage layer so multisite-safe paths are not hard-coded throughout the plugin.
+After the compatible 1.2.0 release:
+
+- use numeric document IDs (`did`) for internal relations instead of `doc_url`;
+- add an explicit category ID to document rows;
+- link pictures and values to `did`;
+- migrate MySQL tables from MyISAM to InnoDB;
+- add indexes and carefully introduced uniqueness constraints;
+- separate document/category/field/storage/rendering/integration responsibilities further;
+- isolate Maps and MediaGallery behind formal service adapters;
+- define a consistent internal field-type API: render, edit, validate, normalize, search and export;
+- centralize filesystem/storage access completely;
+- reduce or retire the historical monolithic `include_html.php` controller.
 
 ## 1.4.0 — Functional evolution
 
 Develop Documents as a configurable structured-content system for Geeklog:
 
-- richer field types: integer, decimal, URL, email, phone, date/time, image, gallery, file, boolean, text, textarea, single/multiple choice, document relation, user and coordinates
-- document-to-document relations
-- repeatable fields
-- advanced filtering and sorting
-- configurable list/table/grid/card views
-- better templates per content type
-- SEO metadata and Schema.org support where relevant
-- automatic/manual slugs
-- revision history and restore
-- document duplication
-- CSV import/export
-- JSON representation/API foundations
-- Documents autotags
-- Geeklog blocks for recent/popular/category/manual selections
-- improved front-end submissions and moderation
-- optional Maps features for marker/map/geographic views
-- optional MediaGallery album/media integration
+- richer field types: integer, decimal, URL, email, phone, date/time, image, gallery, file, boolean, text, textarea, single/multiple choice, document relation, user and coordinates;
+- document-to-document relations;
+- repeatable fields;
+- advanced filtering and sorting;
+- configurable list/table/grid/card views;
+- better templates per content type;
+- richer Schema.org support;
+- automatic/manual slugs;
+- revision history and restore;
+- document duplication;
+- CSV import/export;
+- JSON representation/API foundations;
+- improved front-end submissions and moderation.
 
 ## Architecture principle
 
-The existing core idea must be preserved: a category defines a structure of configurable fields, and documents store values for those fields. Stabilization comes first, architecture changes second, and new product features only after the 1.2.0 stable milestone.
+A category defines the structure, Documents owns document data, permissions and canonical URLs, and other plugins consume standardized contracts rather than querying Documents tables directly. Optional integrations must remain optional and must not make Documents depend on the internal schema of another plugin when a service boundary can be provided instead.
