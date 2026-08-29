@@ -15,7 +15,7 @@
             <p><label>Meta description (SEO)</label>
                 <textarea name="metadescription" id="documents-metadescription" rows="3" maxlength="255" style="width:70%;"></textarea>
                 <input type="hidden" name="metadescription_loaded" id="documents-metadescription-loaded" value="0" {xhtml}>
-                <br{xhtml}><small>Dedicated search-engine description for this category. Recommended: concise, unique and useful.</small></p>
+                <br{xhtml}><small id="documents-metadescription-help">Dedicated search-engine description for this category. Recommended: concise, unique and useful.</small></p>
         </div>
         <div>
             <p><label>{cat_help_label}</label>
@@ -63,7 +63,7 @@
 
     <p class="documents-required-note"><span class="documents-required-mark">*</span><em> {required_field}</em></p>
     {admin_options}
-    <input type="submit" name="submit" value="{validate_button}" {xhtml}>
+    <input type="submit" name="submit" id="documents-category-submit" value="{validate_button}" {xhtml}>
     <input type="hidden" name="mode" value="save_cat"{xhtml}>
     <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
 
@@ -73,6 +73,8 @@
     var form = document.getElementById('documents-category-form');
     var field = document.getElementById('documents-metadescription');
     var loaded = document.getElementById('documents-metadescription-loaded');
+    var submit = document.getElementById('documents-category-submit');
+    var help = document.getElementById('documents-metadescription-help');
     if (!form || !field || !loaded) {
         return;
     }
@@ -80,6 +82,9 @@
     if (!cid || !cid.value) {
         loaded.value = '1';
         return;
+    }
+    if (submit) {
+        submit.disabled = true;
     }
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '{doc_url}/category-meta.php?cid=' + encodeURIComponent(cid.value), true);
@@ -93,8 +98,15 @@
                 if (response && typeof response.metadescription === 'string') {
                     field.value = response.metadescription;
                     loaded.value = '1';
+                    if (submit) {
+                        submit.disabled = false;
+                    }
+                    return;
                 }
             } catch (ignore) {}
+        }
+        if (help) {
+            help.appendChild(document.createTextNode(' Unable to load the current SEO description; saving is disabled to protect the existing value.'));
         }
     };
     xhr.send(null);
