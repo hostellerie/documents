@@ -34,7 +34,9 @@ function documents_mutation_forbid($content, $needle, $message, &$failures)
 
 $admin = documents_mutation_read($root, 'admin_mutations.php', $failures);
 $field = documents_mutation_read($root, 'field_mutations.php', $failures);
+$dispatch = documents_mutation_read($root, 'admin_dispatch.php', $failures);
 $messages = documents_mutation_read($root, 'admin_messages.php', $failures);
+$publicIndex = documents_mutation_read($root, 'public_html/index.php', $failures);
 $adminEndpoint = documents_mutation_read($root, 'public_html/admin-save.php', $failures);
 $fieldEndpoint = documents_mutation_read($root, 'public_html/admin-field-save.php', $failures);
 $catTemplate = documents_mutation_read($root, 'templates/cat_form.thtml', $failures);
@@ -51,6 +53,13 @@ documents_mutation_require($fieldEndpoint, 'DOCUMENTS_adminMessage($message)', '
 documents_mutation_require($messages, "strpos(strtolower((string) $_CONF['language']), 'french')", 'French mutation-message selection is missing.', $failures);
 documents_mutation_require($messages, 'Catégorie enregistrée.', 'French category feedback is missing.', $failures);
 documents_mutation_require($messages, 'Champ enregistré.', 'French field feedback is missing.', $failures);
+
+documents_mutation_require($publicIndex, '$documentsSecureAdminSaveModes', 'Main controller does not identify secure admin save modes.', $failures);
+documents_mutation_require($publicIndex, 'DOCUMENTS_adminDispatchMutation(', 'Main controller still allows legacy admin save handlers to run.', $failures);
+documents_mutation_require($publicIndex, 'exit;', 'Main controller must exit after secure mutation dispatch.', $failures);
+documents_mutation_require($dispatch, 'DOCUMENTS_adminPrepareCategoryRequest', 'Legacy category forms do not preserve an omitted metadescription.', $failures);
+documents_mutation_require($dispatch, 'DOCUMENTS_adminDispatchSelectIsUsed', 'Legacy select deletion does not protect used options.', $failures);
+documents_mutation_forbid($dispatch, 'addslashes(', 'Secure legacy dispatcher must not use addslashes().', $failures);
 
 documents_mutation_require($admin, 'DB_escapeString($slug)', 'Category slug must be SQL escaped.', $failures);
 documents_mutation_require($admin, 'metadescription', 'Category mutation must persist metadescription.', $failures);
