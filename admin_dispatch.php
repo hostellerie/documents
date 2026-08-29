@@ -26,6 +26,31 @@ function DOCUMENTS_adminPrepareCategoryRequest($request)
     return $request;
 }
 
+function DOCUMENTS_adminDispatchSelectIsUsed($selectId)
+{
+    global $_TABLES;
+
+    $selectId = (int) $selectId;
+    if ($selectId <= 0) {
+        return false;
+    }
+
+    $select = DB_fetchArray(DB_query(
+        "SELECT s_group, s_name FROM {$_TABLES['documents_selects']} WHERE sid={$selectId} LIMIT 1"
+    ));
+    if (!is_array($select) || !isset($select['s_group'])) {
+        return false;
+    }
+
+    $groupId = (int) $select['s_group'];
+    $safeName = DB_escapeString((string) $select['s_name']);
+    $sql = "SELECT v.vid FROM {$_TABLES['documents_values']} AS v "
+        . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
+        . "WHERE f.sel_id={$groupId} AND v.v_value='{$safeName}' LIMIT 1";
+
+    return DB_numRows(DB_query($sql)) > 0;
+}
+
 function DOCUMENTS_adminDispatchMutation($mode, $request)
 {
     global $_CONF, $_DOCUMENTS_CONF;
@@ -40,6 +65,7 @@ function DOCUMENTS_adminDispatchMutation($mode, $request)
     $ok = false;
     $message = 'Unsupported operation.';
     $returnUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/index.php';
+    $operation = isset($request['op']) ? (string) $request['op'] : 'save';
 
     switch ($mode) {
         case 'save_cat':
@@ -74,7 +100,14 @@ function DOCUMENTS_adminDispatchMutation($mode, $request)
             break;
 
         case 'save_select':
-            list($ok, $message) = DOCUMENTS_adminSaveSelect($request);
+            if ($operation === 'delete'
+                && !empty($request['sid'])
+                && DOCUMENTS_adminDispatchSelectIsUsed((int) $request['sid'])) {
+                $ok = false;
+                $message = 'This selection value is still used by one or more documents.';
+            } else {
+                list($ok, $message) = DOCUMENTS_adminSaveSelect($request);
+            }
             $returnUrl .= '?mode=list_selects';
             if (!empty($request['s_group'])) {
                 $returnUrl .= '&group=' . (int) $request['s_group'];
