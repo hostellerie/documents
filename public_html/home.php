@@ -13,6 +13,14 @@ $pluginPath = $_CONF['path'] . 'plugins/documents/';
 require_once $pluginPath . 'runtime.php';
 require_once $pluginPath . 'seo.php';
 
+$requestPath = isset($_SERVER['REQUEST_URI'])
+    ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH)
+    : '';
+if (is_string($requestPath) && basename($requestPath) === 'home.php') {
+    header('Location: ' . rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/', true, 301);
+    exit;
+}
+
 if (isset($_SCRIPTS) && is_object($_SCRIPTS)) {
     $_SCRIPTS->setCSSFile(
         'documents_public',
@@ -69,6 +77,13 @@ if (empty($cards)) {
         . '</p>';
 } else {
     $content .= '<div class="documents-category-grid">' . implode('', $cards) . '</div>';
+}
+
+if (function_exists('DOCUMENTS_homeStatsBlock')) {
+    $stats = DOCUMENTS_homeStatsBlock();
+    if ($stats !== '') {
+        $content .= '<section class="documents-home__stats">' . $stats . '</section>';
+    }
 }
 
 if (!empty($_DOCUMENTS_CONF['documents_main_footer'])) {
