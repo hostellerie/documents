@@ -29,6 +29,21 @@ $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
 $operation = isset($_REQUEST['op']) ? (string) $_REQUEST['op'] : 'save';
 $documentId = isset($_REQUEST['doc_url']) ? trim((string) $_REQUEST['doc_url']) : '';
 
+/* Decide ownership before consuming Geeklog's one-time token. Specialized
+ * integrations that do not yet have a service contract may still use the
+ * compatibility controller. Marker categories never take that path. */
+if ($operation !== 'delete') {
+    $standardCategory = $categoryId > 0 && DOCUMENTS_documentMutationIsStandardCategory($categoryId);
+    $mapsCategory = $categoryId > 0 && DOCUMENTS_mapsCategorySupported($categoryId);
+    if ($categoryId <= 0 || (!$standardCategory && !$mapsCategory)) {
+        require __DIR__ . '/index.php';
+        exit;
+    }
+} else {
+    $standardCategory = false;
+    $mapsCategory = false;
+}
+
 if (!SEC_checkToken()) {
     if (function_exists('http_response_code')) {
         http_response_code(403);
@@ -58,19 +73,6 @@ if ($operation === 'delete') {
         rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
         . '/index.php?msg=' . rawurlencode($deleteMessage)
     );
-    exit;
-}
-
-$standardCategory = $categoryId > 0 && DOCUMENTS_documentMutationIsStandardCategory($categoryId);
-$mapsCategory = $categoryId > 0 && DOCUMENTS_mapsCategorySupported($categoryId);
-
-/* Integrations without an ownership-preserving service contract still use the
- * compatibility path. Marker fields are handled exclusively through Maps. */
-if ($categoryId <= 0 || (!$standardCategory && !$mapsCategory)) {
-    /* The token has already been consumed here, so legacy paths cannot safely
-     * handle this request. Reject unsupported mutation types instead of falling
-     * through to the historical controller. */
-    echo COM_refresh($_CONF['site_url'] . '/404.php');
     exit;
 }
 
