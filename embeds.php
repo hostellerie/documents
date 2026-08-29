@@ -197,6 +197,7 @@ function phpblock_documents_popular()
     return DOCUMENTS_renderCompactItems(DOCUMENTS_popularItems(5));
 }
 
+/* Feed and statistics callbacks use the same permission-aware item layer. */
 $documentsDistributionFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'distribution.php';
 if (is_file($documentsDistributionFile)) {
     require_once $documentsDistributionFile;
