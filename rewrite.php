@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.8                                                    |
+// | Documents Plugin 1.2.0                                                    |
 // +---------------------------------------------------------------------------+
 // | rewrite.php                                                               |
 // |                                                                           |
@@ -50,13 +50,14 @@ if (!function_exists('DOCUMENTS_writeHtaccess')) {
             return true;
         }
 
-        $rules = "RewriteEngine On\n\n"
+        $rules = "DirectoryIndex home.php index.php\n\n"
+            . "RewriteEngine On\n\n"
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
             . "RewriteRule ^([^/]+)/([^/]+)/?$ index.php?mode=view&cat=$1&doc=$2 [L,QSA]\n\n"
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
-            . "RewriteRule ^([^/]+)/?$ index.php?mode=view&cat=$1 [L,QSA]\n";
+            . "RewriteRule ^([^/]+)/?$ category.php?cat=$1 [L,QSA]\n";
 
         if (@file_put_contents($target, $rules, LOCK_EX) === false) {
             if (function_exists('COM_errorLog')) {
