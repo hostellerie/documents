@@ -33,8 +33,8 @@ function documents_test_forbid($content, $needle, $message, &$failures)
 }
 
 documents_test_require($files['autoinstall'], "'pi_version' => '1.2.0'", 'Plugin metadata is not 1.2.0.', $failures);
-documents_test_require($files['autoinstall'], "DOCUMENTS_MIN_GEEKLOG_VERSION, '2.1.1'", 'Geeklog 2.1.1 minimum target is missing.', $failures);
-documents_test_require($files['autoinstall'], "DOCUMENTS_MIN_PHP_VERSION, '5.6.0'", 'PHP 5.6 minimum target is missing.', $failures);
+documents_test_require($files['autoinstall'], "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')", 'Geeklog 2.1.1 minimum target is missing.', $failures);
+documents_test_require($files['autoinstall'], "define('DOCUMENTS_MIN_PHP_VERSION', '5.6.0')", 'PHP 5.6 minimum target is missing.', $failures);
 
 documents_test_require($files['install'], 'metadescription varchar(255)', 'Fresh-install category metadescription column is missing.', $failures);
 documents_test_require($files['updates'], 'function DOCUMENTS_updateSchema_1_2_0()', '1.2.0 schema upgrade is missing.', $failures);
