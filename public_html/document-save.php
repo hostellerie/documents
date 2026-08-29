@@ -15,9 +15,10 @@ if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST')
 }
 
 $pluginPath = $_CONF['path'] . 'plugins/documents/';
-require_once $pluginPath . 'runtime.php';
+require_once $pluginPath . 'security.php';
 require_once $pluginPath . 'include_compat.php';
 require_once $pluginPath . 'integrity.php';
+require_once $pluginPath . 'interoperability.php';
 require_once $pluginPath . 'document_mutations.php';
 
 $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
