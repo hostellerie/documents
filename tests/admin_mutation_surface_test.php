@@ -34,6 +34,7 @@ function documents_mutation_forbid($content, $needle, $message, &$failures)
 
 $admin = documents_mutation_read($root, 'admin_mutations.php', $failures);
 $field = documents_mutation_read($root, 'field_mutations.php', $failures);
+$messages = documents_mutation_read($root, 'admin_messages.php', $failures);
 $adminEndpoint = documents_mutation_read($root, 'public_html/admin-save.php', $failures);
 $fieldEndpoint = documents_mutation_read($root, 'public_html/admin-field-save.php', $failures);
 $catTemplate = documents_mutation_read($root, 'templates/cat_form.thtml', $failures);
@@ -45,6 +46,11 @@ documents_mutation_require($adminEndpoint, 'SEC_checkToken()', 'General admin mu
 documents_mutation_require($fieldEndpoint, 'SEC_checkToken()', 'Field mutation endpoint must validate CSRF.', $failures);
 documents_mutation_require($adminEndpoint, "SEC_hasRights('documents.admin')", 'General mutation endpoint must require documents.admin.', $failures);
 documents_mutation_require($fieldEndpoint, "SEC_hasRights('documents.admin')", 'Field mutation endpoint must require documents.admin.', $failures);
+documents_mutation_require($adminEndpoint, 'DOCUMENTS_adminMessage($message)', 'General mutation feedback is not localized.', $failures);
+documents_mutation_require($fieldEndpoint, 'DOCUMENTS_adminMessage($message)', 'Field mutation feedback is not localized.', $failures);
+documents_mutation_require($messages, "strpos(strtolower((string) $_CONF['language']), 'french')", 'French mutation-message selection is missing.', $failures);
+documents_mutation_require($messages, 'Catégorie enregistrée.', 'French category feedback is missing.', $failures);
+documents_mutation_require($messages, 'Champ enregistré.', 'French field feedback is missing.', $failures);
 
 documents_mutation_require($admin, 'DB_escapeString($slug)', 'Category slug must be SQL escaped.', $failures);
 documents_mutation_require($admin, 'metadescription', 'Category mutation must persist metadescription.', $failures);
