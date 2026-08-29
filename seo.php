@@ -61,6 +61,15 @@ function DOCUMENTS_seoFallbackDescription($title, $category = '')
     return DOCUMENTS_interopExcerpt(implode(' - ', array_filter($parts, 'strlen')), 160);
 }
 
+function DOCUMENTS_seoPageNumber()
+{
+    if (!isset($_GET['page'])) {
+        return 1;
+    }
+
+    return max(1, (int) $_GET['page']);
+}
+
 function DOCUMENTS_seoContext()
 {
     global $_CONF, $_DOCUMENTS_CONF, $LANG_DOCUMENTS_1;
@@ -87,7 +96,8 @@ function DOCUMENTS_seoContext()
                 'created' => isset($item['date-created']) ? (int) $item['date-created'] : 0,
                 'modified' => isset($item['date-modified']) ? (int) $item['date-modified'] : 0,
                 'author' => isset($item['author']) ? $item['author'] : '',
-                'category' => isset($item['category']) ? $item['category'] : ''
+                'category' => isset($item['category']) ? $item['category'] : '',
+                'page' => 1
             );
         }
     }
@@ -101,17 +111,25 @@ function DOCUMENTS_seoContext()
                 $description = DOCUMENTS_seoFallbackDescription($title);
             }
 
+            $page = DOCUMENTS_seoPageNumber();
+            $canonical = DOCUMENTS_interopCanonicalUrl($category['cat_url']);
+            if ($page > 1) {
+                $canonical .= '?page=' . $page;
+                $title .= ' - Page ' . $page;
+            }
+
             return array(
                 'title' => $title,
                 'description' => $description,
-                'canonical' => DOCUMENTS_interopCanonicalUrl($category['cat_url']),
+                'canonical' => $canonical,
                 'image' => '',
                 'type' => 'website',
                 'schema_type' => 'CollectionPage',
                 'created' => 0,
                 'modified' => 0,
                 'author' => '',
-                'category' => ''
+                'category' => '',
+                'page' => $page
             );
         }
     }
@@ -129,7 +147,8 @@ function DOCUMENTS_seoContext()
         'created' => 0,
         'modified' => 0,
         'author' => '',
-        'category' => ''
+        'category' => '',
+        'page' => 1
     );
 }
 
@@ -206,15 +225,26 @@ function DOCUMENTS_seoHeaderCode()
     return $header;
 }
 
+function DOCUMENTS_seoRemoveManagedTags($html)
+{
+    $patterns = array(
+        '/<link\b[^>]*\brel=["\']canonical["\'][^>]*>\s*/i',
+        '/<link\b[^>]*\bhref=["\'][^"\']+["\'][^>]*\brel=["\']canonical["\'][^>]*>\s*/i',
+        '/<meta\s+name=["\']description["\'][^>]*>\s*/i',
+        '/<meta\s+name=["\']twitter:[^"\']+["\'][^>]*>\s*/i',
+        '/<meta\s+property=["\'](?:og:[^"\']+|fb:app_id)["\'][^>]*>\s*/i'
+    );
+
+    return preg_replace($patterns, '', $html);
+}
+
 function DOCUMENTS_seoOutputFilter($html)
 {
     if (!is_string($html) || stripos($html, '</head>') === false) {
         return $html;
     }
 
-    /* Remove the legacy Documents OpenGraph block to prevent duplicate tags. */
-    $html = preg_replace('/<meta\s+property=["\'](?:og:[^"\']+|fb:app_id)["\'][^>]*>\s*/i', '', $html);
-
+    $html = DOCUMENTS_seoRemoveManagedTags($html);
     $header = DOCUMENTS_seoHeaderCode();
     if ($header === '') {
         return $html;
