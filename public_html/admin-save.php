@@ -33,6 +33,7 @@ if (!function_exists('DOCUMENTS_normalizeRouteSlug')) {
     require_once $pluginPath . 'include_compat.php';
 }
 require_once $pluginPath . 'admin_mutations.php';
+require_once $pluginPath . 'admin_messages.php';
 
 function DOCUMENTS_adminEndpointCategoryFields($categoryId)
 {
@@ -145,6 +146,7 @@ switch ($mode) {
         break;
 }
 
+$message = DOCUMENTS_adminMessage($message);
 $separator = (strpos($returnUrl, '?') === false) ? '?' : '&';
 $returnUrl .= $separator . 'msg=' . rawurlencode((string) $message);
 
