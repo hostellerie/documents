@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.9                                                    |
+// | Documents Plugin 1.2.0                                                    |
 // +---------------------------------------------------------------------------+
 // | integrity.php                                                             |
 // |                                                                           |
@@ -80,7 +80,17 @@ function DOCUMENTS_uniqueDocumentUrl($title)
     }
 
     do {
-        $candidate = $next . '-' . $slug;
+        $prefix = (string) $next . '-';
+        $available = 40 - strlen($prefix);
+        if ($available < 1) {
+            $available = 1;
+        }
+        $candidateSlug = substr($slug, 0, $available);
+        $candidateSlug = rtrim($candidateSlug, '-');
+        if ($candidateSlug === '') {
+            $candidateSlug = 'd';
+        }
+        $candidate = $prefix . $candidateSlug;
         $next++;
     } while (DOCUMENTS_documentUrlExists($candidate));
 
