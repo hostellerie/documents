@@ -21,17 +21,19 @@ require_once $pluginPath . 'integrity.php';
 require_once $pluginPath . 'interoperability.php';
 require_once $pluginPath . 'indexability.php';
 require_once $pluginPath . 'document_images.php';
-require_once $pluginPath . 'maps_adapter.php';
 require_once $pluginPath . 'document_mutations.php';
+require_once $pluginPath . 'maps_adapter.php';
 
 $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
 $operation = isset($_REQUEST['op']) ? (string) $_REQUEST['op'] : 'save';
+$standardCategory = $categoryId > 0 && DOCUMENTS_documentMutationIsStandardCategory($categoryId);
+$mapsCategory = $categoryId > 0 && DOCUMENTS_mapsCategorySupported($categoryId);
 
-/* Deletion and integrations without a service contract still use the mature
- * compatibility path. Marker fields are handled through the Maps service. */
+/* Deletion and integrations without an ownership-preserving service contract
+ * still use the compatibility path. Marker fields are never delegated to it. */
 if ($operation === 'delete'
     || $categoryId <= 0
-    || !DOCUMENTS_documentMutationIsStandardCategory($categoryId)) {
+    || (!$standardCategory && !$mapsCategory)) {
     require __DIR__ . '/index.php';
     exit;
 }
@@ -96,7 +98,11 @@ if ($wasPublic) {
     }
 }
 
-list($ok, $message, $savedId, $categorySlug, $details) = DOCUMENTS_saveStandardDocument($_REQUEST);
+if ($mapsCategory) {
+    list($ok, $message, $savedId, $categorySlug, $details) = DOCUMENTS_saveMapsDocument($_REQUEST);
+} else {
+    list($ok, $message, $savedId, $categorySlug, $details) = DOCUMENTS_saveStandardDocument($_REQUEST);
+}
 
 if (!$ok) {
     $missing = isset($details) && is_array($details) ? $details : array();
