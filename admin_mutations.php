@@ -1,0 +1,305 @@
+<?php
+
+/* Secure administration mutations for Documents 1.2.0. PHP 5.6+. */
+
+if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'admin_mutations.php') !== false) {
+    die('This file can not be used on its own.');
+}
+
+function DOCUMENTS_adminPlainText($value, $maxLength)
+{
+    if (is_array($value) || is_object($value) || is_resource($value)) {
+        return '';
+    }
+
+    $value = html_entity_decode(strip_tags((string) $value), ENT_QUOTES, 'UTF-8');
+    $value = trim(str_replace("\0", '', $value));
+    $maxLength = max(1, (int) $maxLength);
+
+    if (function_exists('MBYTE_strlen') && function_exists('MBYTE_substr')) {
+        return MBYTE_strlen($value) > $maxLength
+            ? MBYTE_substr($value, 0, $maxLength)
+            : $value;
+    }
+    if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+        return mb_strlen($value, 'UTF-8') > $maxLength
+            ? mb_substr($value, 0, $maxLength, 'UTF-8')
+            : $value;
+    }
+
+    return strlen($value) > $maxLength ? substr($value, 0, $maxLength) : $value;
+}
+
+function DOCUMENTS_adminHtml($value, $maxLength)
+{
+    if (is_array($value) || is_object($value) || is_resource($value)) {
+        return '';
+    }
+
+    $value = COM_checkHTML((string) $value, 'documents.admin');
+    $maxLength = max(1, (int) $maxLength);
+    if (function_exists('MBYTE_strlen') && function_exists('MBYTE_substr')) {
+        return MBYTE_strlen($value) > $maxLength ? MBYTE_substr($value, 0, $maxLength) : $value;
+    }
+    if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+        return mb_strlen($value, 'UTF-8') > $maxLength
+            ? mb_substr($value, 0, $maxLength, 'UTF-8')
+            : $value;
+    }
+
+    return strlen($value) > $maxLength ? substr($value, 0, $maxLength) : $value;
+}
+
+function DOCUMENTS_adminSlug($value, $maxLength)
+{
+    $value = DOCUMENTS_normalizeRouteSlug((string) $value);
+    return DOCUMENTS_adminPlainText($value, $maxLength);
+}
+
+function DOCUMENTS_adminPermissions($request)
+{
+    if (function_exists('DOCUMENTS_requestPermissions')) {
+        return DOCUMENTS_requestPermissions($request, array(3, 3, 2, 2));
+    }
+
+    $defaults = array(3, 3, 2, 2);
+    $keys = array('perm_owner', 'perm_group', 'perm_members', 'perm_anon');
+    $result = array();
+    foreach ($keys as $index => $key) {
+        $value = isset($request[$key]) ? (int) $request[$key] : $defaults[$index];
+        $result[] = max(0, min(3, $value));
+    }
+    return $result;
+}
+
+function DOCUMENTS_adminReorderCategories()
+{
+    global $_TABLES;
+
+    $result = DB_query("SELECT cid, cat_order FROM {$_TABLES['documents_cat']} ORDER BY cat_order ASC, cid ASC");
+    $order = 10;
+    while ($row = DB_fetchArray($result)) {
+        if ((int) $row['cat_order'] !== $order) {
+            DB_query("UPDATE {$_TABLES['documents_cat']} SET cat_order={$order} WHERE cid=" . (int) $row['cid']);
+        }
+        $order += 10;
+    }
+}
+
+function DOCUMENTS_adminReorderSelects($groupId)
+{
+    global $_TABLES;
+
+    $groupId = (int) $groupId;
+    if ($groupId <= 0) {
+        return;
+    }
+
+    $result = DB_query(
+        "SELECT sid, s_order FROM {$_TABLES['documents_selects']} "
+        . "WHERE s_group={$groupId} ORDER BY s_order ASC, sid ASC"
+    );
+    $order = 10;
+    while ($row = DB_fetchArray($result)) {
+        if ((int) $row['s_order'] !== $order) {
+            DB_query("UPDATE {$_TABLES['documents_selects']} SET s_order={$order} WHERE sid=" . (int) $row['sid']);
+        }
+        $order += 10;
+    }
+}
+
+function DOCUMENTS_adminCategoryHasDocuments($categoryId)
+{
+    global $_TABLES;
+
+    $categoryId = (int) $categoryId;
+    if ($categoryId <= 0) {
+        return false;
+    }
+
+    $sql = "SELECT d.did FROM {$_TABLES['documents_docs']} AS d "
+        . "INNER JOIN {$_TABLES['documents_values']} AS v ON v.doc_url=d.doc_url "
+        . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
+        . "WHERE f.cat_id={$categoryId} LIMIT 1";
+
+    return DB_numRows(DB_query($sql)) > 0;
+}
+
+function DOCUMENTS_adminSaveCategory($request)
+{
+    global $_TABLES;
+
+    $cid = isset($request['cid']) ? (int) $request['cid'] : 0;
+    $operation = isset($request['op']) ? (string) $request['op'] : 'save';
+
+    if ($operation === 'delete') {
+        if ($cid <= 0) {
+            return array(false, 'Invalid category.');
+        }
+        if (DOCUMENTS_adminCategoryHasDocuments($cid)) {
+            return array(false, 'This category still contains documents and cannot be deleted.');
+        }
+        DB_query("DELETE FROM {$_TABLES['documents_fields']} WHERE cat_id={$cid}");
+        DB_query("DELETE FROM {$_TABLES['documents_cat']} WHERE cid={$cid}");
+        DOCUMENTS_adminReorderCategories();
+        return array(!DB_error(), DB_error() ? 'Unable to delete category.' : 'Category deleted.');
+    }
+
+    $name = DOCUMENTS_adminPlainText(isset($request['cat_name']) ? $request['cat_name'] : '', 40);
+    $slug = DOCUMENTS_adminSlug(isset($request['cat_url']) ? $request['cat_url'] : '', 40);
+    if ($name === '' || $slug === '') {
+        return array(false, 'Category name and URL are required.');
+    }
+
+    $safeSlug = DB_escapeString($slug);
+    $duplicateSql = "SELECT cid FROM {$_TABLES['documents_cat']} WHERE cat_url='{$safeSlug}'";
+    if ($cid > 0) {
+        $duplicateSql .= " AND cid<>{$cid}";
+    }
+    $duplicateSql .= ' LIMIT 1';
+    if (DB_numRows(DB_query($duplicateSql)) > 0) {
+        return array(false, 'This category URL already exists.');
+    }
+
+    $css = DOCUMENTS_adminPlainText(isset($request['css']) ? $request['css'] : '', 18);
+    $template = DOCUMENTS_adminPlainText(isset($request['template']) ? $request['template'] : '', 18);
+    $help = DOCUMENTS_adminPlainText(isset($request['cat_help']) ? $request['cat_help'] : '', 255);
+    $meta = DOCUMENTS_adminPlainText(isset($request['metadescription']) ? $request['metadescription'] : '', 255);
+    $header = DOCUMENTS_adminHtml(isset($request['custom_header']) ? $request['custom_header'] : '', 255);
+    $footer = DOCUMENTS_adminHtml(isset($request['custom_footer']) ? $request['custom_footer'] : '', 255);
+
+    $catOrder = isset($request['cat_order']) ? max(0, (int) $request['cat_order']) : 0;
+    $listIndex = !empty($request['list_index']) ? 1 : 0;
+    $submitable = !empty($request['submitable']) ? 1 : 0;
+    $ownerId = isset($request['owner_id']) ? max(1, (int) $request['owner_id']) : 1;
+    $groupId = isset($request['group_id']) ? max(1, (int) $request['group_id']) : 1;
+    list($permOwner, $permGroup, $permMembers, $permAnon) = DOCUMENTS_adminPermissions($request);
+
+    if (DOCUMENTS_hasMaps()) {
+        $map = isset($request['map']) ? max(0, (int) $request['map']) : 0;
+    } elseif ($cid > 0) {
+        $map = (int) DB_getItem($_TABLES['documents_cat'], 'map', 'cid=' . $cid);
+    } else {
+        $map = 0;
+    }
+
+    $values = array(
+        'cat_name' => DB_escapeString($name),
+        'cat_url' => DB_escapeString($slug),
+        'css' => DB_escapeString($css),
+        'template' => DB_escapeString($template),
+        'cat_help' => DB_escapeString($help),
+        'metadescription' => DB_escapeString($meta),
+        'custom_header' => DB_escapeString($header),
+        'custom_footer' => DB_escapeString($footer)
+    );
+
+    $set = "cat_name='{$values['cat_name']}', cat_url='{$values['cat_url']}', "
+        . "cat_order={$catOrder}, css='{$values['css']}', map={$map}, "
+        . "template='{$values['template']}', list_index={$listIndex}, submitable={$submitable}, "
+        . "cat_help='{$values['cat_help']}', metadescription='{$values['metadescription']}', "
+        . "custom_header='{$values['custom_header']}', custom_footer='{$values['custom_footer']}', "
+        . "owner_id={$ownerId}, group_id={$groupId}, perm_owner={$permOwner}, "
+        . "perm_group={$permGroup}, perm_members={$permMembers}, perm_anon={$permAnon}";
+
+    if ($cid > 0) {
+        DB_query("UPDATE {$_TABLES['documents_cat']} SET {$set} WHERE cid={$cid}");
+    } else {
+        DB_query("INSERT INTO {$_TABLES['documents_cat']} SET {$set}");
+    }
+
+    if (DB_error()) {
+        return array(false, 'Unable to save category.');
+    }
+
+    DOCUMENTS_adminReorderCategories();
+    return array(true, 'Category saved.');
+}
+
+function DOCUMENTS_adminSaveGroup($request)
+{
+    global $_TABLES;
+
+    $gid = isset($request['gid']) ? (int) $request['gid'] : 0;
+    $operation = isset($request['op']) ? (string) $request['op'] : 'save';
+
+    if ($operation === 'delete') {
+        if ($gid <= 0) {
+            return array(false, 'Invalid selection group.');
+        }
+        if ((int) DB_count($_TABLES['documents_fields'], 'sel_id', $gid) > 0) {
+            return array(false, 'This selection group is still used by a field.');
+        }
+        DB_query("DELETE FROM {$_TABLES['documents_selects']} WHERE s_group={$gid}");
+        DB_query("DELETE FROM {$_TABLES['documents_selects_group']} WHERE gid={$gid}");
+        return array(!DB_error(), DB_error() ? 'Unable to delete selection group.' : 'Selection group deleted.');
+    }
+
+    $name = DOCUMENTS_adminPlainText(isset($request['group_name']) ? $request['group_name'] : '', 255);
+    $help = DOCUMENTS_adminPlainText(isset($request['group_help']) ? $request['group_help'] : '', 255);
+    if ($name === '') {
+        return array(false, 'Selection group name is required.');
+    }
+
+    $safeName = DB_escapeString($name);
+    $safeHelp = DB_escapeString($help);
+    if ($gid > 0) {
+        DB_query("UPDATE {$_TABLES['documents_selects_group']} SET g_name='{$safeName}', g_help='{$safeHelp}' WHERE gid={$gid}");
+    } else {
+        DB_query("INSERT INTO {$_TABLES['documents_selects_group']} SET g_name='{$safeName}', g_help='{$safeHelp}'");
+    }
+
+    return array(!DB_error(), DB_error() ? 'Unable to save selection group.' : 'Selection group saved.');
+}
+
+function DOCUMENTS_adminSaveSelect($request)
+{
+    global $_TABLES;
+
+    $sid = isset($request['sid']) ? (int) $request['sid'] : 0;
+    $operation = isset($request['op']) ? (string) $request['op'] : 'save';
+    $groupId = isset($request['s_group']) ? max(0, (int) $request['s_group']) : 0;
+
+    if ($operation === 'delete') {
+        if ($sid <= 0) {
+            return array(false, 'Invalid selection value.');
+        }
+        if ($groupId <= 0) {
+            $groupId = (int) DB_getItem($_TABLES['documents_selects'], 's_group', 'sid=' . $sid);
+        }
+        DB_query("DELETE FROM {$_TABLES['documents_selects']} WHERE sid={$sid}");
+        DOCUMENTS_adminReorderSelects($groupId);
+        return array(!DB_error(), DB_error() ? 'Unable to delete selection value.' : 'Selection value deleted.');
+    }
+
+    $name = DOCUMENTS_adminPlainText(isset($request['s_name']) ? $request['s_name'] : '', 255);
+    $value = DOCUMENTS_adminPlainText(isset($request['s_value']) ? $request['s_value'] : '', 65535);
+    $order = isset($request['s_order']) ? max(0, (int) $request['s_order']) : 0;
+    if ($name === '' || $groupId <= 0) {
+        return array(false, 'Selection name and group are required.');
+    }
+    if ((int) DB_count($_TABLES['documents_selects_group'], 'gid', $groupId) <= 0) {
+        return array(false, 'Unknown selection group.');
+    }
+
+    $safeName = DB_escapeString($name);
+    $safeValue = DB_escapeString($value);
+    if ($sid > 0) {
+        DB_query(
+            "UPDATE {$_TABLES['documents_selects']} SET s_group={$groupId}, s_name='{$safeName}', "
+            . "s_value='{$safeValue}', s_order={$order} WHERE sid={$sid}"
+        );
+    } else {
+        DB_query(
+            "INSERT INTO {$_TABLES['documents_selects']} SET s_group={$groupId}, s_name='{$safeName}', "
+            . "s_value='{$safeValue}', s_order={$order}"
+        );
+    }
+
+    if (DB_error()) {
+        return array(false, 'Unable to save selection value.');
+    }
+
+    DOCUMENTS_adminReorderSelects($groupId);
+    return array(true, 'Selection value saved.');
+}
