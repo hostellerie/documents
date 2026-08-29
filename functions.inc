@@ -41,6 +41,8 @@ if (!isset($_DOCUMENTS_CONF)) {
     $_DOCUMENTS_CONF = $documents_config->get_config('documents');
 }
 
+require_once $plugin_path . 'interoperability.php';
+
 function DOCUMENTS_dataDir()
 {
     global $_CONF;
