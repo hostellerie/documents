@@ -1,21 +1,20 @@
-<script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script>
-<div id="documents_display">
-    <fieldset id="document">
-	    <legend style="text-transform:uppercase;"><h1>{active}{doc_name}</h1> {editor}</legend>		    
-		{raws}
-		<table cellpadding="10" class="documents">
-			<td valign="top"><label class="document_field">&nbsp;</label></td>
-			<td>
-				<p>{doc_by} {user_name} {displayed} {hits} {times} </p>
-			</td>
-		</table>
+<article id="documents_display" class="documents-document">
+    <header class="documents-document__header">
+        <h1 class="documents-document__title">{active}{doc_name} {editor}</h1>
+        <p class="documents-document__meta">{doc_by} {user_name} · {displayed} {hits} {times}</p>
+    </header>
 
-    </fieldset>
-</div>
-	
-<div id="comments">	
-	<div id="commentbar">
-		{commentbar}
-	</div>
-</div>
+    <div class="documents-document__content">
+        {raws}
+    </div>
 
+    <footer class="documents-document__footer">
+        <a href="{document_url}">{document_url}</a>
+    </footer>
+</article>
+
+<section id="comments" class="documents-document__comments" aria-label="Comments">
+    <div id="commentbar">
+        {commentbar}
+    </div>
+</section>
