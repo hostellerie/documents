@@ -13,6 +13,20 @@ if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'int
     die('This file can not be used on its own.');
 }
 
+/* Keep the lifecycle layer independent from include_compat.php load order. */
+if (!defined('DOCUMENTS_STATUS_INACTIVE')) {
+    define('DOCUMENTS_STATUS_INACTIVE', 0);
+}
+if (!defined('DOCUMENTS_STATUS_ACTIVE')) {
+    define('DOCUMENTS_STATUS_ACTIVE', 1);
+}
+if (!defined('DOCUMENTS_STATUS_DRAFT')) {
+    define('DOCUMENTS_STATUS_DRAFT', 2);
+}
+if (!defined('DOCUMENTS_STATUS_SUBMISSION')) {
+    define('DOCUMENTS_STATUS_SUBMISSION', 3);
+}
+
 function DOCUMENTS_interopCanonicalUrl($categorySlug, $documentSlug = '')
 {
     global $_CONF, $_DOCUMENTS_CONF;
@@ -383,10 +397,17 @@ function DOCUMENTS_interopCapabilities()
         'id_to_url' => true,
         'url_to_id' => true,
         'sitemap_collection' => true,
+        'autotags' => true,
+        'php_blocks' => true,
         'audience_metrics' => false,
         'search_metrics' => false,
         'query_metrics' => false,
         'indexing_status' => false,
         'submission_status' => false
     );
+}
+
+$documentsEmbedsFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'embeds.php';
+if (is_file($documentsEmbedsFile)) {
+    require_once $documentsEmbedsFile;
 }
