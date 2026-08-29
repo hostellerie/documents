@@ -38,7 +38,7 @@ if ($content === false) {
     documents_docmutation_require($content, 'DOCUMENTS_normalizeFieldInput', 'Dynamic field normalization is missing.', $failures);
     documents_docmutation_require($content, 's_group={$selectGroupId} AND s_name=\'{$safeValue}\'', 'Select option validation is missing.', $failures);
     documents_docmutation_require($content, 'in_array($type, array(\'marker\', \'album\', \'file\', \'radio\'), true)', 'Specialized plugin field types are not excluded from the standard mutation path.', $failures);
-    documents_docmutation_require($content, "$type === 'image'", 'Image fields are not handled by the standard mutation path.', $failures);
+    documents_docmutation_require($content, '$type === \'image\'', 'Image fields are not handled by the standard mutation path.', $failures);
     documents_docmutation_require($content, 'DOCUMENTS_uploadDocumentImages($documentId, $fields)', 'Image upload helper is not used before document persistence.', $failures);
     documents_docmutation_require($content, 'DOCUMENTS_cleanupReplacedImages($oldImages, $documentId)', 'Replaced document images are not cleaned after successful persistence.', $failures);
     documents_docmutation_require($content, '$available = 40 - strlen($prefix);', 'Document URL generation does not enforce the 40-character schema limit.', $failures);
