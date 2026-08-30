@@ -21,10 +21,10 @@ function DOCUMENTS_runStorageMigration()
 {
     global $_CONF;
 
-    if (!function_exists('DOCUMENTS_dataDir') || !function_exists('DOCUMENTS_legacyDataDir')) {
-        require_once $_CONF['path'] . 'plugins/documents/functions.inc';
-    }
-
+    /* storage.php is intentionally self-contained for post-install use. Do not
+     * require functions.inc from inside this function: PHP requires inherit the
+     * current function scope, so Geeklog globals such as $_DB_table_prefix are
+     * not visible there on Geeklog 2.2.2/PHP 8.x. */
     require_once $_CONF['path'] . 'plugins/documents/storage.php';
     $migration = DOCUMENTS_migrateLegacyData();
 
