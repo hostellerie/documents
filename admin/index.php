@@ -158,7 +158,33 @@ if ($mode === 'integrity') {
     $template->set_var('new_category_label', htmlspecialchars($LANG_DOCUMENTS_1['new_cat'], ENT_QUOTES, 'UTF-8'));
     $template->set_var('categories_label', htmlspecialchars($LANG_DOCUMENTS_1['categories'], ENT_QUOTES, 'UTF-8'));
 
+    $isFrench = isset($_CONF['language'])
+        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+    $adminHelp = $isFrench ? array(
+        'help_title' => 'Comment créer votre premier document ?',
+        'help_intro' => 'Documents fonctionne comme un générateur de types de contenu : vous définissez d’abord une catégorie, puis les champs qui composeront les documents de cette catégorie.',
+        'help_step_category' => 'Créez une catégorie. Elle représente un type de contenu, par exemple une fiche pratique, un canyon, un livre ou une adresse.',
+        'help_step_fields' => 'Ouvrez « Champs » pour ajouter les informations à saisir : titre, texte, image, date, sélection, album MediaGallery, marqueur Maps, etc. Le premier champ sert notamment de base au nom du document.',
+        'help_step_document' => 'Dès qu’au moins un champ existe, utilisez « Créer un nouveau document » dans la catégorie concernée.',
+        'help_step_publish' => 'Définissez les permissions et l’état de publication. Une catégorie peut être publique, réservée à un groupe ou ouverte aux propositions des membres.',
+        'help_tip_title' => 'Conseil :',
+        'help_tip' => 'commencez simplement avec 2 ou 3 champs. Vous pourrez enrichir la catégorie plus tard sans recréer les documents existants.'
+    ) : array(
+        'help_title' => 'How do I create my first document?',
+        'help_intro' => 'Documents works as a content-type builder: first define a category, then define the fields used by documents in that category.',
+        'help_step_category' => 'Create a category. It represents a content type such as a how-to guide, canyon, book or address.',
+        'help_step_fields' => 'Open “Fields” and add the information to collect: title, text, image, date, selection, MediaGallery album, Maps marker, etc. The first field is also used as the basis for the document name.',
+        'help_step_document' => 'As soon as at least one field exists, use “Create a new document” for that category.',
+        'help_step_publish' => 'Set permissions and publication status. A category may be public, group-restricted or open to member submissions.',
+        'help_tip_title' => 'Tip:',
+        'help_tip' => 'start with only two or three fields. You can expand the category later without recreating existing documents.'
+    );
+    foreach ($adminHelp as $key => $value) {
+        $template->set_var($key, htmlspecialchars($value, ENT_QUOTES, 'UTF-8'));
+    }
+
     $categoryActions = '';
+    $categoryCount = 0;
     $categoryResult = DB_query(
         "SELECT c.cid, c.cat_name, c.cat_url, COUNT(f.fid) AS field_count "
         . "FROM {$_TABLES['documents_cat']} AS c "
@@ -171,6 +197,7 @@ if ($mode === 'integrity') {
         if (!is_array($category) || empty($category['cid'])) {
             continue;
         }
+        $categoryCount++;
 
         $cid = (int) $category['cid'];
         $catName = htmlspecialchars(stripslashes((string) $category['cat_name']), ENT_QUOTES, 'UTF-8');
@@ -217,6 +244,7 @@ if ($mode === 'integrity') {
             . '</a></p>';
     }
 
+    $template->set_var('help_open', $categoryCount === 0 ? ' open="open"' : '');
     $template->set_var('category_actions', $categoryActions);
     $display .= $template->parse('output', 'home');
 }
