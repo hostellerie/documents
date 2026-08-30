@@ -1,0 +1,282 @@
+.documents-admin-page {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto 40px;
+}
+.documents-admin-page *,
+.documents-admin-page *::before,
+.documents-admin-page *::after {
+    box-sizing: border-box;
+}
+.documents-admin-page__header {
+    margin: 0 0 22px;
+}
+.documents-admin-page__header h1 {
+    margin: 0 0 8px;
+    font-size: 1.65em;
+    line-height: 1.25;
+}
+.documents-admin-page__lead {
+    max-width: 78ch;
+    margin: 0;
+    color: #596273;
+    line-height: 1.6;
+}
+.documents-admin-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin: 0 0 20px;
+}
+.documents-admin-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 1px solid #cfd5dc;
+    border-radius: 8px;
+    background: #fff;
+    color: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none !important;
+}
+.documents-admin-button:hover,
+.documents-admin-button:focus {
+    border-color: #9ba8b7;
+    background: #f7f8fa;
+}
+.documents-admin-button--primary {
+    border-color: #4479ba;
+    background: #4479ba;
+    color: #fff !important;
+}
+.documents-admin-button--primary:hover,
+.documents-admin-button--primary:focus {
+    background: #3569a6;
+}
+.documents-admin-guide {
+    margin: 0 0 22px;
+    border: 1px solid #dde2e8;
+    border-radius: 10px;
+    background: #f8f9fb;
+    overflow: hidden;
+}
+.documents-admin-guide summary {
+    cursor: pointer;
+    padding: 13px 16px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+.documents-admin-guide__content {
+    padding: 0 16px 15px;
+    color: #596273;
+    line-height: 1.55;
+}
+.documents-admin-guide__content p,
+.documents-admin-guide__content ul {
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+.documents-admin-card {
+    margin: 0 0 16px;
+    border: 1px solid #dde2e8;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+}
+.documents-admin-card__header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e7eaee;
+    background: #fafbfc;
+}
+.documents-admin-card__header h2,
+.documents-admin-card__header h3 {
+    margin: 0;
+    font-size: 1.05em;
+}
+.documents-admin-card__body {
+    padding: 18px 16px;
+}
+.documents-admin-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+.documents-admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+.documents-admin-table th,
+.documents-admin-table td {
+    padding: 12px 13px;
+    border-bottom: 1px solid #e8ebef;
+    text-align: left;
+    vertical-align: top;
+}
+.documents-admin-table th {
+    background: #f8f9fb;
+    color: #4f5866;
+    font-size: .86em;
+    font-weight: 700;
+}
+.documents-admin-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+.documents-admin-table tbody tr:hover {
+    background: #fbfcfd;
+}
+.documents-admin-table__actions {
+    white-space: nowrap;
+    text-align: right !important;
+}
+.documents-admin-table a {
+    text-decoration: none;
+}
+.documents-admin-muted {
+    color: #747d89;
+    font-size: .9em;
+}
+.documents-admin-badge {
+    display: inline-block;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #eef2f6;
+    color: #4f5967;
+    font-family: monospace;
+    font-size: .86em;
+}
+.documents-admin-order {
+    display: inline-block;
+    min-width: 2.4em;
+    color: #7b8490;
+    font-size: .86em;
+}
+.documents-admin-empty {
+    margin: 0;
+    padding: 22px 18px;
+    border: 1px dashed #ccd3db;
+    border-radius: 9px;
+    background: #fafbfc;
+    color: #616a77;
+    line-height: 1.55;
+}
+.documents-admin-message {
+    margin: 0 0 18px;
+    padding: 11px 14px;
+    border: 1px solid #d7dde4;
+    border-radius: 8px;
+    background: #f8f9fb;
+    line-height: 1.5;
+}
+.documents-admin-form {
+    max-width: 760px;
+}
+.documents-admin-form__section {
+    margin: 0 0 18px;
+    padding: 22px;
+    border: 1px solid #dde2e8;
+    border-radius: 10px;
+    background: #fff;
+}
+.documents-admin-form__row {
+    margin: 0 0 24px;
+}
+.documents-admin-form__row:last-child {
+    margin-bottom: 0;
+}
+.documents-admin-form__label {
+    display: block;
+    margin: 0 0 7px;
+    font-weight: 700;
+}
+.documents-admin-form__control {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 11px;
+    border: 1px solid #cbd2da;
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+}
+textarea.documents-admin-form__control {
+    min-height: 105px;
+    resize: vertical;
+    line-height: 1.5;
+}
+.documents-admin-form__control:focus {
+    outline: 2px solid rgba(68, 121, 186, .18);
+    border-color: #7d9cc2;
+}
+.documents-admin-form__help {
+    display: block;
+    margin-top: 8px;
+    color: #66707d;
+    font-size: .9em;
+    line-height: 1.5;
+}
+.documents-admin-form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 16px;
+    border: 1px solid #dde2e8;
+    border-radius: 10px;
+    background: #f8f9fb;
+}
+.documents-admin-form__actions select {
+    min-height: 40px;
+    padding: 7px 9px;
+    border: 1px solid #cbd2da;
+    border-radius: 7px;
+    background: #fff;
+}
+.documents-admin-submit {
+    min-height: 40px;
+    padding: 8px 16px;
+    border: 1px solid #4479ba;
+    border-radius: 7px;
+    background: #4479ba;
+    color: #fff;
+    font-weight: 700;
+}
+.documents-admin-danger-note {
+    margin: 14px 0 0;
+    padding: 10px 12px;
+    border-left: 3px solid #b3261e;
+    background: #fff7f6;
+    color: #6c3b36;
+    font-size: .9em;
+    line-height: 1.5;
+}
+@media (max-width: 700px) {
+    .documents-admin-page {
+        margin-bottom: 28px;
+    }
+    .documents-admin-card__body,
+    .documents-admin-form__section {
+        padding: 16px;
+    }
+    .documents-admin-table th,
+    .documents-admin-table td {
+        padding: 10px;
+    }
+    .documents-admin-toolbar,
+    .documents-admin-form__actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .documents-admin-button,
+    .documents-admin-submit,
+    .documents-admin-form__actions select {
+        width: 100%;
+        justify-content: center;
+    }
+}
