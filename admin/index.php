@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.8                                                    |
+// | Documents Plugin 1.2.0                                                    |
 // +---------------------------------------------------------------------------+
 // | index.php                                                                 |
 // |                                                                           |
@@ -152,6 +152,72 @@ if ($mode === 'integrity') {
         htmlspecialchars($adminUrl . '?mode=integrity', ENT_QUOTES, 'UTF-8')
     );
     $template->set_var('integrity_label', $LANG_DOCUMENTS_1['integrity_audit_title']);
+
+    $newCategoryUrl = rtrim((string) $documentsUrl, '/') . '/index.php?mode=edit_cat';
+    $template->set_var('new_category_url', htmlspecialchars($newCategoryUrl, ENT_QUOTES, 'UTF-8'));
+    $template->set_var('new_category_label', htmlspecialchars($LANG_DOCUMENTS_1['new_cat'], ENT_QUOTES, 'UTF-8'));
+    $template->set_var('categories_label', htmlspecialchars($LANG_DOCUMENTS_1['categories'], ENT_QUOTES, 'UTF-8'));
+
+    $categoryActions = '';
+    $categoryResult = DB_query(
+        "SELECT c.cid, c.cat_name, c.cat_url, COUNT(f.fid) AS field_count "
+        . "FROM {$_TABLES['documents_cat']} AS c "
+        . "LEFT JOIN {$_TABLES['documents_fields']} AS f ON f.cat_id=c.cid "
+        . "GROUP BY c.cid, c.cat_name, c.cat_url "
+        . "ORDER BY c.cat_order ASC, c.cat_name ASC"
+    );
+
+    while ($category = DB_fetchArray($categoryResult)) {
+        if (!is_array($category) || empty($category['cid'])) {
+            continue;
+        }
+
+        $cid = (int) $category['cid'];
+        $catName = htmlspecialchars(stripslashes((string) $category['cat_name']), ENT_QUOTES, 'UTF-8');
+        $catSlug = (string) $category['cat_url'];
+        $fieldCount = isset($category['field_count']) ? (int) $category['field_count'] : 0;
+
+        $editCategoryUrl = rtrim((string) $documentsUrl, '/')
+            . '/index.php?mode=edit_cat&cid=' . $cid;
+        $fieldsUrl = rtrim((string) $documentsUrl, '/')
+            . '/index.php?mode=list_fields&cat=' . $cid;
+
+        $categoryActions .= '<div class="documents-admin-category">';
+        $categoryActions .= '<h3>' . $catName . '</h3>';
+        $categoryActions .= '<p><a href="'
+            . htmlspecialchars($editCategoryUrl, ENT_QUOTES, 'UTF-8') . '">'
+            . htmlspecialchars($LANG_DOCUMENTS_1['edit_cat'], ENT_QUOTES, 'UTF-8') . '</a> | ';
+        $categoryActions .= '<a href="'
+            . htmlspecialchars($fieldsUrl, ENT_QUOTES, 'UTF-8') . '">'
+            . htmlspecialchars($LANG_DOCUMENTS_1['fields'], ENT_QUOTES, 'UTF-8') . '</a>';
+
+        if ($fieldCount > 0 && $catSlug !== '') {
+            $newDocumentUrl = rtrim((string) $documentsUrl, '/')
+                . '/index.php?mode=new&cat=' . rawurlencode($catSlug);
+            $categoryActions .= ' | <a href="'
+                . htmlspecialchars($newDocumentUrl, ENT_QUOTES, 'UTF-8') . '">'
+                . htmlspecialchars($LANG_DOCUMENTS_1['create_new_doc'], ENT_QUOTES, 'UTF-8') . '</a>';
+        }
+        $categoryActions .= '</p>';
+
+        if ($fieldCount === 0) {
+            $categoryActions .= '<p><em>'
+                . htmlspecialchars($LANG_DOCUMENTS_1['new_field'], ENT_QUOTES, 'UTF-8')
+                . '</em></p>';
+        }
+
+        $categoryActions .= '</div>';
+    }
+
+    if ($categoryActions === '') {
+        $categoryActions = '<p>'
+            . htmlspecialchars($LANG_DOCUMENTS_1['none'], ENT_QUOTES, 'UTF-8')
+            . ' — <a href="' . htmlspecialchars($newCategoryUrl, ENT_QUOTES, 'UTF-8') . '">'
+            . htmlspecialchars($LANG_DOCUMENTS_1['new_cat'], ENT_QUOTES, 'UTF-8')
+            . '</a></p>';
+    }
+
+    $template->set_var('category_actions', $categoryActions);
     $display .= $template->parse('output', 'home');
 }
 
