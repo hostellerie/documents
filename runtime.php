@@ -6,47 +6,30 @@
 // +---------------------------------------------------------------------------+
 // | runtime.php                                                               |
 // |                                                                           |
-// | Runtime environment, lifecycle and self-repair helpers.                   |
+// | Shared runtime dependencies and lifecycle helpers.                        |
 // +---------------------------------------------------------------------------+
 
+/* Runtime is intentionally side-effect free for presentation. Loading this
+ * file must never start an output buffer, render navigation, emit markup or
+ * change the current public controller. Public endpoints explicitly opt in to
+ * CSS, navigation and SEO when they build a page. */
 if (isset($_CONF['path'])) {
-    $documentsSecurityFile = $_CONF['path'] . 'plugins/documents/security.php';
-    if (is_file($documentsSecurityFile)) {
-        require_once $documentsSecurityFile;
-    }
+    $documentsRuntimeFiles = array(
+        'security.php',
+        'presentation.php',
+        'navigation.php',
+        'mediagallery_adapter.php',
+        'interoperability.php',
+        'indexability.php'
+    );
 
-    $documentsPresentationFile = $_CONF['path'] . 'plugins/documents/presentation.php';
-    if (is_file($documentsPresentationFile)) {
-        require_once $documentsPresentationFile;
-    }
-
-    $documentsNavigationFile = $_CONF['path'] . 'plugins/documents/navigation.php';
-    if (is_file($documentsNavigationFile)) {
-        require_once $documentsNavigationFile;
-    }
-
-    $documentsMediaGalleryFile = $_CONF['path'] . 'plugins/documents/mediagallery_adapter.php';
-    if (is_file($documentsMediaGalleryFile)) {
-        require_once $documentsMediaGalleryFile;
-    }
-
-    $documentsInteropFile = $_CONF['path'] . 'plugins/documents/interoperability.php';
-    if (is_file($documentsInteropFile)) {
-        require_once $documentsInteropFile;
-    }
-
-    $documentsIndexabilityFile = $_CONF['path'] . 'plugins/documents/indexability.php';
-    if (is_file($documentsIndexabilityFile)) {
-        require_once $documentsIndexabilityFile;
+    foreach ($documentsRuntimeFiles as $documentsRuntimeFile) {
+        $documentsRuntimePath = $_CONF['path'] . 'plugins/documents/' . $documentsRuntimeFile;
+        if (is_file($documentsRuntimePath)) {
+            require_once $documentsRuntimePath;
+        }
     }
 }
-
-if (function_exists('DOCUMENTS_startNavigationBuffer')) {
-    DOCUMENTS_startNavigationBuffer();
-}
-
-/* Public home statistics are rendered explicitly by public_html/home.php via
- * DOCUMENTS_homeStatsBlock(). Runtime must not mutate documents_main_footer. */
 
 function DOCUMENTS_runtimeDocumentSnapshot($id)
 {
