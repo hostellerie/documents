@@ -68,9 +68,8 @@ if (is_string($requestPath) && basename($requestPath) === 'document.php') {
     exit;
 }
 
-/* MediaGallery album rendering still has a compatibility fallback. Any
- * document containing a marker must stay on the modern renderer so Maps keeps
- * sole ownership of marker storage and rendering, even with a custom template. */
+/* Marker and MediaGallery album fields stay on the modern renderer. Their
+ * owning plugins keep responsibility for storage and public rendering. */
 $albumCount = (int) DB_getItem(
     $_TABLES['documents_fields'],
     'COUNT(*)',
@@ -83,9 +82,9 @@ $markerCount = (int) DB_getItem(
 );
 $templateName = isset($category['template']) ? DOCUMENTS_templateName($category['template']) : '';
 $templateDir = ($templateName !== '') ? DOCUMENTS_customTemplateReadDir($templateName) : '';
-$useLegacyRenderer = ($templateDir !== '' && $markerCount === 0)
-    || ($albumCount > 0 && $markerCount === 0)
-    || ((int) $document['active'] !== DOCUMENTS_STATUS_ACTIVE && $markerCount === 0);
+$externalRendererCount = $albumCount + $markerCount;
+$useLegacyRenderer = ($templateDir !== '' && $externalRendererCount === 0)
+    || ((int) $document['active'] !== DOCUMENTS_STATUS_ACTIVE && $externalRendererCount === 0);
 
 $_REQUEST['mode'] = 'view';
 $_REQUEST['cat'] = $categorySlug;
@@ -177,6 +176,12 @@ function DOCUMENTS_publicDocumentValue($field, $value, $title)
 
     if ($type === 'marker') {
         return DOCUMENTS_publicMarkerValue($value);
+    }
+
+    if ($type === 'album') {
+        return function_exists('DOCUMENTS_mediaGalleryRenderAlbum')
+            ? DOCUMENTS_mediaGalleryRenderAlbum($value)
+            : '';
     }
 
     if ($type === 'select') {
