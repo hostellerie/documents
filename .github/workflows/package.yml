@@ -27,7 +27,8 @@ jobs:
         run: |
           set -euo pipefail
           grep -q "'pi_version' => '1.2.0'" autoinstall.php
-          grep -q "'gl_version' => '2.1.1'" autoinstall.php
+          grep -q "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')" autoinstall.php
+          grep -q "'pi_gl_version' => DOCUMENTS_MIN_GEEKLOG_VERSION" autoinstall.php
 
       - name: Lint plugin PHP files
         shell: bash
