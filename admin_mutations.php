@@ -6,6 +6,24 @@ if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'adm
     die('This file can not be used on its own.');
 }
 
+/* Keep this mutation layer self-contained. It is required by several legacy
+ * and modern dispatchers, so do not rely on a particular entry point having
+ * loaded these helpers first. */
+if (isset($_CONF['path'])) {
+    $documentsCompatFile = $_CONF['path'] . 'plugins/documents/include_compat.php';
+    if ((!function_exists('DOCUMENTS_requestPermissions')
+        || !function_exists('DOCUMENTS_templateName'))
+        && is_file($documentsCompatFile)) {
+        require_once $documentsCompatFile;
+    }
+
+    $documentsIntegrityFile = $_CONF['path'] . 'plugins/documents/integrity.php';
+    if (!function_exists('DOCUMENTS_normalizeRouteSlug')
+        && is_file($documentsIntegrityFile)) {
+        require_once $documentsIntegrityFile;
+    }
+}
+
 function DOCUMENTS_adminPlainText($value, $maxLength)
 {
     if (is_array($value) || is_object($value) || is_resource($value)) {
@@ -52,6 +70,9 @@ function DOCUMENTS_adminHtml($value, $maxLength)
 
 function DOCUMENTS_adminSlug($value, $maxLength)
 {
+    if (!function_exists('DOCUMENTS_normalizeRouteSlug')) {
+        return '';
+    }
     $value = DOCUMENTS_normalizeRouteSlug((string) $value);
     return DOCUMENTS_adminPlainText($value, $maxLength);
 }
