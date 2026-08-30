@@ -29,9 +29,18 @@ if (!SEC_checkToken()) {
 }
 
 $pluginPath = $_CONF['path'] . 'plugins/documents/';
-if (!function_exists('DOCUMENTS_normalizeRouteSlug')) {
+
+/* admin_mutations.php needs helpers from both compatibility and integrity.
+ * Load by capability so this endpoint behaves identically on Geeklog 2.1.1
+ * and 2.2.2 regardless of which plugin callbacks were executed beforehand. */
+if (!function_exists('DOCUMENTS_requestPermissions')
+    || !function_exists('DOCUMENTS_templateName')) {
     require_once $pluginPath . 'include_compat.php';
 }
+if (!function_exists('DOCUMENTS_normalizeRouteSlug')) {
+    require_once $pluginPath . 'integrity.php';
+}
+
 require_once $pluginPath . 'admin_mutations.php';
 require_once $pluginPath . 'admin_messages.php';
 
