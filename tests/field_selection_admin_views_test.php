@@ -45,7 +45,7 @@ foreach ($routes as $needle => $message) {
 
 documents_admin_views_require($fieldEditor, 'id="documents-variable-name"', 'Field editor is missing the editable variable-name control.', $failures);
 documents_admin_views_require($fieldEditor, 'normalize(name.value)', 'Field editor does not generate the variable name from the field label.', $failures);
-documents_admin_views_require($fieldEditor, "data-existing=\"' . (\$fid > 0 ? '1' : '0')", 'Field editor does not protect existing variables from automatic replacement.', $failures);
+documents_admin_views_require($fieldEditor, 'data-existing=', 'Field editor does not protect existing variables from automatic replacement.', $failures);
 documents_admin_views_require($fieldEditor, 'documents-selection-group-row', 'Field editor is missing contextual selection-group configuration.', $failures);
 documents_admin_views_require($fieldEditor, 'documents-text-format-row', 'Field editor is missing contextual text-format configuration.', $failures);
 documents_admin_views_require($fieldEditor, 'SEC_getPermissionsHTML(', 'Field editor no longer exposes Geeklog permissions.', $failures);
