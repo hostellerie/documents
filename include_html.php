@@ -533,18 +533,15 @@ function DOCUMENTS_buildRawDocument ($field, $doc, &$template, $i) {
             break;
 
         case 'album':
-            if (!DOCUMENTS_hasMediaGallery() || !is_numeric($value)) {
+            if (!is_numeric($value) || !function_exists('DOCUMENTS_mediaGalleryRenderAlbum')) {
                 $template->set_var($field['var_name'], '');
                 return '';
             }
-            $albumId = (int) $value;
-            $album_name = DB_getItem($_TABLES['mg_albums'], 'album_title', "album_id='{$albumId}'");
-            if ($album_name === '') {
+            $content = DOCUMENTS_mediaGalleryRenderAlbum((int) $value);
+            if ($content === '') {
                 $template->set_var($field['var_name'], '');
                 return '';
             }
-            $content = '<p><strong><a href="' . $_MG_CONF['site_url'] . '/album.php?aid=' . $albumId . '">' . $album_name . '</a></strong></p>';
-            $content .= DOCUMENTS_albumGallery($albumId);
             $html .= '<td valign="top"><label class="document_field">' . $field['f_name'] . '</label></td>' . LB;
             $html .= '<td class="document_value">' . $content . '</td>' . LB;
             break;
@@ -656,68 +653,6 @@ function DOCUMENTS_buildRawDocument ($field, $doc, &$template, $i) {
     return PLG_replaceTags($html);
 }
 
-function DOCUMENTS_albumGallery($album) {
-
-    global $_TABLES, $_CONF, $_MG_CONF, $_DOCUMENTS_CONF, $_SCRIPTS;
-
-    if (!DOCUMENTS_hasMediaGallery() || !is_numeric($album)) {
-        return '';
-    }
-
-    $classMedia = $_CONF['path'] . 'plugins/mediagallery/include/classMedia.php';
-    if (!is_file($classMedia)) {
-        return '';
-    }
-    require_once $classMedia;
-
-    $album = (int) $album;
-    $album_gallery = '<div id="mg_album_gallery">';
-    $fancybox = '<script type="text/javascript">jQuery(document).ready(function() {' . LB;
-
-    $sql = "SELECT * FROM {$_TABLES['mg_media']} AS m "
-        . "LEFT JOIN {$_TABLES['mg_media_albums']} AS ma ON m.media_id=ma.media_id "
-        . "WHERE ma.album_id={$album} ORDER BY ma.media_order DESC";
-    $result = DB_query($sql, 1);
-    $nRows = DB_numRows($result);
-
-    for ($x = 0; $x < $nRows; $x++) {
-        $row = DB_fetchArray($result);
-        if (!is_array($row) || $row['media_mime_ext'] == '.bmp') {
-            continue;
-        }
-        $media = new Media($row, $row['album_id']);
-        $mfn = 'tn/' . $row['media_filename'][0] . '/' . $row['media_filename'];
-        $row['media_mime_ext'] = $media->getMediaExt($_MG_CONF['path_mediaobjects'] . $mfn);
-        $tn_size = 11;
-        $image = $_MG_CONF['mediaobjects_url'] . '/' . $media->getDefaultThumbnail($row, $tn_size);
-        $display_image = $_MG_CONF['mediaobjects_url'] . '/disp/' . $row['media_filename'][0] . '/' . $row['media_filename'] . $row['media_mime_ext'];
-        $title = htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8');
-
-        $album_gallery .= '<a class="lightbox_' . $row['media_id'] . '" rel="group' . $album
-            . '" href="' . $display_image . '" title="' . $title . '">'
-            . '<img class="documents_photo_gallery" width="100" height="100" src="' . $image
-            . '" alt="' . $title . '" title="' . $title . '" /></a>';
-
-        $fancybox .= 'jQuery("a.lightbox_' . $row['media_id'] . '").fancybox({hideOnContentClick:true});' . LB;
-    }
-
-    $album_gallery .= '</div><div style="clear:both;">&nbsp;</div>';
-    $fancybox .= '});</script>' . LB;
-
-    $_SCRIPTS->setJavaScriptLibrary('jquery');
-    $_SCRIPTS->setJavaScriptFile('documents_mousewheel', '/admin/plugins/documents/js/fancybox/jquery.mousewheel-3.0.4.pack.js', true);
-    $_SCRIPTS->setJavaScriptFile('documents_fancybox', '/admin/plugins/documents/js/fancybox/jquery.fancybox-1.3.4.pack.js', true, 1000);
-    $_SCRIPTS->setCSSFile('documents_css_fancybox', '/admin/plugins/documents/js/fancybox/jquery.fancybox-1.3.4.css', false);
-    $_SCRIPTS->setJavaScript($fancybox, false);
-
-    return $album_gallery;
-}
-
-
-/**
- *  Increment hit counter for ad
- *
- */
 function DOCUMENTS_hit ($doc)
 {
     global $_TABLES;
