@@ -40,12 +40,12 @@ if (strpos($rewrite, 'document.php?cat=$1&doc=$2') === false
 if (strpos($runtime, 'DOCUMENTS_runtimeDispatchRewrittenView') !== false) {
     $failures[] = 'runtime.php must not dispatch public views while it is still loading.';
 }
-if (strpos($index, "if ($documentsMode === 'view')") === false
+if (strpos($index, "if (\$documentsMode === 'view')") === false
     || strpos($index, "require __DIR__ . '/category.php';") === false
     || strpos($index, "require __DIR__ . '/document.php';") === false) {
     $failures[] = 'index.php must dispatch rewritten view requests after runtime/helpers load.';
 }
-if (strpos($index, "basename($documentsRequestPath) === 'index.php'") === false) {
+if (strpos($index, "basename(\$documentsRequestPath) === 'index.php'") === false) {
     $failures[] = 'Direct index.php view URLs must redirect to their clean canonical URL.';
 }
 if (strpos($autoinstall, 'DOCUMENTS_writeHtaccess(true)') === false) {
