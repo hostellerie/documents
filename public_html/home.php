@@ -10,6 +10,8 @@ if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGIN
 }
 
 $pluginPath = $_CONF['path'] . 'plugins/documents/';
+require_once $pluginPath . 'rewrite.php';
+DOCUMENTS_writeHtaccess(false);
 require_once $pluginPath . 'runtime.php';
 require_once $pluginPath . 'seo.php';
 
