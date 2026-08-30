@@ -4,6 +4,20 @@
     <a href="{integrity_url}">{integrity_label}</a>
 </nav>
 
+<details class="documents-admin-help"{help_open}>
+    <summary><strong>{help_title}</strong></summary>
+    <div class="documents-admin-help__content">
+        <p>{help_intro}</p>
+        <ol>
+            <li>{help_step_category}</li>
+            <li>{help_step_fields}</li>
+            <li>{help_step_document}</li>
+            <li>{help_step_publish}</li>
+        </ol>
+        <p><strong>{help_tip_title}</strong> {help_tip}</p>
+    </div>
+</details>
+
 <div class="documents-admin-first-run">
     <h2>{categories_label}</h2>
     {category_actions}
