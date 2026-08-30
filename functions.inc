@@ -474,9 +474,17 @@ function plugin_savecomment_documents($title, $comment, $id, $pid, $postmode)
 
     $ret = CMT_saveComment($title, $comment, $id, $pid, 'documents', $postmode);
     if ($ret > 0) {
-        $retval .= COM_siteHeader('menu', $LANG03[1])
-            . CMT_commentForm($title, $comment, $id, $pid, 'documents', $LANG03[14], $postmode)
-            . COM_siteFooter();
+        $commentForm = CMT_commentForm(
+            $title,
+            $comment,
+            $id,
+            $pid,
+            'documents',
+            $LANG03[14],
+            $postmode
+        );
+        $pageOptions = array('pagetitle' => $LANG03[1]);
+        $retval .= COM_createHTMLDocument($commentForm, $pageOptions);
     } else {
         $cid = DB_insertId();
         $url = $url2 = COM_buildUrl($_DOCUMENTS_CONF['site_url'] . '/' . $catUrl . '/' . $id);
