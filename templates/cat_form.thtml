@@ -95,6 +95,11 @@
                     <div class="documents-field-help">{css_help}</div>
                 </div>
 
+                <div class="documents-form-row documents-form-row--important documents-form-row--full">
+                    <strong>{template_label} / {css_label}</strong>
+                    <div class="documents-field-help"><a href="{doc_url}/presentation-help.php">{template_label} / {css_label} — guide</a></div>
+                </div>
+
                 <div class="documents-form-row documents-form-row--full">{map}</div>
 
                 <div class="documents-form-row documents-form-row--full">
