@@ -11,8 +11,8 @@
 
 /* Runtime is intentionally side-effect free for presentation. Loading this
  * file must never start an output buffer, emit markup or change the current
- * public controller. navigation.php is safe here because it only defines
- * functions; presentation.php remains controller-owned. */
+ * public controller. Navigation is safe here because it only defines helpers;
+ * page presentation remains controller-owned. */
 if (isset($_CONF['path'])) {
     $documentsRuntimeFiles = array(
         'security.php',
