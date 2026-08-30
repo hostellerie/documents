@@ -4,253 +4,207 @@
 // +---------------------------------------------------------------------------+
 // | Documents Plugin 1.2.0                                                    |
 // +---------------------------------------------------------------------------+
-// | index.php                                                                 |
+// | admin/index.php                                                           |
 // |                                                                           |
-// | Plugin administration entry point.                                        |
+// | Dedicated administration router and dashboard.                            |
 // +---------------------------------------------------------------------------+
-// | Copyright (C) 2012-2026 by the following authors:                         |
-// |                                                                           |
-// | Authors: Ben - ben AT geeklog DOT fr                                      |
-// |          Documents plugin contributors                                    |
-// +---------------------------------------------------------------------------+
-// |                                                                           |
-// | This program is free software; you can redistribute it and/or             |
-// | modify it under the terms of the GNU General Public License               |
-// | as published by the Free Software Foundation; either version 2            |
-// | of the License, or (at your option) any later version.                    |
-// +---------------------------------------------------------------------------+
-
-/**
- * @package Documents
- */
 
 require_once '../../../lib-common.php';
 require_once '../../auth.inc.php';
-require_once $_CONF['path'] . 'plugins/documents/admin_styles.php';
+
+$pluginPath = $_CONF['path'] . 'plugins/documents/';
+require_once $pluginPath . 'runtime.php';
+require_once $pluginPath . 'include_compat.php';
+require_once $pluginPath . 'admin_styles.php';
 
 DOCUMENTS_loadAdminStyles();
 
-$display = '';
-
 if (!SEC_hasRights('documents.admin')) {
     $username = isset($_USER['username']) ? $_USER['username'] : 'unknown';
-
-    $display .= COM_showMessageText($MESSAGE[29], $MESSAGE[30]);
-    $display = COM_createHTMLDocument(
-        $display,
+    COM_accessLog('User ' . $username . ' tried to access Documents administration.');
+    COM_output(COM_createHTMLDocument(
+        COM_showMessageText($MESSAGE[29], $MESSAGE[30]),
         array('pagetitle' => $MESSAGE[30])
-    );
+    ));
+    exit;
+}
 
-    COM_accessLog(
-        'User ' . $username
-        . ' tried to illegally access the Documents plugin administration screen.'
-    );
+$adminUrl = rtrim((string) $_CONF['site_admin_url'], '/') . '/plugins/documents';
+$publicUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/');
+$mode = isset($_REQUEST['mode']) && !is_array($_REQUEST['mode'])
+    ? trim((string) $_REQUEST['mode']) : '';
 
-    COM_output($display);
+/* Structural administration views were modernized earlier under the public
+ * plugin directory. Reuse those implementations behind the real Geeklog admin
+ * URL while they are progressively moved into reusable private renderers. The
+ * public base URL is temporarily replaced so every form and admin link remains
+ * inside /admin/plugins/documents/. */
+$adminViews = array(
+    'edit_cat' => 'category-editor.php',
+    'list_fields' => 'admin-fields.php',
+    'edit_field' => 'field-editor.php',
+    'list_groups' => 'admin-groups.php',
+    'edit_group' => 'group-editor.php',
+    'list_selects' => 'admin-selects.php',
+    'edit_select' => 'select-editor.php'
+);
+
+if (isset($adminViews[$mode])) {
+    $publicDir = rtrim((string) $_DOCUMENTS_CONF['path_html'], "/\\") . DIRECTORY_SEPARATOR;
+    $target = $publicDir . $adminViews[$mode];
+    if (!is_file($target)) {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
+
+    $_DOCUMENTS_CONF['site_url'] = $adminUrl;
+    $oldDirectory = getcwd();
+    @chdir($publicDir);
+    require $target;
+    if ($oldDirectory !== false) {
+        @chdir($oldDirectory);
+    }
+    exit;
+}
+
+/* All structural writes are owned by the admin application. Old public POST
+ * targets are still accepted by public_html/index.php as a compatibility
+ * bridge, but new forms post here because their base URL is $adminUrl. */
+$adminSaveModes = array('save_cat', 'save_field', 'save_group', 'save_select');
+if (in_array($mode, $adminSaveModes, true)) {
+    if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
+    if (!SEC_checkToken()) {
+        if (function_exists('http_response_code')) {
+            http_response_code(403);
+        } else {
+            header('HTTP/1.1 403 Forbidden');
+        }
+        exit;
+    }
+
+    $_DOCUMENTS_CONF['site_url'] = $adminUrl;
+    require_once $pluginPath . 'admin_dispatch.php';
+    list($ok, $returnUrl) = DOCUMENTS_adminDispatchMutation($mode, $_REQUEST);
+    echo COM_refresh($returnUrl);
     exit;
 }
 
 $pluginName = isset($LANG_DOCUMENTS_1['plugin_name'])
-    ? $LANG_DOCUMENTS_1['plugin_name']
-    : 'Documents';
-$documentsUrl = isset($_DOCUMENTS_CONF['site_url'])
-    ? $_DOCUMENTS_CONF['site_url']
-    : $_CONF['site_url'] . '/documents';
-$adminUrl = $_CONF['site_admin_url'] . '/plugins/documents/index.php';
-$mode = isset($_GET['mode']) ? (string) $_GET['mode'] : '';
-
-$display .= COM_startBlock(
-    $pluginName,
-    '',
-    COM_getBlockTemplate('_admin_block', 'header')
-);
+    ? $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
+$isFrench = isset($_CONF['language'])
+    && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
 
 if ($mode === 'integrity') {
-    require_once $_CONF['path'] . 'plugins/documents/integrity.php';
+    require_once $pluginPath . 'integrity.php';
     $report = DOCUMENTS_integrityReport();
 
-    $details = '';
-
-    if (!empty($report['duplicate_category_slugs'])) {
-        $details .= '<h3>'
-            . htmlspecialchars($LANG_DOCUMENTS_1['integrity_duplicate_category_slugs'], ENT_QUOTES, 'UTF-8')
-            . '</h3><ul>';
-        foreach ($report['duplicate_category_slugs'] as $item) {
-            $details .= '<li>' . htmlspecialchars($item['slug'], ENT_QUOTES, 'UTF-8')
-                . ' (' . (int) $item['count'] . ')</li>';
-        }
-        $details .= '</ul>';
-    }
-
-    if (!empty($report['duplicate_document_slugs'])) {
-        $details .= '<h3>'
-            . htmlspecialchars($LANG_DOCUMENTS_1['integrity_duplicate_document_slugs'], ENT_QUOTES, 'UTF-8')
-            . '</h3><ul>';
-        foreach ($report['duplicate_document_slugs'] as $item) {
-            $details .= '<li>' . htmlspecialchars($item['slug'], ENT_QUOTES, 'UTF-8')
-                . ' (' . (int) $item['count'] . ')</li>';
-        }
-        $details .= '</ul>';
-    }
-
-    if (!empty($report['missing_image_files'])) {
-        $details .= '<h3>'
-            . htmlspecialchars($LANG_DOCUMENTS_1['integrity_missing_images'], ENT_QUOTES, 'UTF-8')
-            . '</h3><ul>';
-        foreach ($report['missing_image_files'] as $filename) {
-            $details .= '<li>' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '</li>';
-        }
-        $details .= '</ul>';
-    }
-
-    if (!empty($report['unreferenced_image_files'])) {
-        $details .= '<h3>'
-            . htmlspecialchars($LANG_DOCUMENTS_1['integrity_unreferenced_images'], ENT_QUOTES, 'UTF-8')
-            . '</h3><ul>';
-        foreach ($report['unreferenced_image_files'] as $filename) {
-            $details .= '<li>' . htmlspecialchars($filename, ENT_QUOTES, 'UTF-8') . '</li>';
-        }
-        $details .= '</ul>';
-    }
-
-    $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
-    $template->set_file(array('integrity' => 'admin_integrity.thtml'));
-    $template->set_var('audit_title', $LANG_DOCUMENTS_1['integrity_audit_title']);
-    $template->set_var('audit_notice', $LANG_DOCUMENTS_1['integrity_audit_notice']);
-    $template->set_var('check_label', $LANG_DOCUMENTS_1['integrity_check']);
-    $template->set_var('result_label', $LANG_DOCUMENTS_1['integrity_result']);
-    $template->set_var('duplicate_category_label', $LANG_DOCUMENTS_1['integrity_duplicate_category_slugs']);
-    $template->set_var('duplicate_category_count', count($report['duplicate_category_slugs']));
-    $template->set_var('duplicate_document_label', $LANG_DOCUMENTS_1['integrity_duplicate_document_slugs']);
-    $template->set_var('duplicate_document_count', count($report['duplicate_document_slugs']));
-    $template->set_var('documents_without_values_label', $LANG_DOCUMENTS_1['integrity_documents_without_values']);
-    $template->set_var('documents_without_values_count', (int) $report['orphan_documents_without_values']);
-    $template->set_var('values_without_document_label', $LANG_DOCUMENTS_1['integrity_values_without_document']);
-    $template->set_var('values_without_document_count', (int) $report['orphan_values_without_document']);
-    $template->set_var('values_without_field_label', $LANG_DOCUMENTS_1['integrity_values_without_field']);
-    $template->set_var('values_without_field_count', (int) $report['orphan_values_without_field']);
-    $template->set_var('fields_without_category_label', $LANG_DOCUMENTS_1['integrity_fields_without_category']);
-    $template->set_var('fields_without_category_count', (int) $report['orphan_fields_without_category']);
-    $template->set_var('missing_images_label', $LANG_DOCUMENTS_1['integrity_missing_images']);
-    $template->set_var('missing_images_count', count($report['missing_image_files']));
-    $template->set_var('unreferenced_images_label', $LANG_DOCUMENTS_1['integrity_unreferenced_images']);
-    $template->set_var('unreferenced_images_count', count($report['unreferenced_image_files']));
-    $template->set_var('details', $details);
-    $template->set_var('admin_url', htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8'));
-    $template->set_var('back_label', $LANG_DOCUMENTS_1['integrity_back_admin']);
-    $display .= $template->parse('output', 'integrity');
-} else {
-    $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
-    $template->set_file(array('home' => 'admin_home.thtml'));
-    $template->set_var('documents_url', htmlspecialchars($documentsUrl, ENT_QUOTES, 'UTF-8'));
-    $template->set_var('plugin_name', htmlspecialchars($pluginName, ENT_QUOTES, 'UTF-8'));
-    $template->set_var(
-        'integrity_url',
-        htmlspecialchars($adminUrl . '?mode=integrity', ENT_QUOTES, 'UTF-8')
-    );
-    $template->set_var('integrity_label', $LANG_DOCUMENTS_1['integrity_audit_title']);
-
-    $newCategoryUrl = rtrim((string) $documentsUrl, '/') . '/index.php?mode=edit_cat';
-    $template->set_var('new_category_url', htmlspecialchars($newCategoryUrl, ENT_QUOTES, 'UTF-8'));
-    $template->set_var('new_category_label', htmlspecialchars($LANG_DOCUMENTS_1['new_cat'], ENT_QUOTES, 'UTF-8'));
-    $template->set_var('categories_label', htmlspecialchars($LANG_DOCUMENTS_1['categories'], ENT_QUOTES, 'UTF-8'));
-
-    $isFrench = isset($_CONF['language'])
-        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
-    $adminHelp = $isFrench ? array(
-        'help_title' => 'Comment créer votre premier document ?',
-        'help_intro' => 'Documents fonctionne comme un générateur de types de contenu : vous définissez d’abord une catégorie, puis les champs qui composeront les documents de cette catégorie.',
-        'help_step_category' => 'Créez une catégorie. Elle représente un type de contenu, par exemple une fiche pratique, un canyon, un livre ou une adresse.',
-        'help_step_fields' => 'Ouvrez « Champs » pour ajouter les informations à saisir : titre, texte, image, date, sélection, album MediaGallery, marqueur Maps, etc. Le premier champ sert notamment de base au nom du document.',
-        'help_step_document' => 'Dès qu’au moins un champ existe, utilisez « Créer un nouveau document » dans la catégorie concernée.',
-        'help_step_publish' => 'Définissez les permissions et l’état de publication. Une catégorie peut être publique, réservée à un groupe ou ouverte aux propositions des membres.',
-        'help_tip_title' => 'Conseil :',
-        'help_tip' => 'commencez simplement avec 2 ou 3 champs. Vous pourrez enrichir la catégorie plus tard sans recréer les documents existants.'
-    ) : array(
-        'help_title' => 'How do I create my first document?',
-        'help_intro' => 'Documents works as a content-type builder: first define a category, then define the fields used by documents in that category.',
-        'help_step_category' => 'Create a category. It represents a content type such as a how-to guide, canyon, book or address.',
-        'help_step_fields' => 'Open “Fields” and add the information to collect: title, text, image, date, selection, MediaGallery album, Maps marker, etc. The first field is also used as the basis for the document name.',
-        'help_step_document' => 'As soon as at least one field exists, use “Create a new document” for that category.',
-        'help_step_publish' => 'Set permissions and publication status. A category may be public, group-restricted or open to member submissions.',
-        'help_tip_title' => 'Tip:',
-        'help_tip' => 'start with only two or three fields. You can expand the category later without recreating existing documents.'
-    );
-    foreach ($adminHelp as $key => $value) {
-        $template->set_var($key, htmlspecialchars($value, ENT_QUOTES, 'UTF-8'));
-    }
-
-    $categoryActions = '';
-    $categoryCount = 0;
-    $categoryResult = DB_query(
-        "SELECT c.cid, c.cat_name, c.cat_url, COUNT(f.fid) AS field_count "
-        . "FROM {$_TABLES['documents_cat']} AS c "
-        . "LEFT JOIN {$_TABLES['documents_fields']} AS f ON f.cat_id=c.cid "
-        . "GROUP BY c.cid, c.cat_name, c.cat_url "
-        . "ORDER BY c.cat_order ASC, c.cat_name ASC"
+    $checks = array(
+        ($isFrench ? 'Slugs de catégories dupliqués' : 'Duplicate category slugs')
+            => count($report['duplicate_category_slugs']),
+        ($isFrench ? 'Slugs de documents dupliqués' : 'Duplicate document slugs')
+            => count($report['duplicate_document_slugs']),
+        ($isFrench ? 'Documents sans valeurs' : 'Documents without values')
+            => (int) $report['orphan_documents_without_values'],
+        ($isFrench ? 'Valeurs sans document' : 'Values without document')
+            => (int) $report['orphan_values_without_document'],
+        ($isFrench ? 'Valeurs sans champ' : 'Values without field')
+            => (int) $report['orphan_values_without_field'],
+        ($isFrench ? 'Champs sans catégorie' : 'Fields without category')
+            => (int) $report['orphan_fields_without_category'],
+        ($isFrench ? 'Images manquantes' : 'Missing images')
+            => count($report['missing_image_files']),
+        ($isFrench ? 'Images non référencées' : 'Unreferenced images')
+            => count($report['unreferenced_image_files'])
     );
 
-    while ($category = DB_fetchArray($categoryResult)) {
-        if (!is_array($category) || empty($category['cid'])) {
-            continue;
-        }
-        $categoryCount++;
-
-        $cid = (int) $category['cid'];
-        $catName = htmlspecialchars(stripslashes((string) $category['cat_name']), ENT_QUOTES, 'UTF-8');
-        $catSlug = (string) $category['cat_url'];
-        $fieldCount = isset($category['field_count']) ? (int) $category['field_count'] : 0;
-
-        $editCategoryUrl = rtrim((string) $documentsUrl, '/')
-            . '/index.php?mode=edit_cat&cid=' . $cid;
-        $fieldsUrl = rtrim((string) $documentsUrl, '/')
-            . '/index.php?mode=list_fields&cat=' . $cid;
-
-        $categoryActions .= '<div class="documents-admin-category">';
-        $categoryActions .= '<h3>' . $catName . '</h3>';
-        $categoryActions .= '<p><a href="'
-            . htmlspecialchars($editCategoryUrl, ENT_QUOTES, 'UTF-8') . '">'
-            . htmlspecialchars($LANG_DOCUMENTS_1['edit_cat'], ENT_QUOTES, 'UTF-8') . '</a> | ';
-        $categoryActions .= '<a href="'
-            . htmlspecialchars($fieldsUrl, ENT_QUOTES, 'UTF-8') . '">'
-            . htmlspecialchars($LANG_DOCUMENTS_1['fields'], ENT_QUOTES, 'UTF-8') . '</a>';
-
-        if ($fieldCount > 0 && $catSlug !== '') {
-            $newDocumentUrl = rtrim((string) $documentsUrl, '/')
-                . '/index.php?mode=new&cat=' . rawurlencode($catSlug);
-            $categoryActions .= ' | <a href="'
-                . htmlspecialchars($newDocumentUrl, ENT_QUOTES, 'UTF-8') . '">'
-                . htmlspecialchars($LANG_DOCUMENTS_1['create_new_doc'], ENT_QUOTES, 'UTF-8') . '</a>';
-        }
-        $categoryActions .= '</p>';
-
-        if ($fieldCount === 0) {
-            $categoryActions .= '<p><em>'
-                . htmlspecialchars($LANG_DOCUMENTS_1['new_field'], ENT_QUOTES, 'UTF-8')
-                . '</em></p>';
-        }
-
-        $categoryActions .= '</div>';
+    $content = '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
+        . htmlspecialchars($isFrench ? 'Intégrité des données' : 'Data integrity', ENT_QUOTES, 'UTF-8')
+        . '</h1></header><div class="documents-admin-toolbar"><a class="documents-admin-button" href="'
+        . htmlspecialchars($adminUrl . '/index.php', ENT_QUOTES, 'UTF-8') . '">← '
+        . htmlspecialchars($isFrench ? 'Administration' : 'Administration', ENT_QUOTES, 'UTF-8')
+        . '</a></div><section class="documents-admin-card"><div class="documents-admin-card__body"><ul>';
+    foreach ($checks as $label => $count) {
+        $content .= '<li>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . ' : <strong>'
+            . (int) $count . '</strong></li>';
     }
+    $content .= '</ul></div></section></main>';
 
-    if ($categoryActions === '') {
-        $categoryActions = '<p>'
-            . htmlspecialchars($LANG_DOCUMENTS_1['none'], ENT_QUOTES, 'UTF-8')
-            . ' — <a href="' . htmlspecialchars($newCategoryUrl, ENT_QUOTES, 'UTF-8') . '">'
-            . htmlspecialchars($LANG_DOCUMENTS_1['new_cat'], ENT_QUOTES, 'UTF-8')
-            . '</a></p>';
-    }
-
-    $template->set_var('help_open', $categoryCount === 0 ? ' open="open"' : '');
-    $template->set_var('category_actions', $categoryActions);
-    $display .= $template->parse('output', 'home');
+    COM_output(COM_createHTMLDocument($content, array('pagetitle' => $pluginName)));
+    exit;
 }
 
-$display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+/* Dashboard: administration and public reading are deliberately separate. */
+$content = '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
+    . htmlspecialchars($pluginName, ENT_QUOTES, 'UTF-8') . '</h1><p class="documents-admin-page__lead">'
+    . htmlspecialchars(
+        $isFrench
+            ? 'Gérez ici la structure du plugin. Les pages publiques restent réservées à la consultation et à la contribution aux documents.'
+            : 'Manage the plugin structure here. Public pages remain dedicated to reading and document contribution.',
+        ENT_QUOTES,
+        'UTF-8'
+    ) . '</p></header>';
 
-$display = COM_createHTMLDocument(
-    $display,
-    array('pagetitle' => $pluginName)
+$content .= '<div class="documents-admin-toolbar">'
+    . '<a class="documents-admin-button documents-admin-button--primary" href="'
+    . htmlspecialchars($adminUrl . '/index.php?mode=edit_cat', ENT_QUOTES, 'UTF-8') . '">'
+    . htmlspecialchars($isFrench ? 'Nouvelle catégorie' : 'New category', ENT_QUOTES, 'UTF-8') . '</a>'
+    . '<a class="documents-admin-button" href="'
+    . htmlspecialchars($adminUrl . '/index.php?mode=list_fields', ENT_QUOTES, 'UTF-8') . '">'
+    . htmlspecialchars($isFrench ? 'Champs' : 'Fields', ENT_QUOTES, 'UTF-8') . '</a>'
+    . '<a class="documents-admin-button" href="'
+    . htmlspecialchars($adminUrl . '/index.php?mode=list_groups', ENT_QUOTES, 'UTF-8') . '">'
+    . htmlspecialchars($isFrench ? 'Groupes de choix' : 'Selection groups', ENT_QUOTES, 'UTF-8') . '</a>'
+    . '<a class="documents-admin-button" href="'
+    . htmlspecialchars($adminUrl . '/index.php?mode=integrity', ENT_QUOTES, 'UTF-8') . '">'
+    . htmlspecialchars($isFrench ? 'Intégrité' : 'Integrity', ENT_QUOTES, 'UTF-8') . '</a>'
+    . '<a class="documents-admin-button" href="'
+    . htmlspecialchars($publicUrl . '/', ENT_QUOTES, 'UTF-8') . '">'
+    . htmlspecialchars($isFrench ? 'Voir les documents' : 'View documents', ENT_QUOTES, 'UTF-8') . '</a></div>';
+
+$rows = array();
+$result = DB_query(
+    "SELECT c.cid, c.cat_name, c.cat_url, COUNT(f.fid) AS field_count "
+    . "FROM {$_TABLES['documents_cat']} AS c "
+    . "LEFT JOIN {$_TABLES['documents_fields']} AS f ON f.cat_id=c.cid "
+    . "GROUP BY c.cid, c.cat_name, c.cat_url "
+    . "ORDER BY c.cat_order ASC, c.cat_name ASC"
 );
+while ($category = DB_fetchArray($result)) {
+    if (!is_array($category) || empty($category['cid'])) {
+        continue;
+    }
 
-COM_output($display);
+    $cid = (int) $category['cid'];
+    $slug = (string) $category['cat_url'];
+    $name = htmlspecialchars(stripslashes((string) $category['cat_name']), ENT_QUOTES, 'UTF-8');
+    $rows[] = '<tr><td><strong>' . $name . '</strong><div class="documents-admin-muted">/'
+        . htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') . '</div></td><td>'
+        . (int) $category['field_count'] . '</td><td class="documents-admin-table__actions">'
+        . '<a href="' . htmlspecialchars($adminUrl . '/index.php?mode=edit_cat&cid=' . $cid, ENT_QUOTES, 'UTF-8') . '">'
+        . htmlspecialchars($isFrench ? 'Modifier' : 'Edit', ENT_QUOTES, 'UTF-8') . '</a> · '
+        . '<a href="' . htmlspecialchars($adminUrl . '/index.php?mode=list_fields&cat=' . $cid, ENT_QUOTES, 'UTF-8') . '">'
+        . htmlspecialchars($isFrench ? 'Champs' : 'Fields', ENT_QUOTES, 'UTF-8') . '</a>'
+        . ($slug !== '' && (int) $category['field_count'] > 0
+            ? ' · <a href="' . htmlspecialchars($publicUrl . '/index.php?mode=new&cat=' . rawurlencode($slug), ENT_QUOTES, 'UTF-8') . '">'
+                . htmlspecialchars($isFrench ? 'Créer un document' : 'Create document', ENT_QUOTES, 'UTF-8') . '</a>'
+            : '')
+        . '</td></tr>';
+}
+
+if (empty($rows)) {
+    $content .= '<p class="documents-admin-empty">'
+        . htmlspecialchars($isFrench ? 'Aucune catégorie.' : 'No categories.', ENT_QUOTES, 'UTF-8')
+        . '</p>';
+} else {
+    $content .= '<section class="documents-admin-card"><div class="documents-admin-table-wrap"><table class="documents-admin-table">'
+        . '<thead><tr><th>' . htmlspecialchars($isFrench ? 'Catégorie' : 'Category', ENT_QUOTES, 'UTF-8')
+        . '</th><th>' . htmlspecialchars($isFrench ? 'Champs' : 'Fields', ENT_QUOTES, 'UTF-8')
+        . '</th><th>' . htmlspecialchars($isFrench ? 'Actions' : 'Actions', ENT_QUOTES, 'UTF-8')
+        . '</th></tr></thead><tbody>' . implode('', $rows) . '</tbody></table></div></section>';
+}
+
+$content .= '</main>';
+COM_output(COM_createHTMLDocument($content, array('pagetitle' => $pluginName)));
