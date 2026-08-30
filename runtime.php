@@ -41,65 +41,6 @@ if (isset($_CONF['path'])) {
     }
 }
 
-/**
- * Dispatch clean URLs rewritten to index.php?mode=view to the modern public
- * category/document views. Historical Documents used index.php as the rewrite
- * target, which is proven compatible with existing installations. Keeping that
- * entry point also centralizes route behavior without shipping .htaccess.
- */
-function DOCUMENTS_runtimeDispatchRewrittenView()
-{
-    global $_CONF, $_DOCUMENTS_CONF;
-
-    $script = isset($_SERVER['SCRIPT_NAME']) ? basename((string) $_SERVER['SCRIPT_NAME']) : '';
-    $mode = isset($_REQUEST['mode']) && !is_array($_REQUEST['mode'])
-        ? trim((string) $_REQUEST['mode']) : '';
-
-    if ($script !== 'index.php' || $mode !== 'view') {
-        return false;
-    }
-
-    $category = isset($_REQUEST['cat']) && !is_array($_REQUEST['cat'])
-        ? trim((string) $_REQUEST['cat']) : '';
-    if ($category === '') {
-        return false;
-    }
-
-    $document = isset($_REQUEST['doc']) && !is_array($_REQUEST['doc'])
-        ? trim((string) $_REQUEST['doc']) : '';
-
-    if (!empty($_DOCUMENTS_CONF['path_html'])) {
-        $publicDir = rtrim((string) $_DOCUMENTS_CONF['path_html'], "/\\") . DIRECTORY_SEPARATOR;
-    } else {
-        $folder = isset($_DOCUMENTS_CONF['documents_folder'])
-            ? trim((string) $_DOCUMENTS_CONF['documents_folder'], "/\\") : 'documents';
-        $publicDir = rtrim((string) $_CONF['path_html'], "/\\") . DIRECTORY_SEPARATOR
-            . $folder . DIRECTORY_SEPARATOR;
-    }
-
-    $target = $publicDir . ($document !== '' ? 'document.php' : 'category.php');
-    if (!is_file($target)) {
-        if (function_exists('COM_errorLog')) {
-            COM_errorLog('Documents runtime: public view dispatcher target missing: ' . $target);
-        }
-        return false;
-    }
-
-    /* document.php uses the route normalizer before the main index dispatcher
-     * would normally load integrity.php, so guarantee it here as well. */
-    if ($document !== '' && !function_exists('DOCUMENTS_normalizeRouteSlug')) {
-        $integrityFile = $_CONF['path'] . 'plugins/documents/integrity.php';
-        if (is_file($integrityFile)) {
-            require_once $integrityFile;
-        }
-    }
-
-    require $target;
-    exit;
-}
-
-DOCUMENTS_runtimeDispatchRewrittenView();
-
 if (function_exists('DOCUMENTS_startNavigationBuffer')) {
     DOCUMENTS_startNavigationBuffer();
 }
