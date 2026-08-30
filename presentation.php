@@ -6,7 +6,7 @@
 // +---------------------------------------------------------------------------+
 // | presentation.php                                                          |
 // |                                                                           |
-// | Display formatting and lightweight presentation helpers.                  |
+// | Side-effect-free public presentation helpers.                             |
 // +---------------------------------------------------------------------------+
 
 if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'presentation.php') !== false) {
@@ -20,13 +20,6 @@ if (isset($_CONF['path'])) {
     }
 }
 
-/**
- * Load the standard public Documents stylesheet in a way that works with
- * Geeklog 2.1.1 and 2.2.x. setCSSFile() expects a public_html-relative URI on
- * older Geeklog releases, not an absolute site URL.
- *
- * @return bool
- */
 function DOCUMENTS_loadPublicStyles()
 {
     global $_DOCUMENTS_CONF, $_SCRIPTS;
@@ -47,6 +40,49 @@ function DOCUMENTS_loadPublicStyles()
         'documents_public',
         '/' . $folder . '/css/documents.css?v=1.2.0-4'
     );
+}
+
+/**
+ * Explicitly prepare assets for one public Documents page.
+ */
+function DOCUMENTS_preparePublicPresentation($loadCategoryStyle = true)
+{
+    DOCUMENTS_loadPublicStyles();
+
+    if ($loadCategoryStyle && function_exists('DOCUMENTS_loadRequestedCategoryStyle')) {
+        DOCUMENTS_loadRequestedCategoryStyle();
+    }
+}
+
+/**
+ * Build the complete Geeklog page, then apply Documents SEO exactly once.
+ * No output buffering is required and loading presentation.php has no effect
+ * on unrelated requests.
+ */
+function DOCUMENTS_createPublicPage($content, $title)
+{
+    global $_CONF;
+
+    $page = COM_createHTMLDocument(
+        $content,
+        array('pagetitle' => (string) $title)
+    );
+
+    if (isset($_CONF['path'])) {
+        $seoFile = $_CONF['path'] . 'plugins/documents/seo.php';
+        if (is_file($seoFile)) {
+            require_once $seoFile;
+        }
+    }
+
+    if (function_exists('DOCUMENTS_seoOutputFilter')) {
+        $filtered = DOCUMENTS_seoOutputFilter($page);
+        if (is_string($filtered) && $filtered !== '') {
+            $page = $filtered;
+        }
+    }
+
+    return $page;
 }
 
 function DOCUMENTS_stringLower($value)
@@ -181,38 +217,4 @@ function DOCUMENTS_homeStatsBlock()
         . COM_numberFormat($views) . '</strong><span class="documents-stat__label">'
         . htmlspecialchars($viewsLabel, ENT_QUOTES, 'UTF-8') . '</span></div>'
         . '</section>';
-}
-
-/* Public presentation bootstrap. Runtime.php is loaded only by Documents
- * endpoints. SEO must run only on addressable public content surfaces, not on
- * edit/save/administration modes that happen to use the public entry point. */
-$documentsPresentationScript = isset($_SERVER['SCRIPT_NAME'])
-    ? str_replace('\\', '/', (string) $_SERVER['SCRIPT_NAME']) : '';
-$documentsPresentationMode = isset($_REQUEST['mode']) ? trim((string) $_REQUEST['mode']) : '';
-$documentsPresentationIsPublicIndex = $documentsPresentationScript !== ''
-    && strpos($documentsPresentationScript, '/admin/') === false
-    && (basename($documentsPresentationScript) === 'index.php'
-        || basename($documentsPresentationScript) === 'category.php'
-        || basename($documentsPresentationScript) === 'document.php');
-$documentsPresentationIsSeoView = $documentsPresentationMode === ''
-    || $documentsPresentationMode === 'view';
-
-if ($documentsPresentationIsPublicIndex) {
-    DOCUMENTS_loadPublicStyles();
-
-    if (function_exists('DOCUMENTS_loadRequestedCategoryStyle')) {
-        DOCUMENTS_loadRequestedCategoryStyle();
-    }
-
-    if ($documentsPresentationIsSeoView && isset($_CONF['path'])) {
-        $documentsSeoFile = $_CONF['path'] . 'plugins/documents/seo.php';
-        if (is_file($documentsSeoFile)) {
-            require_once $documentsSeoFile;
-            if (function_exists('DOCUMENTS_seoOutputFilter')
-                && !defined('DOCUMENTS_SEO_BUFFER_STARTED')) {
-                define('DOCUMENTS_SEO_BUFFER_STARTED', true);
-                ob_start('DOCUMENTS_seoOutputFilter');
-            }
-        }
-    }
 }
