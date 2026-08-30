@@ -285,7 +285,7 @@ function DOCUMENTS_adminSaveGroup($request)
             return array(false, 'Invalid group.');
         }
         DB_query("DELETE FROM {$_TABLES['documents_selects']} WHERE s_group={$gid}");
-        DB_query("DELETE FROM {$_TABLES['documents_groups']} WHERE gid={$gid}");
+        DB_query("DELETE FROM {$_TABLES['documents_selects_group']} WHERE gid={$gid}");
         return array(!DB_error(), DB_error() ? 'Unable to delete group.' : 'Group deleted.');
     }
 
@@ -298,9 +298,9 @@ function DOCUMENTS_adminSaveGroup($request)
     $safeName = DB_escapeString($name);
     $safeHelp = DB_escapeString($help);
     if ($gid > 0) {
-        DB_query("UPDATE {$_TABLES['documents_groups']} SET g_name='{$safeName}', g_help='{$safeHelp}' WHERE gid={$gid}");
+        DB_query("UPDATE {$_TABLES['documents_selects_group']} SET g_name='{$safeName}', g_help='{$safeHelp}' WHERE gid={$gid}");
     } else {
-        DB_query("INSERT INTO {$_TABLES['documents_groups']} SET g_name='{$safeName}', g_help='{$safeHelp}'");
+        DB_query("INSERT INTO {$_TABLES['documents_selects_group']} SET g_name='{$safeName}', g_help='{$safeHelp}'");
     }
 
     return array(!DB_error(), DB_error() ? 'Unable to save group.' : 'Group saved.');
