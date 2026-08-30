@@ -37,6 +37,8 @@ $template = documents_category_editor_read($root, 'templates/cat_form.thtml', $f
 $mutations = documents_category_editor_read($root, 'admin_mutations.php', $failures);
 $css = documents_category_editor_read($root, 'admin/documents.css', $failures);
 $dispatcher = documents_category_editor_read($root, 'public_html/category-editor.php', $failures);
+$adminIndex = documents_category_editor_read($root, 'admin/index.php', $failures);
+$adminStyles = documents_category_editor_read($root, 'admin_styles.php', $failures);
 
 documents_category_editor_forbid($editor, 'DB_fetchArray(DB_query(', 'Category editor contains a PHP 5.6-incompatible DB_fetchArray(DB_query()) call.', $failures);
 documents_category_editor_require($editor, '$categoryResult = DB_query(', 'Category query result is not stored in a variable.', $failures);
@@ -89,7 +91,17 @@ foreach ($helpVariables as $helpVariable) {
 documents_category_editor_require($editor, '135 à 160 caractères', 'French meta description guidance is incomplete.', $failures);
 documents_category_editor_require($editor, '135–160 characters', 'English meta description guidance is incomplete.', $failures);
 documents_category_editor_require($css, '.documents-field-help', 'Admin stylesheet no longer contains field help styling.', $failures);
-documents_category_editor_require($dispatcher, 'documents.css?v=1.2.0', 'Category editor dispatcher no longer attempts to load the versioned plugin stylesheet.', $failures);
+
+/* Shared Geeklog 2.1.1/2.2.x stylesheet loader contract. */
+documents_category_editor_require($adminStyles, 'function DOCUMENTS_loadAdminStyles()', 'Shared admin stylesheet compatibility helper is missing.', $failures);
+documents_category_editor_require($adminStyles, "method_exists(\$_SCRIPTS, 'setCSSFile')", 'Admin stylesheet helper does not use capability detection.', $failures);
+documents_category_editor_require($adminStyles, '/admin/plugins/documents/documents.css?v=1.2.0', 'Admin stylesheet helper no longer registers the versioned Documents stylesheet.', $failures);
+documents_category_editor_require($adminStyles, "\$_SCRIPTS->setCSSFile(", 'Admin stylesheet helper does not register CSS through Geeklog resources.', $failures);
+documents_category_editor_require($dispatcher, "require_once \$pluginPath . 'admin_styles.php';", 'Category editor dispatcher does not load the shared admin stylesheet helper.', $failures);
+documents_category_editor_require($dispatcher, 'DOCUMENTS_loadAdminStyles();', 'Category editor dispatcher does not call the shared admin stylesheet helper.', $failures);
+documents_category_editor_require($adminIndex, "require_once \$_CONF['path'] . 'plugins/documents/admin_styles.php';", 'Admin index does not load the shared admin stylesheet helper.', $failures);
+documents_category_editor_require($adminIndex, 'DOCUMENTS_loadAdminStyles();', 'Admin index does not call the shared admin stylesheet helper.', $failures);
+documents_category_editor_forbid($dispatcher, "\$_SCRIPTS->setCSSFile(", 'Category editor dispatcher bypasses the shared admin stylesheet helper.', $failures);
 
 if (!empty($failures)) {
     fwrite(STDERR, "Documents category editor compatibility/guidance checks failed:\n");
