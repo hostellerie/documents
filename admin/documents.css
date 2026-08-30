@@ -2,8 +2,8 @@
     padding: 7px 10px;
     background: #4479BA;
     color: #FFF!important;
-	text-decoration:none!important;
-	box-shadow: #999 3px 3px 4px 1px;
+    text-decoration:none!important;
+    box-shadow: #999 3px 3px 4px 1px;
     -moz-box-shadow: #999 3px 3px 4px 1px;
     -webkit-box-shadow: #999 3px 3px 4px;
 }
@@ -20,16 +20,14 @@
   display:inline-block;
   padding:7px 10px;
 }
-.documents-admin-help,
-.documents-form-help {
+.documents-admin-help {
   margin:15px 0;
   padding:10px 14px;
   border:1px solid #d7d7d7;
   border-radius:4px;
   background:#fafafa;
 }
-.documents-admin-help summary,
-.documents-form-help summary {
+.documents-admin-help summary {
   cursor:pointer;
   padding:3px 0;
 }
@@ -50,15 +48,95 @@
 .documents-admin-back {
   margin-top:20px;
 }
-.documents-form-fieldset {
-  margin-top:16px;
-  padding:12px 16px;
+.documents-category-form {
+  max-width:980px;
 }
-.documents-form-fieldset small {
-  display:inline-block;
-  margin-top:3px;
-  color:#666;
+.documents-form-intro {
+  margin:12px 0 18px;
+  padding:14px 16px;
+  border-left:4px solid #777;
+  background:#f7f7f7;
+}
+.documents-form-intro h2 {
+  margin:0 0 6px;
+  font-size:1.15em;
+}
+.documents-form-intro p {
+  margin:0;
+}
+.documents-form-fieldset {
+  margin:18px 0;
+  padding:16px 18px;
+  border:1px solid #d8d8d8;
+}
+.documents-form-fieldset legend {
+  padding:0 8px;
+  font-weight:bold;
+  font-size:1.05em;
+}
+.documents-form-row {
+  margin:0 0 20px;
+}
+.documents-form-row:last-child {
+  margin-bottom:4px;
+}
+.documents-form-label {
+  display:block;
+  margin-bottom:6px;
+  font-weight:bold;
+}
+.documents-form-control {
+  box-sizing:border-box;
+  width:100%;
   max-width:760px;
+  padding:7px 9px;
+}
+.documents-form-control--short {
+  max-width:140px;
+}
+.documents-form-textarea {
+  min-height:90px;
+  resize:vertical;
+  font-family:inherit;
+}
+.documents-field-intro {
+  max-width:760px;
+  margin:0 0 7px;
+  font-weight:600;
+}
+.documents-field-help,
+.documents-section-help {
+  display:block;
+  max-width:760px;
+  margin-top:6px;
+  color:#555;
+  font-size:.92em;
+  line-height:1.45;
+}
+.documents-form-row--important {
+  padding:12px;
+  border:1px solid #dedede;
+  background:#fafafa;
+}
+.documents-form-row--checkbox label {
+  display:block;
+}
+.documents-existing-categories {
+  margin-top:10px;
+}
+.documents-existing-categories blockquote {
+  margin:6px 0 0 18px;
+}
+.documents-permissions-editor {
+  margin-top:4px;
+}
+.documents-form-actions {
+  margin:18px 0 28px;
+  padding:14px 16px;
+  border-top:1px solid #ddd;
+}
+.documents-submit-button {
+  margin-top:8px;
 }
 .documents-form-fieldset-wide {
   width:100%;
@@ -137,7 +215,6 @@
 .admin-list-search {
   float:right;
   margin-top:-30px !important;
-	
 }
 .admin-list-search p{
   display: none !important;
@@ -149,4 +226,12 @@
 .admin-list-field h2{
   margin:0px;
   font-size:large;
+}
+@media (max-width:700px) {
+  .documents-form-fieldset {
+    padding:12px;
+  }
+  .documents-form-control {
+    max-width:none;
+  }
 }
