@@ -2,68 +2,11 @@ name: Patch MediaGallery integration
 
 on:
   push:
-    branches:
-      - modernize-1.1.10
-    paths:
-      - '.github/workflows/patch-mediagallery-integration.yml'
-
-permissions:
-  contents: write
+    branches: [modernize-1.1.10]
 
 jobs:
   patch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: modernize-1.1.10
-          fetch-depth: 0
-
-      - name: Replace legacy album selector
-        run: |
-          python3 <<'PY'
-          from pathlib import Path
-
-          path = Path('include_edit.php')
-          text = path.read_text()
-          old = '''        case 'album':
-              if (DOCUMENTS_hasMediaGallery()) {
-                  $common = $_CONF['path'] . 'plugins/mediagallery/include/common.php';
-                  $classAlbum = $_CONF['path'] . 'plugins/mediagallery/include/classAlbum.php';
-                  if (is_file($common) && is_file($classAlbum)) {
-                      require_once $common;
-                      require_once $classAlbum;
-                      if (class_exists('mgAlbum')) {
-                          $rootAlbum = new mgAlbum(0);
-                          $albumJumpbox = '<select name="' . $name . '"><option value="">----</option>';
-                          $rootAlbum->buildJumpBox($albumJumpbox, 0, 1, -1);
-                          $albumJumpbox .= '</select>';
-                          $html .= '<p><label class="document_field_edit">' . $label . $required
-                              . '</label>' . $albumJumpbox . '</p>';
-                      }
-                  }
-              }
-              break;
-'''
-          new = '''        case 'album':
-              if (function_exists('DOCUMENTS_mediaGalleryAlbumSelect')) {
-                  $albumJumpbox = DOCUMENTS_mediaGalleryAlbumSelect($field['var_name'], $value);
-                  if ($albumJumpbox !== '') {
-                      $html .= '<p><label class="document_field_edit">' . $label . $required
-                          . '</label>' . $albumJumpbox . $help . '</p>';
-                  }
-              }
-              break;
-'''
-          if old not in text:
-              raise SystemExit('Expected legacy album selector block not found')
-          path.write_text(text.replace(old, new, 1))
-          PY
-
-      - name: Commit patch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add include_edit.php
-          git commit -m "Use member MediaGallery album tree in document editor"
-          git push origin HEAD:modernize-1.1.10
+      - run: echo patch-ready
