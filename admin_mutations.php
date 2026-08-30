@@ -127,7 +127,7 @@ function DOCUMENTS_adminCategoryHasDocuments($categoryId)
 
 function DOCUMENTS_adminSaveCategory($request)
 {
-    global $_TABLES;
+    global $_CONF, $_TABLES;
 
     $cid = isset($request['cid']) ? (int) $request['cid'] : 0;
     $operation = isset($request['op']) ? (string) $request['op'] : 'save';
@@ -165,8 +165,40 @@ function DOCUMENTS_adminSaveCategory($request)
         return array(false, 'This category URL already exists.');
     }
 
-    $css = DOCUMENTS_adminPlainText(isset($request['css']) ? $request['css'] : '', 18);
-    $template = DOCUMENTS_adminPlainText(isset($request['template']) ? $request['template'] : '', 18);
+    $assetsFile = isset($_CONF['path'])
+        ? $_CONF['path'] . 'plugins/documents/custom_assets.php'
+        : '';
+    if ($assetsFile !== '' && is_file($assetsFile)) {
+        require_once $assetsFile;
+    }
+    if (function_exists('DOCUMENTS_ensureCustomAssetDirectories')) {
+        DOCUMENTS_ensureCustomAssetDirectories();
+    }
+
+    $cssInput = DOCUMENTS_adminPlainText(isset($request['css']) ? $request['css'] : '', 18);
+    $templateInput = DOCUMENTS_adminPlainText(isset($request['template']) ? $request['template'] : '', 18);
+
+    $css = $cssInput;
+    if ($cssInput !== '') {
+        if (!function_exists('DOCUMENTS_customStyleName')
+            || DOCUMENTS_customStyleName($cssInput) === ''
+            || DOCUMENTS_customStylePath($cssInput) === '') {
+            return array(false, 'CSS must be the filename of an existing .css file in the persistent Documents styles directory.');
+        }
+        $css = DOCUMENTS_customStyleName($cssInput);
+    }
+
+    $template = $templateInput;
+    if ($templateInput !== '') {
+        if (!function_exists('DOCUMENTS_templateName')
+            || DOCUMENTS_templateName($templateInput) === ''
+            || !function_exists('DOCUMENTS_customTemplateIsReady')
+            || !DOCUMENTS_customTemplateIsReady($templateInput)) {
+            return array(false, 'Template must name an existing persistent Documents template containing document.thtml and doccomments.thtml.');
+        }
+        $template = DOCUMENTS_templateName($templateInput);
+    }
+
     $help = DOCUMENTS_adminPlainText(isset($request['cat_help']) ? $request['cat_help'] : '', 255);
     $meta = DOCUMENTS_adminPlainText(isset($request['metadescription']) ? $request['metadescription'] : '', 255);
     $header = DOCUMENTS_adminHtml(isset($request['custom_header']) ? $request['custom_header'] : '', 255);
