@@ -40,9 +40,7 @@ $_REQUEST['mode'] = 'view';
 $_REQUEST['cat'] = $categorySlug;
 $_REQUEST['doc'] = $documentSlug;
 
-if (function_exists('DOCUMENTS_loadPublicStyles')) {
-    DOCUMENTS_loadPublicStyles();
-}
+DOCUMENTS_preparePublicPresentation();
 
 $page = DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug);
 if ($page === false) {
@@ -50,7 +48,4 @@ if ($page === false) {
     exit;
 }
 
-COM_output(COM_createHTMLDocument(
-    $page['body'],
-    array('pagetitle' => $page['title'])
-));
+COM_output(DOCUMENTS_createPublicPage($page['body'], $page['title']));
