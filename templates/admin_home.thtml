@@ -1,4 +1,10 @@
 <nav class="documents-admin-nav" aria-label="Documents administration">
     <a href="{documents_url}">{plugin_name}</a>
+    <a href="{new_category_url}">{new_category_label}</a>
     <a href="{integrity_url}">{integrity_label}</a>
 </nav>
+
+<div class="documents-admin-first-run">
+    <h2>{categories_label}</h2>
+    {category_actions}
+</div>
