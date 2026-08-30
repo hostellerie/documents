@@ -25,7 +25,8 @@ function documents_admin_views_require($content, $needle, $message, &$failures)
     }
 }
 
-$index = documents_admin_views_read($root, 'public_html/index.php', $failures);
+$publicIndex = documents_admin_views_read($root, 'public_html/index.php', $failures);
+$adminIndex = documents_admin_views_read($root, 'admin/index.php', $failures);
 $fieldEditor = documents_admin_views_read($root, 'public_html/field-editor.php', $failures);
 $selects = documents_admin_views_read($root, 'public_html/admin-selects.php', $failures);
 $selectEditor = documents_admin_views_read($root, 'public_html/select-editor.php', $failures);
@@ -34,14 +35,16 @@ $fieldMutations = documents_admin_views_read($root, 'field_mutations.php', $fail
 $css = documents_admin_views_read($root, 'admin/modern-admin.css', $failures);
 
 $routes = array(
-    "'edit_field' => 'field-editor.php'" => 'edit_field is not routed to the modern field editor.',
-    "'list_selects' => 'admin-selects.php'" => 'list_selects is not routed to the modern option list.',
-    "'edit_select' => 'select-editor.php'" => 'edit_select is not routed to the modern option editor.',
-    "'edit_group' => 'group-editor.php'" => 'edit_group is not routed to the modern group editor.'
+    "'edit_field' => 'field-editor.php'" => 'edit_field is not routed by the dedicated admin controller.',
+    "'list_selects' => 'admin-selects.php'" => 'list_selects is not routed by the dedicated admin controller.',
+    "'edit_select' => 'select-editor.php'" => 'edit_select is not routed by the dedicated admin controller.',
+    "'edit_group' => 'group-editor.php'" => 'edit_group is not routed by the dedicated admin controller.'
 );
 foreach ($routes as $needle => $message) {
-    documents_admin_views_require($index, $needle, $message, $failures);
+    documents_admin_views_require($adminIndex, $needle, $message, $failures);
 }
+documents_admin_views_require($publicIndex, '$adminModes', 'Public router no longer redirects historical structural admin modes.', $failures);
+documents_admin_views_require($publicIndex, '/plugins/documents/index.php', 'Historical structural admin modes do not point to Geeklog administration.', $failures);
 
 documents_admin_views_require($fieldEditor, 'id="documents-variable-name"', 'Field editor is missing the editable variable-name control.', $failures);
 documents_admin_views_require($fieldEditor, 'normalize(name.value)', 'Field editor does not generate the variable name from the field label.', $failures);
