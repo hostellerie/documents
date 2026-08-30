@@ -45,7 +45,7 @@ function DOCUMENTS_loadPublicStyles()
 
     return (bool) $_SCRIPTS->setCSSFile(
         'documents_public',
-        '/' . $folder . '/css/documents.css?v=1.2.0-3'
+        '/' . $folder . '/css/documents.css?v=1.2.0-4'
     );
 }
 
