@@ -70,11 +70,6 @@ if (function_exists('DOCUMENTS_loadCategoryStyle') && !empty($category['css'])) 
     DOCUMENTS_loadCategoryStyle($category['css']);
 }
 
-if (!defined('DOCUMENTS_SEO_BUFFER_STARTED')) {
-    define('DOCUMENTS_SEO_BUFFER_STARTED', true);
-    ob_start('DOCUMENTS_seoOutputFilter');
-}
-
 $perPage = 20;
 $offset = ($pageNumber - 1) * $perPage;
 $categoryId = (int) $category['cid'];
@@ -181,4 +176,10 @@ $content .= '</main>';
 
 $pageOptions = array('pagetitle' => $categoryName);
 $page = COM_createHTMLDocument($content, $pageOptions);
+if (function_exists('DOCUMENTS_seoOutputFilter')) {
+    $filteredPage = DOCUMENTS_seoOutputFilter($page);
+    if (is_string($filteredPage) && $filteredPage !== '') {
+        $page = $filteredPage;
+    }
+}
 COM_output($page);
