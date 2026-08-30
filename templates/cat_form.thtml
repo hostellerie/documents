@@ -5,109 +5,114 @@
         <p>{category_help_intro}</p>
     </div>
 
-    <fieldset class="documents-form-fieldset">
-        <legend>{general_legend}</legend>
+    <details class="documents-form-section" open="open">
+        <summary class="documents-form-section__summary">{general_legend}</summary>
+        <div class="documents-form-section__content">
+            <div class="documents-form-row">
+                <label class="documents-form-label" for="documents-cat-name">{category_label}<span class="documents-required-mark"> *</span></label>
+                <input class="documents-form-control" type="text" id="documents-cat-name" name="cat_name" value="{category}" maxlength="40" {xhtml}>
+                <div class="documents-field-help">{category_help}</div>
+            </div>
 
-        <div class="documents-form-row">
-            <label class="documents-form-label" for="documents-cat-name">{category_label}<span class="documents-required-mark"> *</span></label>
-            <input class="documents-form-control" type="text" id="documents-cat-name" name="cat_name" value="{category}" maxlength="40" {xhtml}>
-            <div class="documents-field-help">{category_help}</div>
+            <div class="documents-form-row">
+                <label class="documents-form-label" for="documents-cat-url">{cat_url_label}<span class="documents-required-mark"> *</span></label>
+                <input class="documents-form-control" type="text" id="documents-cat-url" name="cat_url" value="{cat_url}" maxlength="40" {xhtml}>
+                <div class="documents-field-help">{cat_url_help}</div>
+            </div>
+
+            <div class="documents-form-row documents-form-row--important">
+                <label class="documents-form-label" for="documents-metadescription">{metadescription_label}</label>
+                <div class="documents-field-intro">{metadescription_intro}</div>
+                <textarea class="documents-form-control documents-form-textarea" name="metadescription" id="documents-metadescription" rows="4" maxlength="255" placeholder="{metadescription_placeholder}">{metadescription}</textarea>
+                <div class="documents-field-help">{metadescription_help}</div>
+            </div>
+
+            <div class="documents-form-row">
+                <label class="documents-form-label" for="documents-cat-help">{cat_help_label}</label>
+                <textarea class="documents-form-control documents-form-textarea" id="documents-cat-help" name="cat_help" rows="3" maxlength="255">{cat_help}</textarea>
+                <div class="documents-field-help">{cat_help_explanation}</div>
+            </div>
         </div>
+    </details>
 
-        <div class="documents-form-row">
-            <label class="documents-form-label" for="documents-cat-url">{cat_url_label}<span class="documents-required-mark"> *</span></label>
-            <input class="documents-form-control" type="text" id="documents-cat-url" name="cat_url" value="{cat_url}" maxlength="40" {xhtml}>
-            <div class="documents-field-help">{cat_url_help}</div>
+    <details class="documents-form-section">
+        <summary class="documents-form-section__summary">{display_legend}</summary>
+        <div class="documents-form-section__content">
+            <div class="documents-form-row">
+                <label class="documents-form-label" for="documents-template">{template_label}</label>
+                <input class="documents-form-control" type="text" id="documents-template" name="template" value="{template}" maxlength="18" {xhtml}>
+                <div class="documents-field-help">{template_help}</div>
+            </div>
+
+            <div class="documents-form-row">
+                <label class="documents-form-label" for="documents-css">{css_label}</label>
+                <input class="documents-form-control" type="text" id="documents-css" name="css" value="{css}" maxlength="18" {xhtml}>
+                <div class="documents-field-help">{css_help}</div>
+            </div>
+
+            {map}
+
+            <div class="documents-form-row">
+                <label class="documents-form-label" for="documents-custom-header">{custom_header_label}</label>
+                <textarea class="documents-form-control documents-form-textarea" id="documents-custom-header" name="custom_header" rows="4" maxlength="255">{custom_header}</textarea>
+                <div class="documents-field-help">{custom_header_help}</div>
+            </div>
+
+            <div class="documents-form-row">
+                <label class="documents-form-label" for="documents-custom-footer">{custom_footer_label}</label>
+                <textarea class="documents-form-control documents-form-textarea" id="documents-custom-footer" name="custom_footer" rows="4" maxlength="255">{custom_footer}</textarea>
+                <div class="documents-field-help">{custom_footer_help}</div>
+            </div>
         </div>
+    </details>
 
-        <div class="documents-form-row documents-form-row--important">
-            <label class="documents-form-label" for="documents-metadescription">{metadescription_label}</label>
-            <div class="documents-field-intro">{metadescription_intro}</div>
-            <textarea class="documents-form-control documents-form-textarea" name="metadescription" id="documents-metadescription" rows="4" maxlength="255" placeholder="{metadescription_placeholder}">{metadescription}</textarea>
-            <div class="documents-field-help">{metadescription_help}</div>
+    <details class="documents-form-section">
+        <summary class="documents-form-section__summary">{publication_legend}</summary>
+        <div class="documents-form-section__content">
+            <div class="documents-form-row">
+                <label class="documents-form-label" for="documents-cat-order">{catorder_label}</label>
+                <input class="documents-form-control documents-form-control--short" type="number" id="documents-cat-order" name="cat_order" value="{cat_order}" min="0" step="10" {xhtml}>
+                <div class="documents-field-help">{cat_order_help}</div>
+                <div class="documents-existing-categories"><strong>{existing_cat}</strong>{categories_order}</div>
+            </div>
+
+            <div class="documents-form-row documents-form-row--checkbox">
+                <label><input type="checkbox" name="list_index" value="1" {list_index_ckecked} {xhtml}> <strong>{list_index}</strong></label>
+                <div class="documents-field-help">{list_index_help}</div>
+            </div>
+
+            <div class="documents-form-row documents-form-row--checkbox">
+                <label><input type="checkbox" name="submitable" value="1" {submitable_ckecked} {xhtml}> <strong>{submitable}</strong></label>
+                <div class="documents-field-help">{submitable_help}</div>
+            </div>
         </div>
+    </details>
 
-        <div class="documents-form-row">
-            <label class="documents-form-label" for="documents-cat-help">{cat_help_label}</label>
-            <textarea class="documents-form-control documents-form-textarea" id="documents-cat-help" name="cat_help" rows="3" maxlength="255">{cat_help}</textarea>
-            <div class="documents-field-help">{cat_help_explanation}</div>
+    <details class="documents-form-section">
+        <summary class="documents-form-section__summary">{permissions_legend}</summary>
+        <div class="documents-form-section__content">
+            <p class="documents-section-help">{permissions_help}</p>
+
+            <div class="documents-form-row">
+                <div class="documents-form-label">{lang_owner}</div>
+                <div>{owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}></div>
+                <div class="documents-field-help">{owner_help}</div>
+            </div>
+
+            <div class="documents-form-row">
+                <label class="documents-form-label">{lang_group}</label>
+                <div>{group_dropdown}</div>
+                <div class="documents-field-help">{group_help}</div>
+            </div>
+
+            <div class="documents-form-row">
+                <div class="documents-form-label">{lang_perm_key}</div>
+                <div class="documents-permissions-editor">{permissions_editor}</div>
+                <div class="documents-field-help">{permissions_editor_help}</div>
+                <div class="documents-field-help">{lang_permissions_msg}</div>
+            </div>
         </div>
-    </fieldset>
-
-    <fieldset class="documents-form-fieldset">
-        <legend>{display_legend}</legend>
-
-        <div class="documents-form-row">
-            <label class="documents-form-label" for="documents-template">{template_label}</label>
-            <input class="documents-form-control" type="text" id="documents-template" name="template" value="{template}" maxlength="18" {xhtml}>
-            <div class="documents-field-help">{template_help}</div>
-        </div>
-
-        <div class="documents-form-row">
-            <label class="documents-form-label" for="documents-css">{css_label}</label>
-            <input class="documents-form-control" type="text" id="documents-css" name="css" value="{css}" maxlength="18" {xhtml}>
-            <div class="documents-field-help">{css_help}</div>
-        </div>
-
-        {map}
-
-        <div class="documents-form-row">
-            <label class="documents-form-label" for="documents-custom-header">{custom_header_label}</label>
-            <textarea class="documents-form-control documents-form-textarea" id="documents-custom-header" name="custom_header" rows="4" maxlength="255">{custom_header}</textarea>
-            <div class="documents-field-help">{custom_header_help}</div>
-        </div>
-
-        <div class="documents-form-row">
-            <label class="documents-form-label" for="documents-custom-footer">{custom_footer_label}</label>
-            <textarea class="documents-form-control documents-form-textarea" id="documents-custom-footer" name="custom_footer" rows="4" maxlength="255">{custom_footer}</textarea>
-            <div class="documents-field-help">{custom_footer_help}</div>
-        </div>
-    </fieldset>
-
-    <fieldset class="documents-form-fieldset">
-        <legend>{publication_legend}</legend>
-
-        <div class="documents-form-row">
-            <label class="documents-form-label" for="documents-cat-order">{catorder_label}</label>
-            <input class="documents-form-control documents-form-control--short" type="number" id="documents-cat-order" name="cat_order" value="{cat_order}" min="0" step="10" {xhtml}>
-            <div class="documents-field-help">{cat_order_help}</div>
-            <div class="documents-existing-categories"><strong>{existing_cat}</strong>{categories_order}</div>
-        </div>
-
-        <div class="documents-form-row documents-form-row--checkbox">
-            <label><input type="checkbox" name="list_index" value="1" {list_index_ckecked} {xhtml}> <strong>{list_index}</strong></label>
-            <div class="documents-field-help">{list_index_help}</div>
-        </div>
-
-        <div class="documents-form-row documents-form-row--checkbox">
-            <label><input type="checkbox" name="submitable" value="1" {submitable_ckecked} {xhtml}> <strong>{submitable}</strong></label>
-            <div class="documents-field-help">{submitable_help}</div>
-        </div>
-    </fieldset>
-
-    <fieldset class="documents-form-fieldset">
-        <legend>{permissions_legend}</legend>
-        <p class="documents-section-help">{permissions_help}</p>
-
-        <div class="documents-form-row">
-            <div class="documents-form-label">{lang_owner}</div>
-            <div>{owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}></div>
-            <div class="documents-field-help">{owner_help}</div>
-        </div>
-
-        <div class="documents-form-row">
-            <label class="documents-form-label">{lang_group}</label>
-            <div>{group_dropdown}</div>
-            <div class="documents-field-help">{group_help}</div>
-        </div>
-
-        <div class="documents-form-row">
-            <div class="documents-form-label">{lang_perm_key}</div>
-            <div class="documents-permissions-editor">{permissions_editor}</div>
-            <div class="documents-field-help">{permissions_editor_help}</div>
-            <div class="documents-field-help">{lang_permissions_msg}</div>
-        </div>
-    </fieldset>
+    </details>
 
     <div class="documents-form-actions">
         <p class="documents-required-note"><span class="documents-required-mark">*</span> {required_field}</p>
