@@ -27,6 +27,44 @@ function DOCUMENTS_fieldVariableName($value)
     return $value;
 }
 
+/**
+ * Build a predictable template variable from a human field label.
+ *
+ * The browser editor uses the same rules for immediate feedback, but this
+ * server-side implementation makes automatic variable generation reliable
+ * even when JavaScript is disabled.
+ */
+function DOCUMENTS_fieldVariableFromLabel($label)
+{
+    $label = DOCUMENTS_adminPlainText($label, 255);
+    if ($label === '') {
+        return '';
+    }
+
+    if (function_exists('iconv')) {
+        $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $label);
+        if ($ascii !== false && $ascii !== '') {
+            $label = $ascii;
+        }
+    }
+
+    $value = strtolower((string) $label);
+    $value = preg_replace('/[^a-z0-9]+/', '_', $value);
+    $value = trim((string) $value, '_');
+
+    if ($value === '') {
+        $value = 'field';
+    }
+    if (!preg_match('/^[a-z]/', $value)) {
+        $value = 'field_' . $value;
+    }
+
+    $value = substr($value, 0, 18);
+    $value = rtrim($value, '_');
+
+    return DOCUMENTS_fieldVariableName($value);
+}
+
 function DOCUMENTS_adminReorderFields($categoryId)
 {
     global $_TABLES;
@@ -131,7 +169,11 @@ function DOCUMENTS_adminSaveField($request)
 
     $categoryId = isset($request['cat_id']) ? (int) $request['cat_id'] : 0;
     $name = DOCUMENTS_adminPlainText(isset($request['f_name']) ? $request['f_name'] : '', 255);
-    $variable = DOCUMENTS_fieldVariableName(isset($request['var_name']) ? $request['var_name'] : '');
+    $variableInput = isset($request['var_name']) ? $request['var_name'] : '';
+    $variable = DOCUMENTS_fieldVariableName($variableInput);
+    if ($variable === '' && !is_array($variableInput) && trim((string) $variableInput) === '') {
+        $variable = DOCUMENTS_fieldVariableFromLabel($name);
+    }
     $help = DOCUMENTS_adminPlainText(isset($request['f_help']) ? $request['f_help'] : '', 255);
     $type = isset($request['f_type']) ? strtolower(trim((string) $request['f_type'])) : '';
     $order = isset($request['f_order']) ? max(0, (int) $request['f_order']) : 0;
