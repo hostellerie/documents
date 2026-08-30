@@ -121,7 +121,8 @@ function DOCUMENTS_startNavigationBuffer()
     }
 
     $script = isset($_SERVER['SCRIPT_NAME']) ? basename((string) $_SERVER['SCRIPT_NAME']) : '';
-    $mode = isset($_REQUEST['mode']) ? trim((string) $_REQUEST['mode']) : '';
+    $mode = isset($_REQUEST['mode']) && !is_array($_REQUEST['mode'])
+        ? trim((string) $_REQUEST['mode']) : '';
     $excluded = array('image.php', 'style.php', 'admin-save.php', 'admin-field-save.php', 'document-save.php');
     if (in_array($script, $excluded, true)) {
         return;
@@ -130,9 +131,10 @@ function DOCUMENTS_startNavigationBuffer()
     /* Modern public pages render the navigation directly while building their
      * content. Do not defer database-backed navigation rendering to an output
      * buffer callback on these surfaces; older Geeklog/PHP stacks are more
-     * predictable when the menu is rendered during normal request execution. */
-    if ($script === 'category.php' || $script === 'home.php'
-        || ($script === 'index.php' && $mode === '')) {
+     * predictable when the menu is rendered during normal request execution.
+     * Clean URLs are rewritten to index.php?mode=view, so exclude that mode too. */
+    if ($script === 'category.php' || $script === 'document.php' || $script === 'home.php'
+        || ($script === 'index.php' && ($mode === '' || $mode === 'view'))) {
         return;
     }
 
