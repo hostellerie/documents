@@ -1,6 +1,6 @@
 <?php
 
-/* Modern public Documents category page. Compatible with Geeklog 2.1.1/PHP 5.6+. */
+/* Public Documents category page. Compatible with Geeklog 2.1.1/PHP 5.6+. */
 
 require_once '../lib-common.php';
 
@@ -13,6 +13,7 @@ $pluginPath = $_CONF['path'] . 'plugins/documents/';
 require_once $pluginPath . 'runtime.php';
 require_once $pluginPath . 'include_compat.php';
 require_once $pluginPath . 'integrity.php';
+require_once $pluginPath . 'presentation.php';
 require_once $pluginPath . 'seo.php';
 
 $categorySlug = isset($_GET['cat']) ? DOCUMENTS_normalizeRouteSlug((string) $_GET['cat']) : '';
@@ -153,8 +154,9 @@ if ($totalPages > 1) {
     if ($pageNumber > 1) {
         $prevUrl = $baseUrl . (($pageNumber - 1) > 1 ? '?page=' . ($pageNumber - 1) : '');
         $content .= '<a class="documents-pagination__prev" href="'
-            . htmlspecialchars($prevUrl, ENT_QUOTES, 'UTF-8') . '">&laquo; ';
-        $content .= htmlspecialchars(isset($LANG_DOCUMENTS_1['previous']) ? $LANG_DOCUMENTS_1['previous'] : 'Previous', ENT_QUOTES, 'UTF-8') . '</a>';
+            . htmlspecialchars($prevUrl, ENT_QUOTES, 'UTF-8') . '">&laquo; '
+            . htmlspecialchars(isset($LANG_DOCUMENTS_1['previous']) ? $LANG_DOCUMENTS_1['previous'] : 'Previous', ENT_QUOTES, 'UTF-8')
+            . '</a>';
     }
     $content .= '<span class="documents-pagination__status">'
         . (int) $pageNumber . ' / ' . (int) $totalPages . '</span>';
@@ -174,8 +176,7 @@ if (!empty($category['custom_footer'])) {
 }
 $content .= '</main>';
 
-$pageOptions = array('pagetitle' => $categoryName);
-$page = COM_createHTMLDocument($content, $pageOptions);
+$page = COM_createHTMLDocument($content, array('pagetitle' => $categoryName));
 if (function_exists('DOCUMENTS_seoOutputFilter')) {
     $filteredPage = DOCUMENTS_seoOutputFilter($page);
     if (is_string($filteredPage) && $filteredPage !== '') {
