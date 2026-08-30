@@ -26,6 +26,9 @@
 
 require_once '../../../lib-common.php';
 require_once '../../auth.inc.php';
+require_once $_CONF['path'] . 'plugins/documents/admin_styles.php';
+
+DOCUMENTS_loadAdminStyles();
 
 $display = '';
 
@@ -55,12 +58,6 @@ $documentsUrl = isset($_DOCUMENTS_CONF['site_url'])
     : $_CONF['site_url'] . '/documents';
 $adminUrl = $_CONF['site_admin_url'] . '/plugins/documents/index.php';
 $mode = isset($_GET['mode']) ? (string) $_GET['mode'] : '';
-
-$_SCRIPTS->setCSSFile(
-    'documents_admin_css',
-    '/admin/plugins/documents/documents.css',
-    true
-);
 
 $display .= COM_startBlock(
     $pluginName,
