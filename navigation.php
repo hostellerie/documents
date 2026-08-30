@@ -47,12 +47,16 @@ function DOCUMENTS_renderNavigation()
     global $_CONF, $_DOCUMENTS_CONF;
 
     $siteUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/');
+    $adminUrl = isset($_CONF['site_admin_url'])
+        ? rtrim((string) $_CONF['site_admin_url'], '/') . '/plugins/documents/index.php'
+        : $siteUrl . '/';
     $isFrench = isset($_CONF['language'])
         && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
 
     $homeLabel = $isFrench ? 'Accueil' : 'Home';
     $adminLabel = $isFrench ? 'Administration' : 'Administration';
-    $categoriesLabel = $isFrench ? 'Catégories' : 'Categories';
+    $adminHomeLabel = $isFrench ? 'Admin' : 'Admin';
+    $newCategoryLabel = $isFrench ? 'Nouvelle catégorie' : 'New category';
     $fieldsLabel = $isFrench ? 'Champs' : 'Fields';
     $groupsLabel = $isFrench ? 'Groupes de choix' : 'Selection groups';
 
@@ -72,8 +76,10 @@ function DOCUMENTS_renderNavigation()
     if (SEC_hasRights('documents.admin')) {
         $html .= '<div class="documents-navigation__admin"><span class="documents-navigation__label">'
             . htmlspecialchars($adminLabel, ENT_QUOTES, 'UTF-8') . '</span>'
+            . '<a href="' . htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8') . '">'
+            . htmlspecialchars($adminHomeLabel, ENT_QUOTES, 'UTF-8') . '</a>'
             . '<a href="' . htmlspecialchars($siteUrl . '/index.php?mode=edit_cat', ENT_QUOTES, 'UTF-8') . '">'
-            . htmlspecialchars($categoriesLabel, ENT_QUOTES, 'UTF-8') . '</a>'
+            . htmlspecialchars($newCategoryLabel, ENT_QUOTES, 'UTF-8') . '</a>'
             . '<a href="' . htmlspecialchars($siteUrl . '/index.php?mode=list_fields', ENT_QUOTES, 'UTF-8') . '">'
             . htmlspecialchars($fieldsLabel, ENT_QUOTES, 'UTF-8') . '</a>'
             . '<a href="' . htmlspecialchars($siteUrl . '/index.php?mode=list_groups', ENT_QUOTES, 'UTF-8') . '">'
