@@ -20,6 +20,11 @@ if (isset($_CONF['path'])) {
         require_once $documentsPresentationFile;
     }
 
+    $documentsMediaGalleryFile = $_CONF['path'] . 'plugins/documents/mediagallery_adapter.php';
+    if (is_file($documentsMediaGalleryFile)) {
+        require_once $documentsMediaGalleryFile;
+    }
+
     $documentsInteropFile = $_CONF['path'] . 'plugins/documents/interoperability.php';
     if (is_file($documentsInteropFile)) {
         require_once $documentsInteropFile;
