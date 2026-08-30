@@ -13,7 +13,6 @@ $pluginPath = $_CONF['path'] . 'plugins/documents/';
 require_once $pluginPath . 'rewrite.php';
 require_once $pluginPath . 'runtime.php';
 require_once $pluginPath . 'presentation.php';
-require_once $pluginPath . 'seo.php';
 DOCUMENTS_writeHtaccess(false);
 
 $requestPath = isset($_SERVER['REQUEST_URI'])
@@ -24,14 +23,7 @@ if (is_string($requestPath) && basename($requestPath) === 'home.php') {
     exit;
 }
 
-if (function_exists('DOCUMENTS_loadPublicStyles')) {
-    DOCUMENTS_loadPublicStyles();
-}
-
-if (!defined('DOCUMENTS_SEO_BUFFER_STARTED')) {
-    define('DOCUMENTS_SEO_BUFFER_STARTED', true);
-    ob_start('DOCUMENTS_seoOutputFilter');
-}
+DOCUMENTS_preparePublicPresentation(false);
 
 $title = isset($LANG_DOCUMENTS_1['plugin_name']) ? $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
 $content = '<main class="documents-home">';
@@ -93,11 +85,9 @@ if (empty($cards)) {
     $content .= '<div class="documents-category-grid">' . implode('', $cards) . '</div>';
 }
 
-if (function_exists('DOCUMENTS_homeStatsBlock')) {
-    $stats = DOCUMENTS_homeStatsBlock();
-    if ($stats !== '') {
-        $content .= $stats;
-    }
+$stats = DOCUMENTS_homeStatsBlock();
+if ($stats !== '') {
+    $content .= $stats;
 }
 
 if (!empty($_DOCUMENTS_CONF['documents_main_footer'])) {
@@ -106,4 +96,4 @@ if (!empty($_DOCUMENTS_CONF['documents_main_footer'])) {
 }
 $content .= '</main>';
 
-COM_output(COM_createHTMLDocument($content, array('pagetitle' => $title)));
+COM_output(DOCUMENTS_createPublicPage($content, $title));
