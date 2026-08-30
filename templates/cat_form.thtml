@@ -1,3 +1,45 @@
+<style>
+.documents-category-form{max-width:920px;margin:0 auto 42px;font-size:15px;line-height:1.5}
+.documents-category-form *{box-sizing:border-box}
+.documents-category-form .documents-form-intro{margin:0 0 24px;padding:18px 20px;border:1px solid #e4e7ec;border-radius:12px;background:#fff}
+.documents-category-form .documents-form-intro h2{margin:0 0 6px;font-size:1.18em}
+.documents-category-form .documents-form-intro p{margin:0;color:#5b6472;line-height:1.6}
+.documents-category-form .documents-form-section{margin:0 0 16px;border:1px solid #dfe3e8;border-radius:12px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.documents-category-form .documents-form-section__summary{cursor:pointer;padding:16px 20px;font-weight:700;font-size:1.05em;background:#f8f9fb;list-style-position:inside}
+.documents-category-form .documents-form-section[open]>.documents-form-section__summary{border-bottom:1px solid #e7e9ed}
+.documents-category-form .documents-form-section__content{padding:24px 22px 6px}
+.documents-category-form .documents-form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px 28px}
+.documents-category-form .documents-form-row{margin:0 0 28px}
+.documents-category-form .documents-form-grid>.documents-form-row{margin:0}
+.documents-category-form .documents-form-row--full{grid-column:1/-1}
+.documents-category-form .documents-form-label{display:block;margin:0 0 8px;font-weight:700;line-height:1.35}
+.documents-category-form .documents-form-control{display:block;width:100%;min-height:42px;padding:9px 11px;border:1px solid #cfd5dd;border-radius:8px;background:#fff;font:inherit;color:inherit}
+.documents-category-form .documents-form-control:focus{outline:2px solid rgba(49,87,213,.18);border-color:#3157d5}
+.documents-category-form .documents-form-control--short{max-width:140px}
+.documents-category-form .documents-form-textarea{min-height:104px;resize:vertical;line-height:1.5}
+.documents-category-form .documents-field-intro{margin:0 0 10px;color:#3f4752}
+.documents-category-form .documents-field-help{margin-top:8px;padding:9px 11px;border-radius:7px;background:#f7f8fa;color:#66707d;font-size:.88em;line-height:1.5}
+.documents-category-form .documents-form-row--important{padding:16px;border:1px solid #e4e7ec;border-radius:10px;background:#fbfcfd}
+.documents-category-form .documents-form-row--checkbox{padding:13px 14px;border:1px solid #e7e9ed;border-radius:8px;background:#fafbfc}
+.documents-category-form .documents-form-row--checkbox label{display:block;margin:0;font-weight:600}
+.documents-category-form .documents-form-row--checkbox .documents-field-help{margin-top:7px;padding:0;background:none}
+.documents-category-form .documents-section-help{margin:0 0 20px;padding:11px 13px;border-radius:8px;background:#f7f8fa;color:#66707d;font-size:.9em}
+.documents-category-form .documents-existing-categories{margin-top:12px;color:#59616d}
+.documents-category-form .documents-existing-categories blockquote{margin:6px 0 0 16px}
+.documents-category-form .documents-permissions-editor{margin-top:6px}
+.documents-category-form .documents-form-actions{margin-top:22px;padding:20px;border:1px solid #dfe3e8;border-radius:12px;background:#fff}
+.documents-category-form .documents-required-note{margin:0 0 14px;color:#66707d;font-size:.9em;font-weight:400}
+.documents-category-form .documents-required-mark{color:#c62828}
+.documents-category-form .documents-submit-button{margin-top:16px;padding:10px 18px;border-radius:8px;font-weight:700}
+@media (max-width:760px){
+  .documents-category-form{max-width:none}
+  .documents-category-form .documents-form-grid{grid-template-columns:1fr;gap:22px}
+  .documents-category-form .documents-form-row--full{grid-column:auto}
+  .documents-category-form .documents-form-section__content{padding:20px 16px 4px}
+  .documents-category-form .documents-form-section__summary{padding:14px 16px}
+}
+</style>
+
 <form action="{doc_url}/admin-save.php" method="POST" id="documents-category-form" class="documents-category-form">
 {cid}
     <div class="documents-form-intro">
@@ -8,29 +50,31 @@
     <details class="documents-form-section" open="open">
         <summary class="documents-form-section__summary">{general_legend}</summary>
         <div class="documents-form-section__content">
-            <div class="documents-form-row">
-                <label class="documents-form-label" for="documents-cat-name">{category_label}<span class="documents-required-mark"> *</span></label>
-                <input class="documents-form-control" type="text" id="documents-cat-name" name="cat_name" value="{category}" maxlength="40" {xhtml}>
-                <div class="documents-field-help">{category_help}</div>
-            </div>
+            <div class="documents-form-grid">
+                <div class="documents-form-row">
+                    <label class="documents-form-label" for="documents-cat-name">{category_label}<span class="documents-required-mark"> *</span></label>
+                    <input class="documents-form-control" type="text" id="documents-cat-name" name="cat_name" value="{category}" maxlength="40" {xhtml}>
+                    <div class="documents-field-help">{category_help}</div>
+                </div>
 
-            <div class="documents-form-row">
-                <label class="documents-form-label" for="documents-cat-url">{cat_url_label}<span class="documents-required-mark"> *</span></label>
-                <input class="documents-form-control" type="text" id="documents-cat-url" name="cat_url" value="{cat_url}" maxlength="40" {xhtml}>
-                <div class="documents-field-help">{cat_url_help}</div>
-            </div>
+                <div class="documents-form-row">
+                    <label class="documents-form-label" for="documents-cat-url">{cat_url_label}<span class="documents-required-mark"> *</span></label>
+                    <input class="documents-form-control" type="text" id="documents-cat-url" name="cat_url" value="{cat_url}" maxlength="40" {xhtml}>
+                    <div class="documents-field-help">{cat_url_help}</div>
+                </div>
 
-            <div class="documents-form-row documents-form-row--important">
-                <label class="documents-form-label" for="documents-metadescription">{metadescription_label}</label>
-                <div class="documents-field-intro">{metadescription_intro}</div>
-                <textarea class="documents-form-control documents-form-textarea" name="metadescription" id="documents-metadescription" rows="4" maxlength="255" placeholder="{metadescription_placeholder}">{metadescription}</textarea>
-                <div class="documents-field-help">{metadescription_help}</div>
-            </div>
+                <div class="documents-form-row documents-form-row--important documents-form-row--full">
+                    <label class="documents-form-label" for="documents-metadescription">{metadescription_label}</label>
+                    <div class="documents-field-intro">{metadescription_intro}</div>
+                    <textarea class="documents-form-control documents-form-textarea" name="metadescription" id="documents-metadescription" rows="4" maxlength="255" placeholder="{metadescription_placeholder}">{metadescription}</textarea>
+                    <div class="documents-field-help">{metadescription_help}</div>
+                </div>
 
-            <div class="documents-form-row">
-                <label class="documents-form-label" for="documents-cat-help">{cat_help_label}</label>
-                <textarea class="documents-form-control documents-form-textarea" id="documents-cat-help" name="cat_help" rows="3" maxlength="255">{cat_help}</textarea>
-                <div class="documents-field-help">{cat_help_explanation}</div>
+                <div class="documents-form-row documents-form-row--full">
+                    <label class="documents-form-label" for="documents-cat-help">{cat_help_label}</label>
+                    <textarea class="documents-form-control documents-form-textarea" id="documents-cat-help" name="cat_help" rows="3" maxlength="255">{cat_help}</textarea>
+                    <div class="documents-field-help">{cat_help_explanation}</div>
+                </div>
             </div>
         </div>
     </details>
@@ -38,30 +82,32 @@
     <details class="documents-form-section">
         <summary class="documents-form-section__summary">{display_legend}</summary>
         <div class="documents-form-section__content">
-            <div class="documents-form-row">
-                <label class="documents-form-label" for="documents-template">{template_label}</label>
-                <input class="documents-form-control" type="text" id="documents-template" name="template" value="{template}" maxlength="18" {xhtml}>
-                <div class="documents-field-help">{template_help}</div>
-            </div>
+            <div class="documents-form-grid">
+                <div class="documents-form-row">
+                    <label class="documents-form-label" for="documents-template">{template_label}</label>
+                    <input class="documents-form-control" type="text" id="documents-template" name="template" value="{template}" maxlength="18" {xhtml}>
+                    <div class="documents-field-help">{template_help}</div>
+                </div>
 
-            <div class="documents-form-row">
-                <label class="documents-form-label" for="documents-css">{css_label}</label>
-                <input class="documents-form-control" type="text" id="documents-css" name="css" value="{css}" maxlength="18" {xhtml}>
-                <div class="documents-field-help">{css_help}</div>
-            </div>
+                <div class="documents-form-row">
+                    <label class="documents-form-label" for="documents-css">{css_label}</label>
+                    <input class="documents-form-control" type="text" id="documents-css" name="css" value="{css}" maxlength="18" {xhtml}>
+                    <div class="documents-field-help">{css_help}</div>
+                </div>
 
-            {map}
+                <div class="documents-form-row documents-form-row--full">{map}</div>
 
-            <div class="documents-form-row">
-                <label class="documents-form-label" for="documents-custom-header">{custom_header_label}</label>
-                <textarea class="documents-form-control documents-form-textarea" id="documents-custom-header" name="custom_header" rows="4" maxlength="255">{custom_header}</textarea>
-                <div class="documents-field-help">{custom_header_help}</div>
-            </div>
+                <div class="documents-form-row documents-form-row--full">
+                    <label class="documents-form-label" for="documents-custom-header">{custom_header_label}</label>
+                    <textarea class="documents-form-control documents-form-textarea" id="documents-custom-header" name="custom_header" rows="4" maxlength="255">{custom_header}</textarea>
+                    <div class="documents-field-help">{custom_header_help}</div>
+                </div>
 
-            <div class="documents-form-row">
-                <label class="documents-form-label" for="documents-custom-footer">{custom_footer_label}</label>
-                <textarea class="documents-form-control documents-form-textarea" id="documents-custom-footer" name="custom_footer" rows="4" maxlength="255">{custom_footer}</textarea>
-                <div class="documents-field-help">{custom_footer_help}</div>
+                <div class="documents-form-row documents-form-row--full">
+                    <label class="documents-form-label" for="documents-custom-footer">{custom_footer_label}</label>
+                    <textarea class="documents-form-control documents-form-textarea" id="documents-custom-footer" name="custom_footer" rows="4" maxlength="255">{custom_footer}</textarea>
+                    <div class="documents-field-help">{custom_footer_help}</div>
+                </div>
             </div>
         </div>
     </details>
@@ -69,21 +115,24 @@
     <details class="documents-form-section">
         <summary class="documents-form-section__summary">{publication_legend}</summary>
         <div class="documents-form-section__content">
-            <div class="documents-form-row">
-                <label class="documents-form-label" for="documents-cat-order">{catorder_label}</label>
-                <input class="documents-form-control documents-form-control--short" type="number" id="documents-cat-order" name="cat_order" value="{cat_order}" min="0" step="10" {xhtml}>
-                <div class="documents-field-help">{cat_order_help}</div>
-                <div class="documents-existing-categories"><strong>{existing_cat}</strong>{categories_order}</div>
-            </div>
+            <div class="documents-form-grid">
+                <div class="documents-form-row">
+                    <label class="documents-form-label" for="documents-cat-order">{catorder_label}</label>
+                    <input class="documents-form-control documents-form-control--short" type="number" id="documents-cat-order" name="cat_order" value="{cat_order}" min="0" step="10" {xhtml}>
+                    <div class="documents-field-help">{cat_order_help}</div>
+                    <div class="documents-existing-categories"><strong>{existing_cat}</strong>{categories_order}</div>
+                </div>
 
-            <div class="documents-form-row documents-form-row--checkbox">
-                <label><input type="checkbox" name="list_index" value="1" {list_index_ckecked} {xhtml}> <strong>{list_index}</strong></label>
-                <div class="documents-field-help">{list_index_help}</div>
-            </div>
-
-            <div class="documents-form-row documents-form-row--checkbox">
-                <label><input type="checkbox" name="submitable" value="1" {submitable_ckecked} {xhtml}> <strong>{submitable}</strong></label>
-                <div class="documents-field-help">{submitable_help}</div>
+                <div>
+                    <div class="documents-form-row documents-form-row--checkbox">
+                        <label><input type="checkbox" name="list_index" value="1" {list_index_ckecked} {xhtml}> {list_index}</label>
+                        <div class="documents-field-help">{list_index_help}</div>
+                    </div>
+                    <div class="documents-form-row documents-form-row--checkbox">
+                        <label><input type="checkbox" name="submitable" value="1" {submitable_ckecked} {xhtml}> {submitable}</label>
+                        <div class="documents-field-help">{submitable_help}</div>
+                    </div>
+                </div>
             </div>
         </div>
     </details>
@@ -93,23 +142,25 @@
         <div class="documents-form-section__content">
             <p class="documents-section-help">{permissions_help}</p>
 
-            <div class="documents-form-row">
-                <div class="documents-form-label">{lang_owner}</div>
-                <div>{owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}></div>
-                <div class="documents-field-help">{owner_help}</div>
-            </div>
+            <div class="documents-form-grid">
+                <div class="documents-form-row">
+                    <div class="documents-form-label">{lang_owner}</div>
+                    <div>{owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}></div>
+                    <div class="documents-field-help">{owner_help}</div>
+                </div>
 
-            <div class="documents-form-row">
-                <label class="documents-form-label">{lang_group}</label>
-                <div>{group_dropdown}</div>
-                <div class="documents-field-help">{group_help}</div>
-            </div>
+                <div class="documents-form-row">
+                    <label class="documents-form-label">{lang_group}</label>
+                    <div>{group_dropdown}</div>
+                    <div class="documents-field-help">{group_help}</div>
+                </div>
 
-            <div class="documents-form-row">
-                <div class="documents-form-label">{lang_perm_key}</div>
-                <div class="documents-permissions-editor">{permissions_editor}</div>
-                <div class="documents-field-help">{permissions_editor_help}</div>
-                <div class="documents-field-help">{lang_permissions_msg}</div>
+                <div class="documents-form-row documents-form-row--full">
+                    <div class="documents-form-label">{lang_perm_key}</div>
+                    <div class="documents-permissions-editor">{permissions_editor}</div>
+                    <div class="documents-field-help">{permissions_editor_help}</div>
+                    <div class="documents-field-help">{lang_permissions_msg}</div>
+                </div>
             </div>
         </div>
     </details>
