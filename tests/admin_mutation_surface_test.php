@@ -68,6 +68,7 @@ documents_mutation_require($messages, 'Champ enregistré.', 'French field feedba
 
 documents_mutation_require($publicIndex, '$adminModes', 'Public router does not preserve historical admin URL compatibility.', $failures);
 documents_mutation_require($publicIndex, 'DOCUMENTS_adminDispatchMutation(', 'Historical public POST bridge does not use the secure dispatcher.', $failures);
+documents_mutation_require($publicIndex, '/plugins/documents/index.php', 'Historical admin GET URLs are not redirected to Geeklog administration.', $failures);
 documents_mutation_require($dispatch, 'DOCUMENTS_adminPrepareCategoryRequest', 'Legacy category forms do not preserve an omitted metadescription.', $failures);
 documents_mutation_require($dispatch, 'DOCUMENTS_adminDispatchSelectIsUsed', 'Select deletion does not protect used options.', $failures);
 documents_mutation_forbid($dispatch, 'addslashes(', 'Secure dispatcher must not use addslashes().', $failures);
@@ -85,7 +86,9 @@ documents_mutation_require($field, 'cannot be moved to another category', 'Used 
 documents_mutation_require($field, 'cannot change type directly', 'Used fields must not change type silently.', $failures);
 documents_mutation_forbid($field, 'addslashes(', 'Field mutation layer must not use addslashes().', $failures);
 
-documents_mutation_require($rewrite, 'mode=edit_cat', 'Historical edit_cat rewrite compatibility is missing.', $failures);
+/* Structural administration must no longer be captured by public rewrite rules. */
+documents_mutation_forbid($rewrite, 'RewriteCond %{QUERY_STRING} (^|&)mode=edit_cat(&|$)', 'edit_cat is still intercepted by public rewrites.', $failures);
+documents_mutation_forbid($rewrite, 'RewriteRule ^index\\.php$ category-editor.php', 'Category administration still has a public rewrite target.', $failures);
 documents_mutation_require($categoryEditorEndpoint, "SEC_hasRights('documents.admin')", 'Compatibility category editor endpoint must remain protected.', $failures);
 documents_mutation_require($editor, 'metadescription', 'Category editor does not load metadescription.', $failures);
 documents_mutation_require($editor, 'DOCUMENTS_renderCategoryEditor', 'Category editor renderer is missing.', $failures);
