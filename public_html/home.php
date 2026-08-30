@@ -41,6 +41,14 @@ if (!empty($_DOCUMENTS_CONF['documents_main_header'])) {
 }
 $content .= '</header>';
 
+if (isset($_GET['msg']) && !is_array($_GET['msg'])) {
+    $message = trim((string) $_GET['msg']);
+    if ($message !== '') {
+        $content .= '<div class="documents-message" role="status">'
+            . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</div>';
+    }
+}
+
 $sql = "SELECT c.cid, c.cat_name, c.cat_url, c.cat_help "
     . "FROM {$_TABLES['documents_cat']} AS c WHERE c.list_index=1"
     . COM_getPermSQL('AND', 0, 2, 'c')
@@ -79,9 +87,13 @@ if (empty($cards)) {
     $content .= '<div class="documents-category-grid">' . implode('', $cards) . '</div>';
 }
 
-/* runtime.php appends the home statistics component to documents_main_footer
- * when the canonical /documents/ route is requested. Keep a single rendering
- * path so statistics can never appear twice. */
+if (function_exists('DOCUMENTS_homeStatsBlock')) {
+    $stats = DOCUMENTS_homeStatsBlock();
+    if ($stats !== '') {
+        $content .= $stats;
+    }
+}
+
 if (!empty($_DOCUMENTS_CONF['documents_main_footer'])) {
     $content .= '<footer class="documents-page-footer">'
         . (string) $_DOCUMENTS_CONF['documents_main_footer'] . '</footer>';
