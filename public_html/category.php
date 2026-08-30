@@ -12,6 +12,7 @@ if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGIN
 $pluginPath = $_CONF['path'] . 'plugins/documents/';
 require_once $pluginPath . 'runtime.php';
 require_once $pluginPath . 'include_compat.php';
+require_once $pluginPath . 'integrity.php';
 require_once $pluginPath . 'seo.php';
 
 $categorySlug = isset($_GET['cat']) ? DOCUMENTS_normalizeRouteSlug((string) $_GET['cat']) : '';
@@ -62,11 +63,11 @@ $_REQUEST['mode'] = 'view';
 $_REQUEST['cat'] = $categorySlug;
 $_REQUEST['doc'] = '';
 
-if (isset($_SCRIPTS) && is_object($_SCRIPTS)) {
-    $_SCRIPTS->setCSSFile(
-        'documents_public',
-        rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/css/documents.css'
-    );
+if (function_exists('DOCUMENTS_loadPublicStyles')) {
+    DOCUMENTS_loadPublicStyles();
+}
+if (function_exists('DOCUMENTS_loadCategoryStyle') && !empty($category['css'])) {
+    DOCUMENTS_loadCategoryStyle($category['css']);
 }
 
 if (!defined('DOCUMENTS_SEO_BUFFER_STARTED')) {
@@ -174,5 +175,6 @@ if (!empty($category['custom_footer'])) {
 }
 $content .= '</main>';
 
-$page = COM_createHTMLDocument($content, array('pagetitle' => $categoryName));
+$pageOptions = array('pagetitle' => $categoryName);
+$page = COM_createHTMLDocument($content, $pageOptions);
 COM_output($page);
