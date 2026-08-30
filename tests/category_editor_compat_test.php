@@ -33,6 +33,7 @@ function documents_category_editor_forbid($content, $needle, $message, &$failure
 }
 
 $editor = documents_category_editor_read($root, 'admin_category_editor.php', $failures);
+$dispatcher = documents_category_editor_read($root, 'public_html/category-editor.php', $failures);
 $template = documents_category_editor_read($root, 'templates/cat_form.thtml', $failures);
 $mutations = documents_category_editor_read($root, 'admin_mutations.php', $failures);
 $css = documents_category_editor_read($root, 'admin/documents.css', $failures);
@@ -58,6 +59,9 @@ documents_category_editor_require($editor, '$permissionsEditor = SEC_getPermissi
 documents_category_editor_require($editor, '$documentsLanguageFile', 'Category editor does not explicitly load the Documents language file when needed.', $failures);
 documents_category_editor_require($editor, 'language/english.php', 'Category editor does not provide an English language fallback.', $failures);
 documents_category_editor_require($editor, '$lang = function', 'Category editor does not provide safe language-key fallbacks.', $failures);
+
+documents_category_editor_require($dispatcher, "setCSSFile('documents_admin_css'", 'Public category editor does not explicitly load the Documents admin stylesheet.', $failures);
+documents_category_editor_require($dispatcher, '/plugins/documents/documents.css?v=1.2.0', 'Category editor stylesheet URL is not versioned to avoid stale browser caches.', $failures);
 
 documents_category_editor_require($template, 'id="documents-cat-name"', 'Category name field is not identified for automatic URL generation.', $failures);
 documents_category_editor_require($template, 'id="documents-cat-url"', 'Category URL field is not identified for automatic URL generation.', $failures);
@@ -113,6 +117,8 @@ documents_category_editor_require($css, '.documents-form-label', 'Admin styleshe
 documents_category_editor_require($css, '.documents-form-textarea', 'Admin stylesheet does not normalize textareas.', $failures);
 documents_category_editor_require($css, '.documents-form-section__summary', 'Admin stylesheet does not style collapsible section summaries.', $failures);
 documents_category_editor_require($css, '.documents-form-section__content', 'Admin stylesheet does not space collapsible section content.', $failures);
+documents_category_editor_require($css, 'border-radius:10px', 'Modern category editor card styling is missing.', $failures);
+documents_category_editor_require($css, 'max-width:900px', 'Category editor width is not constrained for readability.', $failures);
 
 if (!empty($failures)) {
     fwrite(STDERR, "Documents category editor compatibility/guidance checks failed:\n");
