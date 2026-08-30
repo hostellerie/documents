@@ -110,6 +110,19 @@ if (in_array($documentsMode, $documentsSecureAdminSaveModes, true)) {
     exit;
 }
 
+/* Keep the historical query-string URLs stable while modernizing the three
+ * most opaque administration surfaces. Their writes still use the secure
+ * mutation dispatcher above, so this is presentation-only routing. */
+$documentsModernAdminViews = array(
+    'list_fields' => 'admin-fields.php',
+    'list_groups' => 'admin-groups.php',
+    'edit_group' => 'group-editor.php'
+);
+if (isset($documentsModernAdminViews[$documentsMode])) {
+    require __DIR__ . '/' . $documentsModernAdminViews[$documentsMode];
+    exit;
+}
+
 if ($documentsMode === 'view' || $documentsMode === 'new') {
     $documentsCategorySlug = (string) DOCUMENTS_requestValue($_REQUEST, 'cat', '');
     if ($documentsCategorySlug !== '') {
@@ -225,10 +238,11 @@ if (($documentsMode === 'edit' || $documentsMode === 'save') && $documentsDocUrl
             if (!SEC_hasRights('documents.admin')) {
                 $documentsTrustedPermissions = array(
                     'perm_owner' => $documentsExisting['perm_owner'],
-                    'perm_group' => $documentsExisting['perm_group'],
+                    'perm_group' => $documentsExisting['group_id'],
                     'perm_members' => $documentsExisting['perm_members'],
                     'perm_anon' => $documentsExisting['perm_anon']
                 );
+                $documentsTrustedPermissions['perm_group'] = $documentsExisting['perm_group'];
                 DOCUMENTS_lockSecurityFields(
                     $_REQUEST,
                     $documentsExisting['owner_id'],
