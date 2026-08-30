@@ -30,23 +30,32 @@ if (strpos($rewrite, 'index.php?mode=view&cat=$1') === false) {
 if (strpos($rewrite, 'index.php?mode=view&cat=$1&doc=$2') === false) {
     $failures[] = 'Document clean URLs must be rewritten through index.php?mode=view.';
 }
-if (strpos($rewrite, '# Documents generated rewrite v1.2.0-r2') === false) {
-    $failures[] = 'Generated rewrite rules need a version signature.';
+if (strpos($rewrite, '# Documents generated rewrite v1.2.0-r3') === false) {
+    $failures[] = 'Generated rewrite rules need the current version signature.';
 }
 if (strpos($rewrite, 'document.php?cat=$1&doc=$2') === false
-    || strpos($rewrite, 'category.php?cat=$1') === false) {
-    $failures[] = 'Runtime self-repair must recognize earlier 1.2.0 development rules.';
+    || strpos($rewrite, 'category.php?cat=$1') === false
+    || strpos($rewrite, '# Documents generated rewrite v1.2.0-r2') === false) {
+    $failures[] = 'Runtime self-repair must recognize earlier Documents-owned rule sets.';
+}
+if (strpos($rewrite, 'RewriteCond %{QUERY_STRING} (^|&)mode=edit_cat(&|$)') !== false
+    || strpos($rewrite, 'RewriteRule ^index\\.php$ category-editor.php') !== false) {
+    $failures[] = 'Structural administration must not be intercepted by public rewrite rules.';
 }
 if (strpos($runtime, 'DOCUMENTS_runtimeDispatchRewrittenView') !== false) {
-    $failures[] = 'runtime.php must not dispatch public views while it is still loading.';
+    $failures[] = 'runtime.php must not dispatch public views while it is loading.';
 }
-if (strpos($index, "if (\$documentsMode === 'view')") === false
+if (strpos($index, "if (\$mode === 'view')") === false
     || strpos($index, "require __DIR__ . '/category.php';") === false
     || strpos($index, "require __DIR__ . '/document.php';") === false) {
     $failures[] = 'index.php must dispatch rewritten view requests after runtime/helpers load.';
 }
-if (strpos($index, "basename(\$documentsRequestPath) === 'index.php'") === false) {
+if (strpos($index, "basename(\$requestPath) === 'index.php'") === false) {
     $failures[] = 'Direct index.php view URLs must redirect to their clean canonical URL.';
+}
+if (strpos($index, '$adminModes') === false
+    || strpos($index, '/plugins/documents/index.php') === false) {
+    $failures[] = 'Historical public admin modes must redirect to dedicated Geeklog administration.';
 }
 if (strpos($autoinstall, 'DOCUMENTS_writeHtaccess(true)') === false) {
     $failures[] = 'Install/update must generate the Documents .htaccess file.';
