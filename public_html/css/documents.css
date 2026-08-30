@@ -29,6 +29,15 @@
     letter-spacing: -.02em;
 }
 
+.documents-message {
+    margin: 0 0 1.25rem;
+    padding: .85rem 1rem;
+    border: 1px solid #e2c98b;
+    border-radius: 9px;
+    background: #fff9e8;
+    line-height: 1.5;
+}
+
 .documents-document__meta {
     margin: 0;
     font-size: .925rem;
