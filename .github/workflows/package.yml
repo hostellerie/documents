@@ -1,0 +1,101 @@
+name: Build installable archive
+
+on:
+  push:
+    branches:
+      - modernize-1.1.10
+    paths-ignore:
+      - 'dist/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: modernize-1.1.10
+          fetch-depth: 0
+
+      - name: Verify release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "'pi_version' => '1.2.0'" autoinstall.php
+          grep -q "'gl_version' => '2.1.1'" autoinstall.php
+
+      - name: Lint plugin PHP files
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            php -l "$file"
+          done < <(find . -type f \( -name '*.php' -o -name '*.inc' \) \
+            -not -path './.git/*' \
+            -not -path './.github/*' \
+            -not -path './tests/*' \
+            -not -path './dist/*' \
+            -print0)
+
+      - name: Run static regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test in tests/*_test.php; do
+            echo "==> $test"
+            php "$test"
+          done
+
+      - name: Build Geeklog installable archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf build
+          mkdir -p build/documents dist
+
+          rsync -a ./ build/documents/ \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'build/' \
+            --exclude 'dist/' \
+            --exclude 'tests/' \
+            --exclude 'docs/' \
+            --exclude 'ROADMAP.md' \
+            --exclude 'TESTING.md'
+
+          cd build
+          zip -qr documents_1.2.0-2.1.1.zip documents
+          unzip -t documents_1.2.0-2.1.1.zip >/dev/null
+          test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | head -n 1)" = 'documents/'
+          test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/functions.inc$')" -eq 1
+          test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/autoinstall.php$')" -eq 1
+          test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/public_html/index.php$')" -eq 1
+          test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/admin/index.php$')" -eq 1
+
+          cp documents_1.2.0-2.1.1.zip ../dist/documents_1.2.0-2.1.1.zip
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documents_1.2.0-2.1.1
+          path: dist/documents_1.2.0-2.1.1.zip
+          if-no-files-found: error
+
+      - name: Commit archive to dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f dist/documents_1.2.0-2.1.1.zip
+          if git diff --cached --quiet; then
+            echo 'Archive unchanged.'
+            exit 0
+          fi
+          git commit -m 'Build Documents 1.2.0 installable archive [skip ci]'
+          git push origin HEAD:modernize-1.1.10
