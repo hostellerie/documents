@@ -20,10 +20,18 @@ function documents_public_style_read($root, $path, &$failures)
 
 $presentation = documents_public_style_read($root, 'presentation.php', $failures);
 $home = documents_public_style_read($root, 'public_html/home.php', $failures);
+$category = documents_public_style_read($root, 'public_html/category.php', $failures);
+$document = documents_public_style_read($root, 'public_html/document.php', $failures);
 $css = documents_public_style_read($root, 'public_html/css/documents.css', $failures);
 
 if (strpos($presentation, 'function DOCUMENTS_loadPublicStyles()') === false) {
     $failures[] = 'Shared public stylesheet loader is missing.';
+}
+if (strpos($presentation, 'function DOCUMENTS_preparePublicPresentation(') === false) {
+    $failures[] = 'Explicit public presentation bootstrap is missing.';
+}
+if (strpos($presentation, 'function DOCUMENTS_createPublicPage(') === false) {
+    $failures[] = 'Unified public page builder is missing.';
 }
 if (strpos($presentation, "'/css/documents.css?v=1.2.0-4'") === false) {
     $failures[] = 'Public stylesheet is not registered with the current versioned public_html-relative URI.';
@@ -34,11 +42,16 @@ if (strpos($presentation, 'COM_startBlock(') !== false || strpos($presentation, 
 if (strpos($presentation, 'documents-stat__value') === false) {
     $failures[] = 'Compact statistics component is missing.';
 }
-if (strpos($home, 'DOCUMENTS_loadPublicStyles()') === false) {
-    $failures[] = 'Documents home does not use the shared public stylesheet loader.';
+if (strpos($presentation, 'ob_start(') !== false) {
+    $failures[] = 'Presentation still relies on implicit output buffering.';
 }
-if (strpos($home, "rtrim((string) \$_DOCUMENTS_CONF['site_url'], '/') . '/css/documents.css'") !== false) {
-    $failures[] = 'Documents home still registers public CSS using an absolute site URL.';
+foreach (array('home' => $home, 'category' => $category, 'document' => $document) as $name => $source) {
+    if (strpos($source, 'DOCUMENTS_preparePublicPresentation(') === false) {
+        $failures[] = 'Documents ' . $name . ' does not prepare presentation explicitly.';
+    }
+    if (strpos($source, 'DOCUMENTS_createPublicPage(') === false) {
+        $failures[] = 'Documents ' . $name . ' does not use the unified public page builder.';
+    }
 }
 if (strpos($css, '.documents-category-card__link') === false) {
     $failures[] = 'Modern category-card styling is missing.';
