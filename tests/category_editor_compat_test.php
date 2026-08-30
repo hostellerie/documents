@@ -48,6 +48,36 @@ documents_category_editor_require(
     'Category editor does not keep the query result in a variable before DB_fetchArray().',
     $failures
 );
+documents_category_editor_forbid(
+    $editor,
+    "COM_createHTMLDocument($content, array(",
+    'Category editor passes a temporary array to COM_createHTMLDocument(), which is unsafe with Geeklog 2.1.1 by-reference signatures.',
+    $failures
+);
+documents_category_editor_require(
+    $editor,
+    '$pageOptions = array(',
+    'Category editor does not keep COM_createHTMLDocument options in a variable.',
+    $failures
+);
+documents_category_editor_require(
+    $editor,
+    '$errorOptions = array(',
+    'Category editor error page does not keep COM_createHTMLDocument options in a variable.',
+    $failures
+);
+documents_category_editor_require(
+    $editor,
+    '$groupId = (int) $category[\'group_id\'];',
+    'Category editor does not pass a real group-id variable to Geeklog group helpers.',
+    $failures
+);
+documents_category_editor_require(
+    $editor,
+    '$permissionsEditor = SEC_getPermissionsHTML(',
+    'Category editor does not isolate permission values before rendering the Geeklog permission editor.',
+    $failures
+);
 
 documents_category_editor_require($template, 'id="documents-cat-name"', 'Category name field is not identified for automatic URL generation.', $failures);
 documents_category_editor_require($template, 'id="documents-cat-url"', 'Category URL field is not identified for automatic URL generation.', $failures);
