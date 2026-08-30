@@ -14,7 +14,6 @@ require_once $pluginPath . 'runtime.php';
 require_once $pluginPath . 'include_compat.php';
 require_once $pluginPath . 'integrity.php';
 require_once $pluginPath . 'presentation.php';
-require_once $pluginPath . 'seo.php';
 
 $categorySlug = isset($_GET['cat']) ? DOCUMENTS_normalizeRouteSlug((string) $_GET['cat']) : '';
 if ($categorySlug === '') {
@@ -64,9 +63,7 @@ $_REQUEST['mode'] = 'view';
 $_REQUEST['cat'] = $categorySlug;
 $_REQUEST['doc'] = '';
 
-if (function_exists('DOCUMENTS_loadPublicStyles')) {
-    DOCUMENTS_loadPublicStyles();
-}
+DOCUMENTS_preparePublicPresentation(false);
 if (function_exists('DOCUMENTS_loadCategoryStyle') && !empty($category['css'])) {
     DOCUMENTS_loadCategoryStyle($category['css']);
 }
@@ -176,11 +173,4 @@ if (!empty($category['custom_footer'])) {
 }
 $content .= '</main>';
 
-$page = COM_createHTMLDocument($content, array('pagetitle' => $categoryName));
-if (function_exists('DOCUMENTS_seoOutputFilter')) {
-    $filteredPage = DOCUMENTS_seoOutputFilter($page);
-    if (is_string($filteredPage) && $filteredPage !== '') {
-        $page = $filteredPage;
-    }
-}
-COM_output($page);
+COM_output(DOCUMENTS_createPublicPage($content, $categoryName));
