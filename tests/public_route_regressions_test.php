@@ -36,8 +36,7 @@ if (strpos($home, "isset(\$_GET['msg'])") === false
 if (strpos($home, 'DOCUMENTS_homeStatsBlock()') === false) {
     $failures[] = 'Documents home must render statistics explicitly.';
 }
-if (strpos($runtime, 'documents_main_footer') !== false
-    && strpos($runtime, 'DOCUMENTS_homeStatsBlock') !== false) {
+if (strpos($runtime, "\$_DOCUMENTS_CONF['documents_main_footer'] =") !== false) {
     $failures[] = 'runtime.php must not inject home statistics into configuration output.';
 }
 if (strpos($presentation, 'documents.css?v=1.2.0-3') === false) {
