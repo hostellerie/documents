@@ -67,7 +67,9 @@ jobs:
             --exclude 'tests/' \
             --exclude 'docs/' \
             --exclude 'ROADMAP.md' \
-            --exclude 'TESTING.md'
+            --exclude 'TESTING.md' \
+            --exclude '.*' \
+            --exclude '*/.*'
 
           cd build
           zip -qr documents_1.2.0-2.1.1.zip documents
@@ -77,6 +79,13 @@ jobs:
           test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/autoinstall.php$')" -eq 1
           test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/public_html/index.php$')" -eq 1
           test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/admin/index.php$')" -eq 1
+
+          if zipinfo -1 documents_1.2.0-2.1.1.zip | awk -F/ '{for (i=1;i<=NF;i++) if ($i ~ /^\./) {print; exit 1}}'; then
+            :
+          else
+            echo 'Archive contains a hidden file or directory.' >&2
+            exit 1
+          fi
 
           cp documents_1.2.0-2.1.1.zip ../dist/documents_1.2.0-2.1.1.zip
 
