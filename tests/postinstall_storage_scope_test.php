@@ -18,13 +18,32 @@ function documents_postinstall_read($root, $path, &$failures)
     return $content;
 }
 
+function documents_postinstall_code_only($content)
+{
+    $tokens = token_get_all($content);
+    $code = '';
+    foreach ($tokens as $token) {
+        if (is_array($token)) {
+            if ($token[0] === T_COMMENT || $token[0] === T_DOC_COMMENT) {
+                continue;
+            }
+            $code .= $token[1];
+        } else {
+            $code .= $token;
+        }
+    }
+    return $code;
+}
+
 $autoinstall = documents_postinstall_read($root, 'autoinstall.php', $failures);
 $storage = documents_postinstall_read($root, 'storage.php', $failures);
+$autoinstallCode = documents_postinstall_code_only($autoinstall);
+$storageCode = documents_postinstall_code_only($storage);
 
-$start = strpos($autoinstall, 'function DOCUMENTS_runStorageMigration()');
-$end = ($start !== false) ? strpos($autoinstall, 'function DOCUMENTS_runUpgradeSteps', $start) : false;
+$start = strpos($autoinstallCode, 'function DOCUMENTS_runStorageMigration()');
+$end = ($start !== false) ? strpos($autoinstallCode, 'function DOCUMENTS_runUpgradeSteps', $start) : false;
 $section = ($start !== false && $end !== false)
-    ? substr($autoinstall, $start, $end - $start)
+    ? substr($autoinstallCode, $start, $end - $start)
     : '';
 
 if ($section === '') {
@@ -38,12 +57,12 @@ if ($section === '') {
     }
 }
 
-if (strpos($storage, "if (!function_exists('DOCUMENTS_dataDir'))") === false
-    || strpos($storage, "if (!function_exists('DOCUMENTS_legacyDataDir'))") === false) {
+if (strpos($storageCode, "if (!function_exists('DOCUMENTS_dataDir'))") === false
+    || strpos($storageCode, "if (!function_exists('DOCUMENTS_legacyDataDir'))") === false) {
     $failures[] = 'storage.php must provide guarded path helpers for autoinstall use.';
 }
 
-if (strpos($storage, '$_DB_table_prefix') !== false) {
+if (strpos($storageCode, '$_DB_table_prefix') !== false) {
     $failures[] = 'storage.php must not depend on the Geeklog database table prefix.';
 }
 
