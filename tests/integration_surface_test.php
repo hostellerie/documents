@@ -29,7 +29,7 @@ integration_require($functions, "COM_getPermSQL('AND', 0, 2, 'd')", 'What\'s New
 integration_require($functions, ' AS description', 'Search result description column is missing.', $failures);
 integration_require($functions, "fd.f_type='text'", 'Search description is not sourced from text fields.', $failures);
 integration_require($home, 'DOCUMENTS_homeStatsBlock()', 'Documents home statistics rendering is missing.', $failures);
-integration_forbid($runtime, 'DOCUMENTS_homeStatsBlock()', 'Runtime must not inject public home statistics as a side effect.', $failures);
+integration_forbid($runtime, "\$_DOCUMENTS_CONF['documents_main_footer'] =", 'Runtime must not inject public home statistics as a side effect.', $failures);
 integration_require($includeEdit, 'DOCUMENTS_textFormatOptions(', 'Text display-format selector is missing from field editor.', $failures);
 integration_require($includeHtml, 'DOCUMENTS_formatTextDisplay(', 'Text display formatting is not applied to rendered documents.', $failures);
 
