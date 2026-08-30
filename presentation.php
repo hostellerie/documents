@@ -13,6 +13,13 @@ if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'pre
     die('This file can not be used on its own.');
 }
 
+if (isset($_CONF['path'])) {
+    $documentsCustomAssetsFile = $_CONF['path'] . 'plugins/documents/custom_assets.php';
+    if (is_file($documentsCustomAssetsFile)) {
+        require_once $documentsCustomAssetsFile;
+    }
+}
+
 function DOCUMENTS_stringLower($value)
 {
     return function_exists('mb_strtolower')
@@ -151,8 +158,10 @@ $documentsPresentationScript = isset($_SERVER['SCRIPT_NAME'])
     ? str_replace('\\', '/', (string) $_SERVER['SCRIPT_NAME']) : '';
 $documentsPresentationMode = isset($_REQUEST['mode']) ? trim((string) $_REQUEST['mode']) : '';
 $documentsPresentationIsPublicIndex = $documentsPresentationScript !== ''
-    && basename($documentsPresentationScript) === 'index.php'
-    && strpos($documentsPresentationScript, '/admin/') === false;
+    && strpos($documentsPresentationScript, '/admin/') === false
+    && (basename($documentsPresentationScript) === 'index.php'
+        || basename($documentsPresentationScript) === 'category.php'
+        || basename($documentsPresentationScript) === 'document.php');
 $documentsPresentationIsSeoView = $documentsPresentationMode === ''
     || $documentsPresentationMode === 'view';
 
@@ -162,6 +171,10 @@ if ($documentsPresentationIsPublicIndex) {
             'documents_public',
             rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/css/documents.css'
         );
+    }
+
+    if (function_exists('DOCUMENTS_loadRequestedCategoryStyle')) {
+        DOCUMENTS_loadRequestedCategoryStyle();
     }
 
     if ($documentsPresentationIsSeoView && isset($_CONF['path'])) {
