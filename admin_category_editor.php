@@ -42,10 +42,19 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
         );
         $row = DB_fetchArray($categoryResult);
         if (!is_array($row) || empty($row['cid'])) {
-            return COM_createHTMLDocument(
-                '<p>' . htmlspecialchars(isset($LANG_DOCUMENTS_1['error']) ? $LANG_DOCUMENTS_1['error'] : 'Error', ENT_QUOTES, 'UTF-8') . '</p>',
-                array('pagetitle' => isset($LANG_DOCUMENTS_1['error']) ? $LANG_DOCUMENTS_1['error'] : 'Error')
+            $errorText = '<p>'
+                . htmlspecialchars(
+                    isset($LANG_DOCUMENTS_1['error']) ? $LANG_DOCUMENTS_1['error'] : 'Error',
+                    ENT_QUOTES,
+                    'UTF-8'
+                )
+                . '</p>';
+            $errorOptions = array(
+                'pagetitle' => isset($LANG_DOCUMENTS_1['error'])
+                    ? $LANG_DOCUMENTS_1['error']
+                    : 'Error'
             );
+            return COM_createHTMLDocument($errorText, $errorOptions);
         }
         $category = array_merge($category, $row);
     }
@@ -222,21 +231,26 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
     $template->set_var('owner_name', htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8'));
     $template->set_var('owner_id', (int) $category['owner_id']);
     $template->set_var('lang_group', $LANG_ACCESS['group']);
-    $template->set_var('group_dropdown', SEC_getGroupDropdown((int) $category['group_id'], 3));
-    $template->set_var(
-        'permissions_editor',
-        SEC_getPermissionsHTML(
-            $category['perm_owner'],
-            $category['perm_group'],
-            $category['perm_members'],
-            $category['perm_anon']
-        )
+    $groupId = (int) $category['group_id'];
+    $groupDropdown = SEC_getGroupDropdown($groupId, 3);
+    $template->set_var('group_dropdown', $groupDropdown);
+    $permOwner = $category['perm_owner'];
+    $permGroup = $category['perm_group'];
+    $permMembers = $category['perm_members'];
+    $permAnon = $category['perm_anon'];
+    $permissionsEditor = SEC_getPermissionsHTML(
+        $permOwner,
+        $permGroup,
+        $permMembers,
+        $permAnon
     );
+    $template->set_var('permissions_editor', $permissionsEditor);
     $template->set_var('lang_perm_key', $LANG_ACCESS['permissionskey']);
     $template->set_var('lang_permissions_msg', $LANG_ACCESS['permmsg']);
 
     $content = $template->parse('output', 'cat');
     $pageTitle = $categoryId > 0 ? $LANG_DOCUMENTS_1['edit_cat'] : $LANG_DOCUMENTS_1['new_cat'];
+    $pageOptions = array('pagetitle' => $pageTitle);
 
-    return COM_createHTMLDocument($content, array('pagetitle' => $pageTitle));
+    return COM_createHTMLDocument($content, $pageOptions);
 }
