@@ -10,12 +10,13 @@
 // +---------------------------------------------------------------------------+
 
 /* Runtime is intentionally side-effect free for presentation. Loading this
- * file must never start an output buffer, render navigation, emit markup or
- * change the current public controller. Public endpoints explicitly load
- * presentation.php and navigation.php when they build a page. */
+ * file must never start an output buffer, emit markup or change the current
+ * public controller. navigation.php is safe here because it only defines
+ * functions; presentation.php remains controller-owned. */
 if (isset($_CONF['path'])) {
     $documentsRuntimeFiles = array(
         'security.php',
+        'navigation.php',
         'mediagallery_adapter.php',
         'interoperability.php',
         'indexability.php'
