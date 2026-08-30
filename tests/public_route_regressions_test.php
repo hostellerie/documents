@@ -39,7 +39,7 @@ if (strpos($home, 'DOCUMENTS_homeStatsBlock()') === false) {
 if (strpos($runtime, "\$_DOCUMENTS_CONF['documents_main_footer'] =") !== false) {
     $failures[] = 'runtime.php must not inject home statistics into configuration output.';
 }
-if (strpos($presentation, 'documents.css?v=1.2.0-3') === false) {
+if (strpos($presentation, 'documents.css?v=1.2.0-4') === false) {
     $failures[] = 'Public stylesheet cache-busting version is missing.';
 }
 
