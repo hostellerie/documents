@@ -23,7 +23,7 @@ if ($categorySlug === '') {
 
 $safeSlug = DB_escapeString($categorySlug);
 $category = DB_fetchArray(DB_query(
-    "SELECT cid, cat_name, cat_url, cat_help, metadescription, submitable, custom_header, custom_footer, "
+    "SELECT cid, cat_name, cat_url, cat_help, metadescription, submitable, css, custom_header, custom_footer, "
     . "owner_id, group_id, perm_owner, perm_group, perm_members, perm_anon "
     . "FROM {$_TABLES['documents_cat']} WHERE cat_url='{$safeSlug}' LIMIT 1"
 ));
@@ -94,7 +94,7 @@ if ($pageNumber > $totalPages) {
     exit;
 }
 
-$sql = "SELECT DISTINCT d.doc_url, COALESCE(d.modified,d.created) AS changed_at "
+$sql = "SELECT DISTINCT d.doc_url, d.did, COALESCE(d.modified,d.created) AS changed_at "
     . "FROM {$_TABLES['documents_docs']} AS d "
     . "INNER JOIN {$_TABLES['documents_values']} AS v ON v.doc_url=d.doc_url "
     . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
@@ -104,7 +104,11 @@ $sql = "SELECT DISTINCT d.doc_url, COALESCE(d.modified,d.created) AS changed_at 
 $result = DB_query($sql);
 
 $categoryName = stripslashes((string) $category['cat_name']);
-$content = '<main class="documents-category">';
+$content = '';
+if (function_exists('DOCUMENTS_renderNavigation')) {
+    $content .= DOCUMENTS_renderNavigation();
+}
+$content .= '<main class="documents-category">';
 $content .= '<header class="documents-page-header"><h1>'
     . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</h1>';
 
