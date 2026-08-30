@@ -45,6 +45,14 @@ $documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
 $documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
 $documentsOperation = (string) DOCUMENTS_requestValue($_REQUEST, 'op', '');
 
+/* The plugin root is a first-class modern public surface. Categories belong
+ * to Documents independently of whether fields or documents exist yet, so the
+ * home page must never depend on the historical renderer's field-driven lists. */
+if ($documentsMode === '') {
+    require __DIR__ . '/home.php';
+    exit;
+}
+
 /* Never let a direct index.php?mode=save request reach the historical save
  * controller. document-save.php owns modern document mutations and delegates
  * marker operations to Maps. Only an explicit internal compatibility fallback
