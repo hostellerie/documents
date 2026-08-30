@@ -20,6 +20,35 @@ if (isset($_CONF['path'])) {
     }
 }
 
+/**
+ * Load the standard public Documents stylesheet in a way that works with
+ * Geeklog 2.1.1 and 2.2.x. setCSSFile() expects a public_html-relative URI on
+ * older Geeklog releases, not an absolute site URL.
+ *
+ * @return bool
+ */
+function DOCUMENTS_loadPublicStyles()
+{
+    global $_DOCUMENTS_CONF, $_SCRIPTS;
+
+    if (!isset($_SCRIPTS) || !is_object($_SCRIPTS)
+        || !method_exists($_SCRIPTS, 'setCSSFile')) {
+        return false;
+    }
+
+    $folder = isset($_DOCUMENTS_CONF['documents_folder'])
+        ? trim((string) $_DOCUMENTS_CONF['documents_folder'], '/')
+        : 'documents';
+    if ($folder === '') {
+        $folder = 'documents';
+    }
+
+    return (bool) $_SCRIPTS->setCSSFile(
+        'documents_public',
+        '/' . $folder . '/css/documents.css?v=1.2.0'
+    );
+}
+
 function DOCUMENTS_stringLower($value)
 {
     return function_exists('mb_strtolower')
@@ -139,16 +168,19 @@ function DOCUMENTS_homeStatsBlock()
     $title = isset($LANG_DOCUMENTS_1['stats_title'])
         ? $LANG_DOCUMENTS_1['stats_title'] : 'Statistics';
     $documents = isset($LANG_DOCUMENTS_1['stats_documents'])
-        ? $LANG_DOCUMENTS_1['stats_documents'] : 'Documents';
+        ? $LANG_DOCUMENTS_1['stats_documents'] : 'Published documents';
     $viewsLabel = isset($LANG_DOCUMENTS_1['stats_views'])
         ? $LANG_DOCUMENTS_1['stats_views'] : 'Views';
 
-    $content = '<p>' . htmlspecialchars($documents, ENT_QUOTES, 'UTF-8') . ': <strong>'
-        . COM_numberFormat($total) . '</strong><br' . XHTML . '>'
-        . htmlspecialchars($viewsLabel, ENT_QUOTES, 'UTF-8') . ': <strong>'
-        . COM_numberFormat($views) . '</strong></p>';
-
-    return COM_startBlock($title) . $content . COM_endBlock();
+    return '<section class="documents-home__stats" aria-label="'
+        . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '">'
+        . '<div class="documents-stat"><strong class="documents-stat__value">'
+        . COM_numberFormat($total) . '</strong><span class="documents-stat__label">'
+        . htmlspecialchars($documents, ENT_QUOTES, 'UTF-8') . '</span></div>'
+        . '<div class="documents-stat"><strong class="documents-stat__value">'
+        . COM_numberFormat($views) . '</strong><span class="documents-stat__label">'
+        . htmlspecialchars($viewsLabel, ENT_QUOTES, 'UTF-8') . '</span></div>'
+        . '</section>';
 }
 
 /* Public presentation bootstrap. Runtime.php is loaded only by Documents
@@ -166,12 +198,7 @@ $documentsPresentationIsSeoView = $documentsPresentationMode === ''
     || $documentsPresentationMode === 'view';
 
 if ($documentsPresentationIsPublicIndex) {
-    if (isset($_SCRIPTS) && is_object($_SCRIPTS) && isset($_DOCUMENTS_CONF['site_url'])) {
-        $_SCRIPTS->setCSSFile(
-            'documents_public',
-            rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/css/documents.css'
-        );
-    }
+    DOCUMENTS_loadPublicStyles();
 
     if (function_exists('DOCUMENTS_loadRequestedCategoryStyle')) {
         DOCUMENTS_loadRequestedCategoryStyle();
