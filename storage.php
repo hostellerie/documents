@@ -2,12 +2,47 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.8                                                    |
+// | Documents Plugin 1.2.0                                                    |
 // +---------------------------------------------------------------------------+
 // | storage.php                                                               |
 // |                                                                           |
 // | Persistent storage creation and legacy migration helpers.                 |
 // +---------------------------------------------------------------------------+
+
+/* Storage migration is also called from plugin_postinstall_documents().
+ * During Geeklog autoinstall this file may be loaded before functions.inc is
+ * available in normal global scope. Keep these two path helpers self-contained
+ * so post-install never has to require the full plugin runtime from inside a
+ * function (which hides globals such as $_DB_table_prefix on PHP 8/Geeklog
+ * 2.2.2). The guards preserve the normal functions.inc definitions at runtime. */
+if (!function_exists('DOCUMENTS_dataDir')) {
+    function DOCUMENTS_dataDir()
+    {
+        global $_CONF;
+
+        $base = isset($_CONF['path_data']) ? rtrim($_CONF['path_data'], "/\\") : '';
+        if ($base === '') {
+            return '';
+        }
+
+        return dirname($base) . DIRECTORY_SEPARATOR
+            . basename($base) . '-documents' . DIRECTORY_SEPARATOR;
+    }
+}
+
+if (!function_exists('DOCUMENTS_legacyDataDir')) {
+    function DOCUMENTS_legacyDataDir()
+    {
+        global $_CONF;
+
+        $base = isset($_CONF['path_data']) ? rtrim($_CONF['path_data'], "/\\") : '';
+        if ($base === '') {
+            return '';
+        }
+
+        return $base . DIRECTORY_SEPARATOR . 'data_documents' . DIRECTORY_SEPARATOR;
+    }
+}
 
 /**
  * Validate that the Documents target directory is the site-specific sibling
