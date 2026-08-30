@@ -31,7 +31,7 @@ function DOCUMENTS_loadAdminStyles()
     }
 
     $legacyCss = '/admin/plugins/documents/documents.css?v=1.2.0-2';
-    $modernCss = '/admin/plugins/documents/modern-admin.css?v=1.2.0-1';
+    $modernCss = '/admin/plugins/documents/modern-admin.css?v=1.2.0-2';
 
     $legacyLoaded = (bool) $_SCRIPTS->setCSSFile(
         'documents_admin_css',
