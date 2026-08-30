@@ -20,8 +20,8 @@ jobs:
           fetch-depth: 0
 
       - name: Replace legacy album selector
-        shell: python
         run: |
+          python3 <<'PY'
           from pathlib import Path
 
           path = Path('include_edit.php')
@@ -58,6 +58,7 @@ jobs:
           if old not in text:
               raise SystemExit('Expected legacy album selector block not found')
           path.write_text(text.replace(old, new, 1))
+          PY
 
       - name: Commit patch
         run: |
