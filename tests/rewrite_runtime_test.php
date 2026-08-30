@@ -20,6 +20,7 @@ function documents_rewrite_test_read($root, $path, &$failures)
 
 $rewrite = documents_rewrite_test_read($root, 'rewrite.php', $failures);
 $runtime = documents_rewrite_test_read($root, 'runtime.php', $failures);
+$index = documents_rewrite_test_read($root, 'public_html/index.php', $failures);
 $autoinstall = documents_rewrite_test_read($root, 'autoinstall.php', $failures);
 $package = documents_rewrite_test_read($root, '.github/workflows/package.yml', $failures);
 
@@ -36,12 +37,16 @@ if (strpos($rewrite, 'document.php?cat=$1&doc=$2') === false
     || strpos($rewrite, 'category.php?cat=$1') === false) {
     $failures[] = 'Runtime self-repair must recognize earlier 1.2.0 development rules.';
 }
-if (strpos($runtime, 'function DOCUMENTS_runtimeDispatchRewrittenView()') === false
-    || strpos($runtime, "'document.php' : 'category.php'") === false) {
-    $failures[] = 'Runtime must dispatch rewritten view requests to modern public views.';
+if (strpos($runtime, 'DOCUMENTS_runtimeDispatchRewrittenView') !== false) {
+    $failures[] = 'runtime.php must not dispatch public views while it is still loading.';
 }
-if (strpos($runtime, '$script !== \'index.php\' || $mode !== \'view\'') === false) {
-    $failures[] = 'Runtime view dispatch must be limited to rewritten index view requests.';
+if (strpos($index, "if ($documentsMode === 'view')") === false
+    || strpos($index, "require __DIR__ . '/category.php';") === false
+    || strpos($index, "require __DIR__ . '/document.php';") === false) {
+    $failures[] = 'index.php must dispatch rewritten view requests after runtime/helpers load.';
+}
+if (strpos($index, "basename($documentsRequestPath) === 'index.php'") === false) {
+    $failures[] = 'Direct index.php view URLs must redirect to their clean canonical URL.';
 }
 if (strpos($autoinstall, 'DOCUMENTS_writeHtaccess(true)') === false) {
     $failures[] = 'Install/update must generate the Documents .htaccess file.';
