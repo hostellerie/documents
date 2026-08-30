@@ -2,6 +2,7 @@
 
 $root = dirname(__DIR__);
 $endpoint = file_get_contents($root . '/public_html/admin-save.php');
+$mutations = file_get_contents($root . '/admin_mutations.php');
 $integrity = file_get_contents($root . '/integrity.php');
 $compat = file_get_contents($root . '/include_compat.php');
 
@@ -28,7 +29,19 @@ if (strpos($endpoint, $compatNeedle) === false) {
 $integrityPos = strpos($endpoint, $integrityNeedle);
 $mutationsPos = strpos($endpoint, $mutationsNeedle);
 if ($integrityPos === false || $mutationsPos === false || $integrityPos > $mutationsPos) {
-    $failures[] = 'integrity.php must be loaded before admin_mutations.php.';
+    $failures[] = 'integrity.php must be loaded before admin_mutations.php in admin-save.php.';
+}
+
+if (strpos($mutations, "plugins/documents/integrity.php") === false
+    || strpos($mutations, "function_exists('DOCUMENTS_normalizeRouteSlug')") === false) {
+    $failures[] = 'admin_mutations.php must self-load integrity.php when slug normalization is unavailable.';
+}
+if (strpos($mutations, "plugins/documents/include_compat.php") === false
+    || strpos($mutations, "function_exists('DOCUMENTS_templateName')") === false) {
+    $failures[] = 'admin_mutations.php must self-load include_compat.php when compatibility helpers are unavailable.';
+}
+if (strpos($mutations, "if (!function_exists('DOCUMENTS_normalizeRouteSlug'))") === false) {
+    $failures[] = 'DOCUMENTS_adminSlug() must guard against a missing normalization helper.';
 }
 
 if (!empty($failures)) {
