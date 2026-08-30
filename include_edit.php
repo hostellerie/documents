@@ -630,20 +630,11 @@ function DOCUMENTS_buildRawForm($field, $doc, &$template, $i)
             break;
 
         case 'album':
-            if (DOCUMENTS_hasMediaGallery()) {
-                $common = $_CONF['path'] . 'plugins/mediagallery/include/common.php';
-                $classAlbum = $_CONF['path'] . 'plugins/mediagallery/include/classAlbum.php';
-                if (is_file($common) && is_file($classAlbum)) {
-                    require_once $common;
-                    require_once $classAlbum;
-                    if (class_exists('mgAlbum')) {
-                        $rootAlbum = new mgAlbum(0);
-                        $albumJumpbox = '<select name="' . $name . '"><option value="">----</option>';
-                        $rootAlbum->buildJumpBox($albumJumpbox, 0, 1, -1);
-                        $albumJumpbox .= '</select>';
-                        $html .= '<p><label class="document_field_edit">' . $label . $required
-                            . '</label>' . $albumJumpbox . '</p>';
-                    }
+            if (function_exists('DOCUMENTS_mediaGalleryAlbumSelect')) {
+                $albumJumpbox = DOCUMENTS_mediaGalleryAlbumSelect($field['var_name'], $value);
+                if ($albumJumpbox !== '') {
+                    $html .= '<p><label class="document_field_edit">' . $label . $required
+                        . '</label>' . $albumJumpbox . $help . '</p>';
                 }
             }
             break;
