@@ -36,6 +36,9 @@ if (isset($_CONF['path'])) {
     }
 }
 
+/* Public home statistics are rendered explicitly by public_html/home.php via
+ * DOCUMENTS_homeStatsBlock(). Runtime must not mutate documents_main_footer. */
+
 function DOCUMENTS_runtimeDocumentSnapshot($id)
 {
     global $_TABLES;
