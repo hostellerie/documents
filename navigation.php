@@ -121,8 +121,18 @@ function DOCUMENTS_startNavigationBuffer()
     }
 
     $script = isset($_SERVER['SCRIPT_NAME']) ? basename((string) $_SERVER['SCRIPT_NAME']) : '';
+    $mode = isset($_REQUEST['mode']) ? trim((string) $_REQUEST['mode']) : '';
     $excluded = array('image.php', 'style.php', 'admin-save.php', 'admin-field-save.php', 'document-save.php');
     if (in_array($script, $excluded, true)) {
+        return;
+    }
+
+    /* Modern public pages render the navigation directly while building their
+     * content. Do not defer database-backed navigation rendering to an output
+     * buffer callback on these surfaces; older Geeklog/PHP stacks are more
+     * predictable when the menu is rendered during normal request execution. */
+    if ($script === 'category.php' || $script === 'home.php'
+        || ($script === 'index.php' && $mode === '')) {
         return;
     }
 
