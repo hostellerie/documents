@@ -146,7 +146,11 @@ function DOCUMENTS_adminSaveCategory($request)
     }
 
     $name = DOCUMENTS_adminPlainText(isset($request['cat_name']) ? $request['cat_name'] : '', 40);
-    $slug = DOCUMENTS_adminSlug(isset($request['cat_url']) ? $request['cat_url'] : '', 40);
+    $slugInput = isset($request['cat_url']) ? $request['cat_url'] : '';
+    if (!is_array($slugInput) && trim((string) $slugInput) === '') {
+        $slugInput = $name;
+    }
+    $slug = DOCUMENTS_adminSlug($slugInput, 40);
     if ($name === '' || $slug === '') {
         return array(false, 'Category name and URL are required.');
     }
@@ -225,31 +229,28 @@ function DOCUMENTS_adminSaveGroup($request)
 
     if ($operation === 'delete') {
         if ($gid <= 0) {
-            return array(false, 'Invalid selection group.');
-        }
-        if ((int) DB_count($_TABLES['documents_fields'], 'sel_id', $gid) > 0) {
-            return array(false, 'This selection group is still used by a field.');
+            return array(false, 'Invalid group.');
         }
         DB_query("DELETE FROM {$_TABLES['documents_selects']} WHERE s_group={$gid}");
-        DB_query("DELETE FROM {$_TABLES['documents_selects_group']} WHERE gid={$gid}");
-        return array(!DB_error(), DB_error() ? 'Unable to delete selection group.' : 'Selection group deleted.');
+        DB_query("DELETE FROM {$_TABLES['documents_groups']} WHERE gid={$gid}");
+        return array(!DB_error(), DB_error() ? 'Unable to delete group.' : 'Group deleted.');
     }
 
-    $name = DOCUMENTS_adminPlainText(isset($request['group_name']) ? $request['group_name'] : '', 255);
-    $help = DOCUMENTS_adminPlainText(isset($request['group_help']) ? $request['group_help'] : '', 255);
+    $name = DOCUMENTS_adminPlainText(isset($request['g_name']) ? $request['g_name'] : '', 255);
+    $help = DOCUMENTS_adminPlainText(isset($request['g_help']) ? $request['g_help'] : '', 255);
     if ($name === '') {
-        return array(false, 'Selection group name is required.');
+        return array(false, 'Group name is required.');
     }
 
     $safeName = DB_escapeString($name);
     $safeHelp = DB_escapeString($help);
     if ($gid > 0) {
-        DB_query("UPDATE {$_TABLES['documents_selects_group']} SET g_name='{$safeName}', g_help='{$safeHelp}' WHERE gid={$gid}");
+        DB_query("UPDATE {$_TABLES['documents_groups']} SET g_name='{$safeName}', g_help='{$safeHelp}' WHERE gid={$gid}");
     } else {
-        DB_query("INSERT INTO {$_TABLES['documents_selects_group']} SET g_name='{$safeName}', g_help='{$safeHelp}'");
+        DB_query("INSERT INTO {$_TABLES['documents_groups']} SET g_name='{$safeName}', g_help='{$safeHelp}'");
     }
 
-    return array(!DB_error(), DB_error() ? 'Unable to save selection group.' : 'Selection group saved.');
+    return array(!DB_error(), DB_error() ? 'Unable to save group.' : 'Group saved.');
 }
 
 function DOCUMENTS_adminSaveSelect($request)
@@ -258,28 +259,26 @@ function DOCUMENTS_adminSaveSelect($request)
 
     $sid = isset($request['sid']) ? (int) $request['sid'] : 0;
     $operation = isset($request['op']) ? (string) $request['op'] : 'save';
-    $groupId = isset($request['s_group']) ? max(0, (int) $request['s_group']) : 0;
 
     if ($operation === 'delete') {
         if ($sid <= 0) {
-            return array(false, 'Invalid selection value.');
+            return array(false, 'Invalid selection.');
         }
-        if ($groupId <= 0) {
-            $groupId = (int) DB_getItem($_TABLES['documents_selects'], 's_group', 'sid=' . $sid);
-        }
+        $groupId = (int) DB_getItem($_TABLES['documents_selects'], 's_group', 'sid=' . $sid);
         DB_query("DELETE FROM {$_TABLES['documents_selects']} WHERE sid={$sid}");
-        DOCUMENTS_adminReorderSelects($groupId);
-        return array(!DB_error(), DB_error() ? 'Unable to delete selection value.' : 'Selection value deleted.');
+        if ($groupId > 0) {
+            DOCUMENTS_adminReorderSelects($groupId);
+        }
+        return array(!DB_error(), DB_error() ? 'Unable to delete selection.' : 'Selection deleted.');
     }
 
+    $groupId = isset($request['s_group']) ? max(0, (int) $request['s_group']) : 0;
     $name = DOCUMENTS_adminPlainText(isset($request['s_name']) ? $request['s_name'] : '', 255);
-    $value = DOCUMENTS_adminPlainText(isset($request['s_value']) ? $request['s_value'] : '', 65535);
+    $value = DOCUMENTS_adminPlainText(isset($request['s_value']) ? $request['s_value'] : '', 255);
     $order = isset($request['s_order']) ? max(0, (int) $request['s_order']) : 0;
-    if ($name === '' || $groupId <= 0) {
-        return array(false, 'Selection name and group are required.');
-    }
-    if ((int) DB_count($_TABLES['documents_selects_group'], 'gid', $groupId) <= 0) {
-        return array(false, 'Unknown selection group.');
+
+    if ($groupId <= 0 || $name === '') {
+        return array(false, 'Selection group and name are required.');
     }
 
     $safeName = DB_escapeString($name);
@@ -296,10 +295,8 @@ function DOCUMENTS_adminSaveSelect($request)
         );
     }
 
-    if (DB_error()) {
-        return array(false, 'Unable to save selection value.');
+    if (!DB_error()) {
+        DOCUMENTS_adminReorderSelects($groupId);
     }
-
-    DOCUMENTS_adminReorderSelects($groupId);
-    return array(true, 'Selection value saved.');
+    return array(!DB_error(), DB_error() ? 'Unable to save selection.' : 'Selection saved.');
 }
