@@ -38,7 +38,7 @@ $requirements = array(
     array($editor, 'name="g_name"', 'Group editor does not use the secure mutation field name g_name.'),
     array($editor, 'name="g_help"', 'Group editor does not use the secure mutation field name g_help.'),
     array($editor, 'SEC_createToken()', 'Group editor does not create a Geeklog CSRF token.'),
-    array($styles, 'modern-admin.css?v=1.2.0-1', 'Modern admin stylesheet is not registered through the compatibility helper.'),
+    array($styles, 'modern-admin.css?v=1.2.0-2', 'Modern admin stylesheet is not registered through the compatibility helper.'),
     array($css, '.documents-admin-page', 'Modern admin page styling is missing.'),
     array($css, '.documents-admin-form__help', 'Contextual form-help styling is missing.'),
     array($mutations, "\$_TABLES['documents_selects_group']", 'Selection group mutations do not use the declared Documents group table.')
