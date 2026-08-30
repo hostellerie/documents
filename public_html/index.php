@@ -110,13 +110,16 @@ if (in_array($documentsMode, $documentsSecureAdminSaveModes, true)) {
     exit;
 }
 
-/* Keep the historical query-string URLs stable while modernizing the three
- * most opaque administration surfaces. Their writes still use the secure
- * mutation dispatcher above, so this is presentation-only routing. */
+/* Keep the historical query-string URLs stable while modernizing the data
+ * structure administration surfaces. Their writes still use the secure
+ * mutation dispatcher above, so this remains presentation-only routing. */
 $documentsModernAdminViews = array(
     'list_fields' => 'admin-fields.php',
+    'edit_field' => 'field-editor.php',
     'list_groups' => 'admin-groups.php',
-    'edit_group' => 'group-editor.php'
+    'edit_group' => 'group-editor.php',
+    'list_selects' => 'admin-selects.php',
+    'edit_select' => 'select-editor.php'
 );
 if (isset($documentsModernAdminViews[$documentsMode])) {
     require __DIR__ . '/' . $documentsModernAdminViews[$documentsMode];
