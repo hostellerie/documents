@@ -4,9 +4,27 @@ on:
   push:
     branches: [modernize-1.1.10]
 
+permissions:
+  contents: write
+
 jobs:
   patch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo patch-ready
+        with:
+          ref: modernize-1.1.10
+          fetch-depth: 0
+      - name: Patch album selector
+        env:
+          NEW_BLOCK_B64: ICAgICAgICBjYXNlICdhbGJ1bSc6CiAgICAgICAgICAgIGlmIChmdW5jdGlvbl9leGlzdHMoJ0RPQ1VNRU5UU19tZWRpYUdhbGxlcnlBbGJ1bVNlbGVjdCcpKSB7CiAgICAgICAgICAgICAgICAkYWxidW1KdW1wYm94ID0gRE9DVU1FTlRTX21lZGlhR2FsbGVyeUFsYnVtU2VsZWN0KCRmaWVsZFsndmFyX25hbWUnXSwgJHZhbHVlKTsKICAgICAgICAgICAgICAgIGlmICgkYWxidW1KdW1wYm94ICE9PSAnJykgewogICAgICAgICAgICAgICAgICAgICRodG1sIC49ICc8cD48bGFiZWwgY2xhc3M9ImRvY3VtZW50X2ZpZWxkX2VkaXQiPicgLiAkbGFiZWwgLiAkcmVxdWlyZWQKICAgICAgICAgICAgICAgICAgICAgICAgLiAnPC9sYWJlbD4nIC4gJGFsYnVtSnVtcGJveCAuICRoZWxwIC4gJzwvcD4nOwogICAgICAgICAgICAgICAgfQogICAgICAgICAgICB9CiAgICAgICAgICAgIGJyZWFrOwoK
+        run: |
+          python3 -c "import os,base64; from pathlib import Path; p=Path('include_edit.php'); t=p.read_text(); s=t.index(\"        case 'album':\\n\"); e=t.index(\"        case 'image':\", s); n=base64.b64decode(os.environ['NEW_BLOCK_B64']).decode(); p.write_text(t[:s]+n+t[e:])"
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add include_edit.php
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Use member MediaGallery album tree in document editor"
+          git push origin HEAD:modernize-1.1.10
