@@ -13,15 +13,20 @@ if (strpos($integrity, 'function DOCUMENTS_normalizeRouteSlug') === false) {
 if (strpos($compat, 'function DOCUMENTS_templateName') === false) {
     $failures[] = 'include_compat.php does not define DOCUMENTS_templateName().';
 }
-if (strpos($endpoint, "require_once $pluginPath . 'integrity.php';") === false) {
+
+$integrityNeedle = "require_once \$pluginPath . 'integrity.php';";
+$compatNeedle = "require_once \$pluginPath . 'include_compat.php';";
+$mutationsNeedle = "require_once \$pluginPath . 'admin_mutations.php';";
+
+if (strpos($endpoint, $integrityNeedle) === false) {
     $failures[] = 'admin-save.php does not load integrity.php for slug normalization.';
 }
-if (strpos($endpoint, "require_once $pluginPath . 'include_compat.php';") === false) {
+if (strpos($endpoint, $compatNeedle) === false) {
     $failures[] = 'admin-save.php does not load include_compat.php for admin mutation helpers.';
 }
 
-$integrityPos = strpos($endpoint, "require_once $pluginPath . 'integrity.php';");
-$mutationsPos = strpos($endpoint, "require_once $pluginPath . 'admin_mutations.php';");
+$integrityPos = strpos($endpoint, $integrityNeedle);
+$mutationsPos = strpos($endpoint, $mutationsNeedle);
 if ($integrityPos === false || $mutationsPos === false || $integrityPos > $mutationsPos) {
     $failures[] = 'integrity.php must be loaded before admin_mutations.php.';
 }
