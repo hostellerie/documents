@@ -25,7 +25,7 @@ $css = documents_public_style_read($root, 'public_html/css/documents.css', $fail
 if (strpos($presentation, 'function DOCUMENTS_loadPublicStyles()') === false) {
     $failures[] = 'Shared public stylesheet loader is missing.';
 }
-if (strpos($presentation, "'/css/documents.css?v=1.2.0-3'") === false) {
+if (strpos($presentation, "'/css/documents.css?v=1.2.0-4'") === false) {
     $failures[] = 'Public stylesheet is not registered with the current versioned public_html-relative URI.';
 }
 if (strpos($presentation, 'COM_startBlock(') !== false || strpos($presentation, 'COM_endBlock(') !== false) {
