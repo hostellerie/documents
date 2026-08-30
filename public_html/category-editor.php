@@ -16,21 +16,16 @@ if (!SEC_hasRights('documents.admin')) {
 
 $pluginPath = $_CONF['path'] . 'plugins/documents/';
 require_once $pluginPath . 'include_compat.php';
+require_once $pluginPath . 'admin_styles.php';
 require_once $pluginPath . 'admin_category_editor.php';
 
 /*
- * This editor is served from the public Documents directory rather than from
- * admin/plugins/documents/. Load the admin stylesheet explicitly so the
- * category form does not fall back to the raw theme styling.
- *
- * The version query string also makes browser/proxy caches pick up UI changes
- * while testing or upgrading Documents 1.2.0.
+ * Geeklog 2.1.1 and 2.2.x expose CSS registration through the scripts/resource
+ * object, but their surrounding page-generation code differs.  Keep that
+ * compatibility logic in one helper and register the stylesheet before
+ * COM_createHTMLDocument() builds the page header.
  */
-if (isset($_SCRIPTS) && is_object($_SCRIPTS) && method_exists($_SCRIPTS, 'setCSSFile')) {
-    $documentsAdminCss = $_CONF['site_admin_url']
-        . '/plugins/documents/documents.css?v=1.2.0';
-    $_SCRIPTS->setCSSFile('documents_admin_css', $documentsAdminCss, true);
-}
+DOCUMENTS_loadAdminStyles();
 
 $categoryId = 0;
 if (isset($_GET['cid'])) {
