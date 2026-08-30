@@ -11,24 +11,24 @@ if ($index === false || $home === false) {
     exit(1);
 }
 
-if (strpos($index, "if (\$documentsMode === '')") === false
+if (strpos($index, "if (\$mode === '')") === false
     || strpos($index, "require __DIR__ . '/home.php';") === false) {
-    $failures[] = 'The Documents root does not route empty mode to the modern home page.';
+    $failures[] = 'The Documents root does not route empty mode to the public home page.';
 }
 
 if (strpos($home, "FROM {\$_TABLES['documents_cat']} AS c WHERE c.list_index=1") === false) {
-    $failures[] = 'Modern home must query categories directly.';
+    $failures[] = 'Public home must query categories directly.';
 }
 
 foreach (array('documents_fields', 'documents_values', 'documents_docs') as $table) {
     if (strpos($home, 'JOIN {$_TABLES[\'' . $table . '\']}') !== false
         || strpos($home, 'INNER JOIN {$_TABLES[\'' . $table . '\']}') !== false) {
-        $failures[] = 'Modern home must not require ' . $table . ' rows to display a category.';
+        $failures[] = 'Public home must not require ' . $table . ' rows to display a category.';
     }
 }
 
 if (strpos($home, "COM_getPermSQL('AND', 0, 2, 'c')") === false) {
-    $failures[] = 'Modern home must retain category permission filtering.';
+    $failures[] = 'Public home must retain category permission filtering.';
 }
 
 if (!empty($failures)) {
