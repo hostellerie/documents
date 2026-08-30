@@ -15,6 +15,7 @@ $files = array(
     'security' => file_get_contents($root . '/security.php'),
     'public' => file_get_contents($root . '/public_html/index.php'),
     'document' => file_get_contents($root . '/public_html/document.php'),
+    'document_renderer' => file_get_contents($root . '/public_document.php'),
     'document_save' => file_get_contents($root . '/public_html/document-save.php'),
     'template' => file_get_contents($root . '/templates/document.thtml'),
     'category_template' => file_get_contents($root . '/templates/cat_form.thtml')
@@ -103,8 +104,10 @@ documents_test_require($files['category_template'], 'name="cat_help"', 'cat_help
 documents_test_forbid($files['category_template'], 'XMLHttpRequest', 'Category editor still contains AJAX metadata preload.', $failures);
 
 documents_test_require($files['public'], 'SEC_checkToken()', 'Mutating legacy routes do not validate CSRF.', $failures);
-documents_test_require($files['document'], '$categoryAccess = SEC_hasAccess(', 'Public document category permission guard is missing.', $failures);
-documents_test_require($files['document'], 'if ($categoryAccess < 2)', 'Public document category access is not enforced.', $failures);
+documents_test_require($files['document'], 'DOCUMENTS_renderPublicDocument(', 'Public document controller does not use the unified renderer.', $failures);
+documents_test_require($files['document_renderer'], '$categoryAccess = SEC_hasAccess(', 'Public document category permission guard is missing.', $failures);
+documents_test_require($files['document_renderer'], 'if ($categoryAccess < 2)', 'Public document category access is not enforced.', $failures);
+documents_test_require($files['document_renderer'], 'DOCUMENTS_canViewDocument($document, 2)', 'Public document visibility guard is missing.', $failures);
 documents_test_require($files['security'], 'DOCUMENTS_plainTextInput', 'Plain-text input normalization is missing.', $failures);
 documents_test_require($files['security'], '($type === \'select\' || $type === \'radio\')', 'Select/radio forged-value validation is missing.', $failures);
 
