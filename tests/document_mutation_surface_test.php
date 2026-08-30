@@ -65,7 +65,6 @@ documents_docmutation_require($images, 'setMaxFileSize(', 'Image size limit is m
 documents_docmutation_require($images, 'DOCUMENTS_imageDeleteFiles($filenames)', 'Failed uploads are not cleaned up.', $failures);
 documents_docmutation_forbid($images, 'addslashes(', 'Secure image upload helper must not use addslashes().', $failures);
 
-/* Maps is the sole owner of marker creation, editing and withdrawal. */
 documents_docmutation_require($maps, 'function DOCUMENTS_mapsSaveMarker(', 'Documents Maps service adapter is missing.', $failures);
 documents_docmutation_require($maps, "PLG_invokeService('maps', 'marker_save'", 'Marker mutations are not delegated to Maps marker_save.', $failures);
 documents_docmutation_require($maps, 'function DOCUMENTS_mapsDeactivateMarker(', 'Marker withdrawal is not delegated to Maps.', $failures);
@@ -96,7 +95,10 @@ documents_docmutation_require($endpoint, 'DOCUMENTS_isPubliclyIndexable($documen
 documents_docmutation_require($endpoint, 'DOCUMENTS_notifyPublicTransition($savedId, $wasPublic, $isPublic)', 'Standard saves do not emit public-only lifecycle events.', $failures);
 documents_docmutation_forbid($endpoint, 'runtime.php', 'Secure document dispatcher must not register duplicate runtime lifecycle hooks.', $failures);
 
-documents_docmutation_require($index, '$documentsMode === \'save\' && empty($GLOBALS[\'DOCUMENTS_LEGACY_SAVE_DISPATCH\'])', 'Direct index.php document saves can still reach the historical controller.', $failures);
+/* index.php is now only a small router. All normal saves must enter the secure
+ * document-save.php endpoint before any historical fallback can be requested. */
+documents_docmutation_require($index, "if (\$mode === 'save')", 'Public router does not identify document saves.', $failures);
+documents_docmutation_require($index, "empty(\$GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'])", 'Public router does not isolate the explicit legacy save fallback.', $failures);
 documents_docmutation_require($index, "require __DIR__ . '/document-save.php';", 'Direct index.php saves are not delegated to the secure dispatcher.', $failures);
 
 documents_docmutation_require($integrity, '$available = 40 - strlen($prefix);', 'Historical unique-document URL helper still ignores the 40-character schema limit.', $failures);
