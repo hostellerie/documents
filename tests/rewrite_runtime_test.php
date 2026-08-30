@@ -40,7 +40,7 @@ if (strpos($runtime, 'function DOCUMENTS_runtimeDispatchRewrittenView()') === fa
     || strpos($runtime, "'document.php' : 'category.php'") === false) {
     $failures[] = 'Runtime must dispatch rewritten view requests to modern public views.';
 }
-if (strpos($runtime, "$script !== 'index.php' || $mode !== 'view'") === false) {
+if (strpos($runtime, '$script !== \'index.php\' || $mode !== \'view\'') === false) {
     $failures[] = 'Runtime view dispatch must be limited to rewritten index view requests.';
 }
 if (strpos($autoinstall, 'DOCUMENTS_writeHtaccess(true)') === false) {
