@@ -32,6 +32,9 @@ if (!defined('DOCUMENTS_SEO_BUFFER_STARTED')) {
 
 $title = isset($LANG_DOCUMENTS_1['plugin_name']) ? $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
 $content = '<main class="documents-home">';
+if (function_exists('DOCUMENTS_renderNavigation')) {
+    $content .= DOCUMENTS_renderNavigation();
+}
 $content .= '<header class="documents-page-header documents-home__header"><h1>'
     . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
 
