@@ -1,6 +1,6 @@
 <?php
 
-/* Modern public Documents home page. Compatible with Geeklog 2.1.1/PHP 5.6+. */
+/* Public Documents home page. Compatible with Geeklog 2.1.1/PHP 5.6+. */
 
 require_once '../lib-common.php';
 
@@ -11,9 +11,10 @@ if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGIN
 
 $pluginPath = $_CONF['path'] . 'plugins/documents/';
 require_once $pluginPath . 'rewrite.php';
-DOCUMENTS_writeHtaccess(false);
 require_once $pluginPath . 'runtime.php';
+require_once $pluginPath . 'presentation.php';
 require_once $pluginPath . 'seo.php';
+DOCUMENTS_writeHtaccess(false);
 
 $requestPath = isset($_SERVER['REQUEST_URI'])
     ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH)
@@ -105,6 +106,4 @@ if (!empty($_DOCUMENTS_CONF['documents_main_footer'])) {
 }
 $content .= '</main>';
 
-$pageOptions = array('pagetitle' => $title);
-$page = COM_createHTMLDocument($content, $pageOptions);
-COM_output($page);
+COM_output(COM_createHTMLDocument($content, array('pagetitle' => $title)));
