@@ -8,23 +8,23 @@
     <fieldset class="documents-form-fieldset">
         <legend><b>{general_legend}</b></legend>
         <div>
-            <p><label>{category_label}<span class="documents-required-mark"> *</span></label>
-                <input type="text" name="cat_name" value="{category}" size="80" maxlength="40" {xhtml}>
+            <p><label for="documents-cat-name">{category_label}<span class="documents-required-mark"> *</span></label>
+                <input type="text" id="documents-cat-name" name="cat_name" value="{category}" size="80" maxlength="40" {xhtml}>
                 <br{xhtml}><small>{category_help}</small></p>
         </div>
         <div>
-            <p><label>{cat_url_label}<span class="documents-required-mark"> *</span></label>
-                <input type="text" name="cat_url" value="{cat_url}" size="80" maxlength="40" {xhtml}>
+            <p><label for="documents-cat-url">{cat_url_label}<span class="documents-required-mark"> *</span></label>
+                <input type="text" id="documents-cat-url" name="cat_url" value="{cat_url}" size="80" maxlength="40" {xhtml}>
                 <br{xhtml}><small>{cat_url_help}</small></p>
         </div>
         <div>
-            <p><label>{metadescription_label}</label>
+            <p><label for="documents-metadescription">{metadescription_label}</label>
                 <textarea name="metadescription" id="documents-metadescription" rows="3" maxlength="255" style="width:70%;">{metadescription}</textarea>
                 <br{xhtml}><small>{metadescription_help}</small></p>
         </div>
         <div>
-            <p><label>{cat_help_label}</label>
-                <input type="text" name="cat_help" value="{cat_help}" size="80" maxlength="255" {xhtml}>
+            <p><label for="documents-cat-help">{cat_help_label}</label>
+                <input type="text" id="documents-cat-help" name="cat_help" value="{cat_help}" size="80" maxlength="255" {xhtml}>
                 <br{xhtml}><small>{cat_help_explanation}</small></p>
         </div>
     </fieldset>
@@ -32,24 +32,24 @@
     <fieldset class="documents-form-fieldset">
         <legend><b>{display_legend}</b></legend>
         <div>
-            <p><label>{template_label}</label>
-                <input type="text" name="template" value="{template}" size="80" maxlength="18" {xhtml}>
+            <p><label for="documents-template">{template_label}</label>
+                <input type="text" id="documents-template" name="template" value="{template}" size="80" maxlength="18" {xhtml}>
                 <br{xhtml}><small>{template_help}</small></p>
         </div>
         <div>
-            <p><label>{css_label}</label>
-                <input type="text" name="css" value="{css}" size="80" maxlength="18" {xhtml}>
+            <p><label for="documents-css">{css_label}</label>
+                <input type="text" id="documents-css" name="css" value="{css}" size="80" maxlength="18" {xhtml}>
                 <br{xhtml}><small>{css_help}</small></p>
         </div>
         {map}
         <div>
-            <p><label>{custom_header_label}</label>
-                <input type="text" name="custom_header" value="{custom_header}" size="80" maxlength="255" {xhtml}>
+            <p><label for="documents-custom-header">{custom_header_label}</label>
+                <input type="text" id="documents-custom-header" name="custom_header" value="{custom_header}" size="80" maxlength="255" {xhtml}>
                 <br{xhtml}><small>{custom_header_help}</small></p>
         </div>
         <div>
-            <p><label>{custom_footer_label}</label>
-                <input type="text" name="custom_footer" value="{custom_footer}" size="80" maxlength="255" {xhtml}>
+            <p><label for="documents-custom-footer">{custom_footer_label}</label>
+                <input type="text" id="documents-custom-footer" name="custom_footer" value="{custom_footer}" size="80" maxlength="255" {xhtml}>
                 <br{xhtml}><small>{custom_footer_help}</small></p>
         </div>
     </fieldset>
@@ -57,8 +57,8 @@
     <fieldset class="documents-form-fieldset">
         <legend><b>{publication_legend}</b></legend>
         <div>
-            <p><label>{catorder_label}</label>
-                <input type="text" name="cat_order" value="{cat_order}" size="5" maxlength="5" {xhtml}>
+            <p><label for="documents-cat-order">{catorder_label}</label>
+                <input type="text" id="documents-cat-order" name="cat_order" value="{cat_order}" size="5" maxlength="5" {xhtml}>
                 <br{xhtml}><small>{cat_order_help}</small></p>
             <p>{existing_cat}
             {categories_order}</p>
@@ -75,20 +75,65 @@
         <legend><b>{permissions_legend}</b></legend>
         <p><small>{permissions_help}</small></p>
         <div id="lang_accessrights">
-            <div><p><strong>{lang_owner}</strong>: {owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}></p></div>
-            <div><p><label><strong>{lang_group}</strong> {group_dropdown}</label></p></div>
+            <div><p><strong>{lang_owner}</strong>: {owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}>
+                <br{xhtml}><small>{owner_help}</small></p></div>
+            <div><p><label><strong>{lang_group}</strong> {group_dropdown}</label>
+                <br{xhtml}><small>{group_help}</small></p></div>
         </div>
         <div id="lang_permissions">
             <p><strong>{lang_perm_key}</strong></p>
             <p>{permissions_editor}</p>
+            <p><small>{permissions_editor_help}</small></p>
             <p>{lang_permissions_msg}</p>
         </div>
     </fieldset>
 
     <p class="documents-required-note"><span class="documents-required-mark">*</span><em> {required_field}</em></p>
-    {admin_options}
+    <p><label for="documents-category-action"><strong>{action_label}</strong></label> {admin_options}
+        <br{xhtml}><small>{action_help}</small></p>
     <input type="submit" name="submit" value="{validate_button}" {xhtml}>
     <input type="hidden" name="mode" value="save_cat"{xhtml}>
     <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
 
 </form>
+
+<script>
+(function () {
+    var nameField = document.getElementById('documents-cat-name');
+    var urlField = document.getElementById('documents-cat-url');
+    if (!nameField || !urlField) {
+        return;
+    }
+
+    var manuallyEdited = urlField.value !== '';
+
+    function slugify(value) {
+        value = String(value || '').toLowerCase();
+        if (value.normalize) {
+            value = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+        value = value
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .replace(/-+/g, '-');
+        return value.substring(0, 40);
+    }
+
+    nameField.addEventListener('input', function () {
+        if (!manuallyEdited) {
+            urlField.value = slugify(nameField.value);
+        }
+    });
+
+    urlField.addEventListener('input', function () {
+        manuallyEdited = urlField.value !== '';
+    });
+
+    urlField.addEventListener('blur', function () {
+        if (urlField.value === '') {
+            manuallyEdited = false;
+            urlField.value = slugify(nameField.value);
+        }
+    });
+}());
+</script>
