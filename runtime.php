@@ -20,6 +20,11 @@ if (isset($_CONF['path'])) {
         require_once $documentsPresentationFile;
     }
 
+    $documentsNavigationFile = $_CONF['path'] . 'plugins/documents/navigation.php';
+    if (is_file($documentsNavigationFile)) {
+        require_once $documentsNavigationFile;
+    }
+
     $documentsMediaGalleryFile = $_CONF['path'] . 'plugins/documents/mediagallery_adapter.php';
     if (is_file($documentsMediaGalleryFile)) {
         require_once $documentsMediaGalleryFile;
@@ -34,6 +39,10 @@ if (isset($_CONF['path'])) {
     if (is_file($documentsIndexabilityFile)) {
         require_once $documentsIndexabilityFile;
     }
+}
+
+if (function_exists('DOCUMENTS_startNavigationBuffer')) {
+    DOCUMENTS_startNavigationBuffer();
 }
 
 /* Public home statistics are rendered explicitly by public_html/home.php via
