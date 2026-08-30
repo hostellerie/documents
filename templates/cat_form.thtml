@@ -1,15 +1,21 @@
 <form action="{doc_url}/admin-save.php" method="POST" id="documents-category-form">
 {cid}
-    <fieldset class="documents-form-fieldset">
-        <legend><b>{cat_informations}</b></legend>
+    <details class="documents-form-help" open="open">
+        <summary><strong>{category_help_title}</strong></summary>
+        <p>{category_help_intro}</p>
+    </details>
 
+    <fieldset class="documents-form-fieldset">
+        <legend><b>{general_legend}</b></legend>
         <div>
             <p><label>{category_label}<span class="documents-required-mark"> *</span></label>
-                <input type="text" name="cat_name" value="{category}" size="80" maxlength="40" {xhtml}></p>
+                <input type="text" name="cat_name" value="{category}" size="80" maxlength="40" {xhtml}>
+                <br{xhtml}><small>{category_help}</small></p>
         </div>
         <div>
             <p><label>{cat_url_label}<span class="documents-required-mark"> *</span></label>
-                <input type="text" name="cat_url" value="{cat_url}" size="80" maxlength="40" {xhtml}></p>
+                <input type="text" name="cat_url" value="{cat_url}" size="80" maxlength="40" {xhtml}>
+                <br{xhtml}><small>{cat_url_help}</small></p>
         </div>
         <div>
             <p><label>{metadescription_label}</label>
@@ -18,46 +24,65 @@
         </div>
         <div>
             <p><label>{cat_help_label}</label>
-                <input type="text" name="cat_help" value="{cat_help}" size="80" maxlength="255" {xhtml}></p>
+                <input type="text" name="cat_help" value="{cat_help}" size="80" maxlength="255" {xhtml}>
+                <br{xhtml}><small>{cat_help_explanation}</small></p>
         </div>
+    </fieldset>
+
+    <fieldset class="documents-form-fieldset">
+        <legend><b>{display_legend}</b></legend>
         <div>
             <p><label>{template_label}</label>
-                <input type="text" name="template" value="{template}" size="80" maxlength="18" {xhtml}></p>
+                <input type="text" name="template" value="{template}" size="80" maxlength="18" {xhtml}>
+                <br{xhtml}><small>{template_help}</small></p>
         </div>
         <div>
             <p><label>{css_label}</label>
-                <input type="text" name="css" value="{css}" size="80" maxlength="18" {xhtml}></p>
+                <input type="text" name="css" value="{css}" size="80" maxlength="18" {xhtml}>
+                <br{xhtml}><small>{css_help}</small></p>
         </div>
         {map}
         <div>
             <p><label>{custom_header_label}</label>
-                <input type="text" name="custom_header" value="{custom_header}" size="80" maxlength="255" {xhtml}></p>
+                <input type="text" name="custom_header" value="{custom_header}" size="80" maxlength="255" {xhtml}>
+                <br{xhtml}><small>{custom_header_help}</small></p>
         </div>
         <div>
             <p><label>{custom_footer_label}</label>
-                <input type="text" name="custom_footer" value="{custom_footer}" size="80" maxlength="255" {xhtml}></p>
+                <input type="text" name="custom_footer" value="{custom_footer}" size="80" maxlength="255" {xhtml}>
+                <br{xhtml}><small>{custom_footer_help}</small></p>
         </div>
+    </fieldset>
+
+    <fieldset class="documents-form-fieldset">
+        <legend><b>{publication_legend}</b></legend>
         <div>
             <p><label>{catorder_label}</label>
-                <input type="text" name="cat_order" value="{cat_order}" size="5" maxlength="5" {xhtml}></p>
+                <input type="text" name="cat_order" value="{cat_order}" size="5" maxlength="5" {xhtml}>
+                <br{xhtml}><small>{cat_order_help}</small></p>
             <p>{existing_cat}
             {categories_order}</p>
         </div>
-
         <div>
-            <p><input type="checkbox" name="list_index" value="1" {list_index_ckecked} {xhtml}> {list_index}<br{xhtml}>
-               <input type="checkbox" name="submitable" value="1" {submitable_ckecked} {xhtml}> {submitable}</p>
+            <p><label><input type="checkbox" name="list_index" value="1" {list_index_ckecked} {xhtml}> {list_index}</label>
+                <br{xhtml}><small>{list_index_help}</small></p>
+            <p><label><input type="checkbox" name="submitable" value="1" {submitable_ckecked} {xhtml}> {submitable}</label>
+                <br{xhtml}><small>{submitable_help}</small></p>
         </div>
+    </fieldset>
+
+    <fieldset class="documents-form-fieldset">
+        <legend><b>{permissions_legend}</b></legend>
+        <p><small>{permissions_help}</small></p>
         <div id="lang_accessrights">
-            <div><p>{lang_owner}: {owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}></p></div>
-            <div><p>{lang_group}: {group_dropdown}</p></div>
+            <div><p><strong>{lang_owner}</strong>: {owner_name}<input type="hidden" name="owner_id" value="{owner_id}"{xhtml}></p></div>
+            <div><p><label><strong>{lang_group}</strong> {group_dropdown}</label></p></div>
         </div>
         <div id="lang_permissions">
-            <p>{lang_perm_key}</p>
+            <p><strong>{lang_perm_key}</strong></p>
             <p>{permissions_editor}</p>
             <p>{lang_permissions_msg}</p>
         </div>
-
     </fieldset>
 
     <p class="documents-required-note"><span class="documents-required-mark">*</span><em> {required_field}</em></p>
