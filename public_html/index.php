@@ -45,6 +45,49 @@ $documentsMode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
 $documentsDocUrl = (string) DOCUMENTS_requestValue($_REQUEST, 'doc_url', '');
 $documentsOperation = (string) DOCUMENTS_requestValue($_REQUEST, 'op', '');
 
+/* Historical clean URLs are deliberately rewritten to index.php?mode=view.
+ * Dispatch them only after runtime + compatibility helpers are fully loaded.
+ * Do not include category.php/document.php from runtime.php while runtime.php
+ * itself is still being evaluated: PHP 5.6/Geeklog 2.1.1 can otherwise finish
+ * the rewritten request with an empty response. */
+if ($documentsMode === 'view') {
+    $documentsRouteCategory = (string) DOCUMENTS_requestValue($_REQUEST, 'cat', '');
+    $documentsRouteDocument = (string) DOCUMENTS_requestValue($_REQUEST, 'doc', '');
+
+    if ($documentsRouteCategory !== '') {
+        $documentsRequestPath = isset($_SERVER['REQUEST_URI'])
+            ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH)
+            : '';
+
+        /* Direct query-string access remains a compatibility URL and redirects
+         * to the canonical clean URL. Internally rewritten clean requests keep
+         * their original REQUEST_URI, so they render instead of looping. */
+        if (is_string($documentsRequestPath)
+            && basename($documentsRequestPath) === 'index.php') {
+            $documentsCanonical = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
+                . '/' . rawurlencode($documentsRouteCategory);
+            if ($documentsRouteDocument !== '') {
+                $documentsCanonical .= '/' . rawurlencode($documentsRouteDocument);
+            }
+            header('Location: ' . $documentsCanonical, true, 301);
+            exit;
+        }
+
+        $_GET['cat'] = $documentsRouteCategory;
+        $_REQUEST['cat'] = $documentsRouteCategory;
+        if ($documentsRouteDocument !== '') {
+            $_GET['doc'] = $documentsRouteDocument;
+            $_REQUEST['doc'] = $documentsRouteDocument;
+            require __DIR__ . '/document.php';
+        } else {
+            unset($_GET['doc']);
+            unset($_REQUEST['doc']);
+            require __DIR__ . '/category.php';
+        }
+        exit;
+    }
+}
+
 /* The plugin root is a first-class modern public surface. Categories belong
  * to Documents independently of whether fields or documents exist yet, so the
  * home page must never depend on the historical renderer's field-driven lists. */
