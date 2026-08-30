@@ -67,6 +67,17 @@ documents_category_editor_require($mutations, '$slugInput = $name;', 'Server-sid
 
 documents_category_editor_forbid($template, '<details class="documents-form-help"', 'Category form still contains the misleading collapsible help arrow.', $failures);
 documents_category_editor_require($template, 'class="documents-form-intro"', 'Category form does not display a permanent introduction.', $failures);
+documents_category_editor_require($template, '<details class="documents-form-section" open="open">', 'The first category editor section is not open by default.', $failures);
+documents_category_editor_require($template, '<summary class="documents-form-section__summary">{general_legend}</summary>', 'General section does not use a collapsible summary.', $failures);
+documents_category_editor_require($template, '<summary class="documents-form-section__summary">{display_legend}</summary>', 'Display section does not use a collapsible summary.', $failures);
+documents_category_editor_require($template, '<summary class="documents-form-section__summary">{publication_legend}</summary>', 'Publication section does not use a collapsible summary.', $failures);
+documents_category_editor_require($template, '<summary class="documents-form-section__summary">{permissions_legend}</summary>', 'Permissions section does not use a collapsible summary.', $failures);
+if (substr_count($template, '<details class="documents-form-section" open="open">') !== 1) {
+    $failures[] = 'Exactly one category editor section must be open by default.';
+}
+if (substr_count($template, '<details class="documents-form-section">') !== 3) {
+    $failures[] = 'Exactly three category editor sections must be collapsed by default.';
+}
 documents_category_editor_require($template, '{metadescription_label}', 'Meta description does not have a visible label.', $failures);
 documents_category_editor_require($template, '{metadescription_intro}', 'Meta description does not explain what to enter above the textarea.', $failures);
 documents_category_editor_require($template, 'placeholder="{metadescription_placeholder}"', 'Meta description textarea does not contain a localized example.', $failures);
@@ -100,6 +111,8 @@ documents_category_editor_require($editor, '135–160 characters', 'English meta
 documents_category_editor_require($css, '.documents-field-help', 'Admin stylesheet does not make field help consistently visible.', $failures);
 documents_category_editor_require($css, '.documents-form-label', 'Admin stylesheet does not provide visible field labels.', $failures);
 documents_category_editor_require($css, '.documents-form-textarea', 'Admin stylesheet does not normalize textareas.', $failures);
+documents_category_editor_require($css, '.documents-form-section__summary', 'Admin stylesheet does not style collapsible section summaries.', $failures);
+documents_category_editor_require($css, '.documents-form-section__content', 'Admin stylesheet does not space collapsible section content.', $failures);
 
 if (!empty($failures)) {
     fwrite(STDERR, "Documents category editor compatibility/guidance checks failed:\n");
