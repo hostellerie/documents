@@ -18,7 +18,8 @@ function documents_admin_context_read($root, $path, &$failures)
     return $content;
 }
 
-$index = documents_admin_context_read($root, 'public_html/index.php', $failures);
+$index = documents_admin_context_read($root, 'admin/index.php', $failures);
+$publicIndex = documents_admin_context_read($root, 'public_html/index.php', $failures);
 $fields = documents_admin_context_read($root, 'public_html/admin-fields.php', $failures);
 $groups = documents_admin_context_read($root, 'public_html/admin-groups.php', $failures);
 $editor = documents_admin_context_read($root, 'public_html/group-editor.php', $failures);
@@ -27,9 +28,11 @@ $css = documents_admin_context_read($root, 'admin/modern-admin.css', $failures);
 $mutations = documents_admin_context_read($root, 'admin_mutations.php', $failures);
 
 $requirements = array(
-    array($index, "'list_fields' => 'admin-fields.php'", 'list_fields is not routed to the modern contextual view.'),
-    array($index, "'list_groups' => 'admin-groups.php'", 'list_groups is not routed to the modern contextual view.'),
-    array($index, "'edit_group' => 'group-editor.php'", 'edit_group is not routed to the modern contextual editor.'),
+    array($index, "'list_fields' => 'admin-fields.php'", 'Dedicated admin router does not expose the fields view.'),
+    array($index, "'list_groups' => 'admin-groups.php'", 'Dedicated admin router does not expose the groups view.'),
+    array($index, "'edit_group' => 'group-editor.php'", 'Dedicated admin router does not expose the group editor.'),
+    array($index, "'/plugins/documents'", 'Administration is not rooted under the Geeklog admin URL.'),
+    array($publicIndex, '$adminModes', 'Public router no longer keeps compatibility redirects for historical admin URLs.'),
     array($fields, 'documents-admin-guide', 'Fields view has no contextual guide.'),
     array($fields, 'documents-admin-table', 'Fields view has no modern structured table.'),
     array($fields, '{variable}', 'Fields guidance does not explain template variables.'),
