@@ -39,6 +39,8 @@ documents_nav_require($navigation, "SEC_hasRights('documents.admin')", 'Administ
 documents_nav_require($navigation, "'image.php', 'style.php'", 'Non-HTML endpoints are not excluded from navigation buffering.', $failures);
 documents_nav_require($navigation, '<main class="documents-', 'Modern Documents pages are not targeted by navigation injection.', $failures);
 documents_nav_require($navigation, '<div class="user_menu">', 'Legacy Documents pages are not targeted by navigation injection.', $failures);
+documents_nav_require($navigation, "\$mode === '' || \$mode === 'view'", 'Rewritten modern view routes are not excluded from navigation buffering.', $failures);
+documents_nav_require($navigation, "\$script === 'document.php'", 'Modern document view is not excluded from navigation buffering.', $failures);
 documents_nav_require($presentation, 'documents.css?v=1.2.0-4', 'Public stylesheet cache-buster was not updated for navigation.', $failures);
 documents_nav_require($css, '.documents-navigation', 'Shared navigation styling is missing.', $failures);
 
