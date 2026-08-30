@@ -125,21 +125,6 @@ function DOCUMENTS_runtimePrepareLifecycle()
 
 DOCUMENTS_runtimePrepareLifecycle();
 
-$documentsScript = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\', '/', $_SERVER['SCRIPT_NAME']) : '';
-$documentsMode = isset($_REQUEST['mode']) ? trim((string) $_REQUEST['mode']) : '';
-if ($documentsMode === ''
-    && $documentsScript !== ''
-    && strpos($documentsScript, '/documents/index.php') !== false
-    && strpos($documentsScript, '/admin/') === false
-    && function_exists('DOCUMENTS_homeStatsBlock')) {
-    $documentsStats = DOCUMENTS_homeStatsBlock();
-    if ($documentsStats !== '') {
-        $existingFooter = isset($_DOCUMENTS_CONF['documents_main_footer'])
-            ? (string) $_DOCUMENTS_CONF['documents_main_footer'] : '';
-        $_DOCUMENTS_CONF['documents_main_footer'] = $existingFooter . $documentsStats;
-    }
-}
-
 function DOCUMENTS_ensureImageDirectory()
 {
     global $_DOCUMENTS_CONF;
