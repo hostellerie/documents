@@ -25,8 +25,8 @@ $css = documents_public_style_read($root, 'public_html/css/documents.css', $fail
 if (strpos($presentation, 'function DOCUMENTS_loadPublicStyles()') === false) {
     $failures[] = 'Shared public stylesheet loader is missing.';
 }
-if (strpos($presentation, "'/css/documents.css?v=1.2.0'") === false) {
-    $failures[] = 'Public stylesheet is not registered with a versioned public_html-relative URI.';
+if (strpos($presentation, "'/css/documents.css?v=1.2.0-3'") === false) {
+    $failures[] = 'Public stylesheet is not registered with the current versioned public_html-relative URI.';
 }
 if (strpos($presentation, 'COM_startBlock(') !== false || strpos($presentation, 'COM_endBlock(') !== false) {
     $failures[] = 'Home statistics must not depend on Geeklog theme blocks.';
@@ -45,6 +45,9 @@ if (strpos($css, '.documents-category-card__link') === false) {
 }
 if (strpos($css, '.documents-home__stats') === false) {
     $failures[] = 'Compact statistics styling is missing.';
+}
+if (strpos($css, '.documents-message') === false) {
+    $failures[] = 'Public feedback-message styling is missing.';
 }
 
 if (!empty($failures)) {
