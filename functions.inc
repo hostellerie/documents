@@ -231,6 +231,29 @@ function plugin_searchtypes_documents()
     return array('documents' => $LANG_DOCUMENTS_1['plugin_name']);
 }
 
+function DOCUMENTS_searchCallback($offset, $limit)
+{
+    $offset = max(0, (int) $offset);
+    $limit = max(0, (int) $limit);
+    if ($limit === 0 || empty($GLOBALS['DOCUMENTS_SEARCH_CALLBACK_SQL'])) {
+        return array();
+    }
+
+    $sql = $GLOBALS['DOCUMENTS_SEARCH_CALLBACK_SQL']
+        . ' ORDER BY d.created DESC, d.doc_url ASC LIMIT '
+        . $offset . ', ' . $limit;
+    $result = DB_query($sql);
+    $rows = array();
+
+    while ($row = DB_fetchArray($result)) {
+        if (is_array($row)) {
+            $rows[] = $row;
+        }
+    }
+
+    return $rows;
+}
+
 function plugin_dopluginsearch_documents($query, $datestart, $dateend, $topic, $type, $author, $keyType, $page, $perpage)
 {
     global $_TABLES, $LANG_DOCUMENTS_1, $_DOCUMENTS_CONF;
@@ -239,14 +262,10 @@ function plugin_dopluginsearch_documents($query, $datestart, $dateend, $topic, $
 
     $descriptionSql = "(SELECT vd.v_value FROM {$_TABLES['documents_values']} AS vd "
         . "INNER JOIN {$_TABLES['documents_fields']} AS fd ON fd.fid=vd.field_id "
-        . "WHERE vd.doc_url=d.doc_url AND fd.f_type='text' AND vd.vid<>v.vid "
+        . "WHERE vd.doc_url=d.doc_url AND fd.f_type IN ('text','textarea') AND vd.vid<>v.vid "
         . "AND vd.v_value<>'' ORDER BY fd.f_order ASC, vd.vid ASC LIMIT 1)";
 
-    $sql = "SELECT DISTINCT d.doc_url AS id, v.v_value AS title, "
-        . $descriptionSql . " AS description, UNIX_TIMESTAMP(d.created) AS date, "
-        . "d.owner_id AS uid, d.hits, CONCAT('/" . $_DOCUMENTS_CONF['documents_folder']
-        . "/', CONCAT(c.cat_url, CONCAT('/', d.doc_url))) AS url "
-        . "FROM {$_TABLES['documents_docs']} AS d "
+    $fromSql = " FROM {$_TABLES['documents_docs']} AS d "
         . "LEFT JOIN {$_TABLES['documents_values']} AS v ON d.doc_url=v.doc_url "
         . "AND v.vid=(SELECT MIN(vt.vid) FROM {$_TABLES['documents_values']} AS vt "
         . "WHERE vt.doc_url=d.doc_url) "
@@ -254,7 +273,7 @@ function plugin_dopluginsearch_documents($query, $datestart, $dateend, $topic, $
         . "LEFT JOIN {$_TABLES['documents_cat']} AS c ON f.cat_id=c.cid "
         . "WHERE d.active=1";
 
-    $sql .= COM_getPermSQL('AND', 0, 2, 'd') . ' ';
+    $fromSql .= COM_getPermSQL('AND', 0, 2, 'd') . ' ';
 
     if (!empty($datestart) && !empty($dateend)) {
         $delim = substr($datestart, 4, 1);
@@ -264,21 +283,50 @@ function plugin_dopluginsearch_documents($query, $datestart, $dateend, $topic, $
             if (count($DS) >= 3 && count($DE) >= 3) {
                 $startdate = mktime(0, 0, 0, $DS[1], $DS[2], $DS[0]);
                 $enddate = mktime(23, 59, 59, $DE[1], $DE[2], $DE[0]);
-                $sql .= "AND (UNIX_TIMESTAMP(d.created) BETWEEN '"
+                $fromSql .= "AND (UNIX_TIMESTAMP(d.created) BETWEEN '"
                     . (int) $startdate . "' AND '" . (int) $enddate . "') ";
             }
         }
     }
 
     if (!empty($author)) {
-        $sql .= 'AND (d.owner_id = ' . (int) $author . ') ';
+        $fromSql .= 'AND (d.owner_id = ' . (int) $author . ') ';
     }
 
+    $resultSql = "SELECT DISTINCT d.doc_url AS id, v.v_value AS title, "
+        . $descriptionSql . " AS description, UNIX_TIMESTAMP(d.created) AS date, "
+        . "d.owner_id AS uid, d.hits, CONCAT('/" . $_DOCUMENTS_CONF['documents_folder']
+        . "/', CONCAT(c.cat_url, CONCAT('/', d.doc_url))) AS url"
+        . $fromSql;
+    $countSql = 'SELECT COUNT(DISTINCT d.doc_url) AS total' . $fromSql;
+
     $search = new SearchCriteria('documents', $LANG_DOCUMENTS_1['plugin_name']);
-    $columns = array('d.doc_url', 'v.v_value', $descriptionSql);
-    list($sql, $ftsql) = $search->buildSearchSQL($keyType, $query, $columns, $sql);
-    $search->setSQL($sql);
-    $search->setFTSQL($ftsql);
+    $columns = array(
+        'title' => 'v.v_value',
+        'slug' => 'd.doc_url',
+        'description' => $descriptionSql
+    );
+    list($resultSql, $unusedFtSql) = $search->buildSearchSQL(
+        $keyType,
+        $query,
+        $columns,
+        $resultSql
+    );
+    list($countSql, $unusedCountFtSql) = $search->buildSearchSQL(
+        $keyType,
+        $query,
+        $columns,
+        $countSql
+    );
+
+    $countResult = DB_query($countSql);
+    $countRow = DB_fetchArray($countResult);
+    $total = is_array($countRow) && isset($countRow['total'])
+        ? (int) $countRow['total'] : 0;
+
+    $GLOBALS['DOCUMENTS_SEARCH_CALLBACK_SQL'] = $resultSql;
+    $search->setCallback('DOCUMENTS_searchCallback');
+    $search->setTotal($total);
     $search->setRank(3);
 
     return $search;
