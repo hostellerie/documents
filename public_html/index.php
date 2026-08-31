@@ -6,7 +6,7 @@
 // +---------------------------------------------------------------------------+
 // | index.php                                                                 |
 // |                                                                           |
-// | Small public compatibility router.                                        |
+// | Small public router.                                                      |
 // +---------------------------------------------------------------------------+
 
 require_once '../lib-common.php';
@@ -19,10 +19,6 @@ if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGIN
 $pluginPath = $_CONF['path'] . 'plugins/documents/';
 $requestedMode = isset($_REQUEST['mode']) && !is_array($_REQUEST['mode'])
     ? trim((string) $_REQUEST['mode']) : '';
-
-if ($requestedMode === 'save' && empty($GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'])) {
-    $GLOBALS['DOCUMENTS_SECURE_SAVE_CONTROLLER'] = true;
-}
 
 require_once $pluginPath . 'rewrite.php';
 require_once $pluginPath . 'runtime.php';
@@ -81,11 +77,7 @@ if ($mode === 'new' || $mode === 'edit') {
 }
 
 if ($mode === 'save') {
-    if (empty($GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'])) {
-        require __DIR__ . '/document-save.php';
-    } else {
-        require_once $pluginPath . 'include_html.php';
-    }
+    require __DIR__ . '/document-save.php';
     exit;
 }
 
