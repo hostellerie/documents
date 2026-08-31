@@ -34,6 +34,29 @@ $publicUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/');
 $mode = isset($_REQUEST['mode']) && !is_array($_REQUEST['mode'])
     ? trim((string) $_REQUEST['mode']) : '';
 
+if ($mode === 'editsubmission') {
+    $documentId = isset($_REQUEST['id']) && !is_array($_REQUEST['id'])
+        ? trim((string) $_REQUEST['id']) : '';
+    if ($documentId === '') {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
+
+    $safeId = DB_escapeString($documentId);
+    $status = DB_getItem($_TABLES['documents_docs'], 'active', "doc_url='{$safeId}'");
+    if ((int) $status !== DOCUMENTS_STATUS_SUBMISSION) {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
+
+    header(
+        'Location: ' . $publicUrl . '/index.php?mode=edit&doc_url=' . rawurlencode($documentId),
+        true,
+        302
+    );
+    exit;
+}
+
 $adminViews = array(
     'edit_cat' => 'category-editor.php',
     'list_fields' => 'admin-fields.php',
