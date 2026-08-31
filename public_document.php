@@ -113,6 +113,38 @@ function DOCUMENTS_publicFieldHtml($field, $value, $title)
     return $type === 'textarea' ? nl2br($safe) : $safe;
 }
 
+function DOCUMENTS_publicDocumentTitle($fields, $fallback)
+{
+    if (!is_array($fields)) {
+        return (string) $fallback;
+    }
+
+    foreach ($fields as $field) {
+        if (!is_array($field)) {
+            continue;
+        }
+
+        $variable = isset($field['var_name'])
+            ? strtolower(trim((string) $field['var_name'])) : '';
+        if ($variable === 'metadescription' || $variable === 'schema_type') {
+            continue;
+        }
+
+        $type = isset($field['f_type']) ? strtolower((string) $field['f_type']) : '';
+        if ($type !== 'text' && $type !== 'textarea') {
+            continue;
+        }
+
+        $candidate = isset($field['v_value'])
+            ? trim(stripslashes((string) $field['v_value'])) : '';
+        if ($candidate !== '') {
+            return $candidate;
+        }
+    }
+
+    return (string) $fallback;
+}
+
 function DOCUMENTS_publicDocumentData($categorySlug, $documentSlug)
 {
     global $_TABLES;
@@ -187,13 +219,7 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     $document = $data['document'];
     $fields = $data['fields'];
 
-    $title = $documentSlug;
-    if (!empty($fields)) {
-        $candidate = trim(stripslashes((string) $fields[0]['v_value']));
-        if ($candidate !== '') {
-            $title = $candidate;
-        }
-    }
+    $title = DOCUMENTS_publicDocumentTitle($fields, $documentSlug);
 
     $templateName = isset($category['template'])
         ? DOCUMENTS_templateName($category['template']) : '';
@@ -216,16 +242,27 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     $template->set_var('doc_name', htmlspecialchars($title, ENT_QUOTES, 'UTF-8'));
 
     $details = '<dl class="documents-fields">';
-    foreach ($fields as $index => $field) {
+    foreach ($fields as $field) {
         $value = isset($field['v_value']) ? $field['v_value'] : '';
         $rendered = DOCUMENTS_publicFieldHtml($field, $value, $title);
         $variable = isset($field['var_name']) ? (string) $field['var_name'] : '';
+        $normalizedVariable = strtolower(trim($variable));
 
         if ($variable !== '') {
             $template->set_var($variable, $rendered);
         }
 
-        if ($index === 0 || ($rendered === '' && $field['f_type'] !== 'checkbox')) {
+        if ($normalizedVariable === 'metadescription'
+            || $normalizedVariable === 'schema_type') {
+            continue;
+        }
+
+        if (trim(stripslashes((string) $value)) === $title
+            && ($field['f_type'] === 'text' || $field['f_type'] === 'textarea')) {
+            continue;
+        }
+
+        if ($rendered === '' && $field['f_type'] !== 'checkbox') {
             continue;
         }
 
@@ -253,17 +290,8 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
             . htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') . '</span> '
     );
 
-    $access = SEC_hasAccess(
-        (int) $document['owner_id'],
-        (int) $document['group_id'],
-        (int) $document['perm_owner'],
-        (int) $document['perm_group'],
-        (int) $document['perm_members'],
-        (int) $document['perm_anon']
-    );
-
     $edit = '';
-    if ($access >= 3 || SEC_hasRights('documents.admin')) {
+    if (DOCUMENTS_canEditDocument($document)) {
         $editUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
             . '/index.php?mode=edit&doc_url=' . rawurlencode($documentSlug)
             . '&cat=' . (int) $category['cid'];
@@ -317,5 +345,10 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
             . PLG_replaceTags((string) $category['custom_footer']) . '</div>';
     }
 
-    return array('title' => $title, 'body' => $body);
+    return array(
+        'title' => $title,
+        'body' => $body,
+        'category_name' => isset($category['cat_name']) ? stripslashes((string) $category['cat_name']) : '',
+        'category_slug' => isset($category['cat_url']) ? (string) $category['cat_url'] : $categorySlug
+    );
 }
