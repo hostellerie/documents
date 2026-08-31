@@ -15,21 +15,28 @@ function DOCUMENTS_renderNavigation()
     $isFrench = isset($_CONF['language'])
         && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
 
-    $html = '<nav class="documents-navigation" aria-label="Documents">'
-        . '<div class="documents-navigation__main">'
-        . '<a class="documents-navigation__home" href="'
-        . htmlspecialchars($siteUrl . '/', ENT_QUOTES, 'UTF-8') . '">'
-        . htmlspecialchars($isFrench ? 'Accueil des documents' : 'Documents home', ENT_QUOTES, 'UTF-8')
-        . '</a></div>';
+    $items = array(
+        array(
+            'url' => $siteUrl . '/',
+            'label' => $isFrench ? 'Tous les documents' : 'All documents'
+        )
+    );
 
     if (SEC_hasRights('documents.admin')) {
-        $adminUrl = rtrim((string) $_CONF['site_admin_url'], '/')
-            . '/plugins/documents/index.php';
-        $html .= '<div class="documents-navigation__admin">'
-            . '<a href="' . htmlspecialchars($adminUrl, ENT_QUOTES, 'UTF-8') . '">'
-            . htmlspecialchars('Administration', ENT_QUOTES, 'UTF-8')
-            . '</a></div>';
+        $items[] = array(
+            'url' => rtrim((string) $_CONF['site_admin_url'], '/')
+                . '/plugins/documents/index.php',
+            'label' => $isFrench ? 'Administration' : 'Admin'
+        );
     }
 
-    return $html . '</nav>';
+    $links = array();
+    foreach ($items as $item) {
+        $links[] = '<a href="'
+            . htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') . '">'
+            . htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') . '</a>';
+    }
+
+    return '<div class="user_menu documents-navigation" role="navigation" aria-label="Documents">'
+        . implode(' | ', $links) . '</div>';
 }
