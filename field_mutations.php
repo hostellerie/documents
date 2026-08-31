@@ -8,7 +8,10 @@ if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'fie
 
 function DOCUMENTS_fieldAllowedTypes()
 {
-    $types = array('text', 'textarea', 'decimal', 'date', 'image', 'checkbox', 'select', 'category');
+    /* Only expose field types with a complete modern form + save path. Legacy
+     * category/file values remain readable in existing installations but are
+     * no longer offered for new fields. */
+    $types = array('text', 'textarea', 'decimal', 'date', 'image', 'checkbox', 'select', 'radio');
     if (DOCUMENTS_hasMaps()) {
         $types[] = 'marker';
     }
@@ -27,13 +30,6 @@ function DOCUMENTS_fieldVariableName($value)
     return $value;
 }
 
-/**
- * Build a predictable template variable from a human field label.
- *
- * The browser editor uses the same rules for immediate feedback, but this
- * server-side implementation makes automatic variable generation reliable
- * even when JavaScript is disabled.
- */
 function DOCUMENTS_fieldVariableFromLabel($label)
 {
     $label = DOCUMENTS_adminPlainText($label, 255);
@@ -209,9 +205,9 @@ function DOCUMENTS_adminSaveField($request)
         if (!in_array($selId, array(0, 1001, 1002, 1003, 1004), true)) {
             $selId = 0;
         }
-    } elseif ($type === 'select') {
+    } elseif ($type === 'select' || $type === 'radio') {
         if (!DOCUMENTS_fieldValidSelectGroup($selId)) {
-            return array(false, 'A valid selection group is required for select fields.', $categoryId);
+            return array(false, 'A valid selection group is required for select/radio fields.', $categoryId);
         }
     } else {
         $selId = 0;
