@@ -142,7 +142,7 @@ if ($mode === 'new') {
         (int) $row['document_perm_members'],
         (int) $row['document_perm_anon']
     );
-    if ($access < 3) {
+    if ($access < 3 && !SEC_hasRights('documents.admin')) {
         echo COM_refresh($_CONF['site_url'] . '/404.php');
         exit;
     }
