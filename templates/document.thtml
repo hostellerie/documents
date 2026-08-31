@@ -9,3 +9,7 @@
         <a href="{document_url}">{document_url}</a>
     </footer>
 </article>
+
+<section id="comments" class="documents-document__comments" aria-label="Comments">
+    <div id="commentbar">{commentbar}</div>
+</section>
