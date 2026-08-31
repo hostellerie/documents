@@ -105,8 +105,6 @@ function DOCUMENTS_requestPermissions($source, $defaults = array())
 
 function DOCUMENTS_canViewDocument($document, $minimumAccess = 2)
 {
-    global $_USER;
-
     if (!is_array($document)
         || !isset($document['active'])
         || !isset($document['owner_id'])
@@ -119,26 +117,12 @@ function DOCUMENTS_canViewDocument($document, $minimumAccess = 2)
     }
 
     $status = (int) $document['active'];
-    $ownerId = (int) $document['owner_id'];
-    $userId = isset($_USER['uid']) ? (int) $_USER['uid'] : 1;
-    $isAdmin = SEC_hasRights('documents.admin');
-
-    if ($status === DOCUMENTS_STATUS_INACTIVE && !$isAdmin) {
-        return false;
-    }
-
-    if (($status === DOCUMENTS_STATUS_DRAFT || $status === DOCUMENTS_STATUS_SUBMISSION)
-        && !$isAdmin
-        && $ownerId !== $userId) {
-        return false;
-    }
-
     if ($status < DOCUMENTS_STATUS_INACTIVE || $status > DOCUMENTS_STATUS_SUBMISSION) {
         return false;
     }
 
     return SEC_hasAccess(
-        $ownerId,
+        (int) $document['owner_id'],
         (int) $document['group_id'],
         (int) $document['perm_owner'],
         (int) $document['perm_group'],
