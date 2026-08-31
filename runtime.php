@@ -91,6 +91,15 @@ function DOCUMENTS_runtimeLifecycleAfterSave($requestedId, $operation, $before, 
 
 function DOCUMENTS_runtimePrepareLifecycle()
 {
+    /* The modern document-save.php controller snapshots visibility and emits
+     * the lifecycle event itself. Registering this legacy shutdown observer as
+     * well caused the same save to be processed twice and could make external
+     * PLG_itemSaved listeners recurse or hold the database connection long
+     * enough to hit PHP's execution timeout. */
+    if (!empty($GLOBALS['DOCUMENTS_SECURE_SAVE_CONTROLLER'])) {
+        return;
+    }
+
     if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST'
         || !isset($_REQUEST['mode']) || $_REQUEST['mode'] !== 'save') {
         return;
