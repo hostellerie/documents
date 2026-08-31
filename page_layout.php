@@ -15,8 +15,13 @@ function DOCUMENTS_blockTitle()
 function DOCUMENTS_wrapBlock($content, $context = 'public')
 {
     $context = ($context === 'admin') ? 'admin' : 'public';
+    $content = (string) $content;
+    if (strpos($content, 'documents-shell--' . $context) !== false) {
+        return $content;
+    }
+
     $content = '<div class="documents-shell documents-shell--' . $context . '">'
-        . (string) $content . '</div>';
+        . $content . '</div>';
 
     if (function_exists('COM_startBlock') && function_exists('COM_endBlock')) {
         return COM_startBlock(DOCUMENTS_blockTitle()) . $content . COM_endBlock();
@@ -28,6 +33,9 @@ function DOCUMENTS_wrapBlock($content, $context = 'public')
 function DOCUMENTS_wrapRenderedAdminPage($page, $active = '')
 {
     if (!is_string($page) || $page === '') {
+        return $page;
+    }
+    if (strpos($page, 'documents-shell--admin') !== false) {
         return $page;
     }
 
