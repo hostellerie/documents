@@ -56,9 +56,6 @@ if (isset($adminViews[$mode])) {
     $oldDirectory = getcwd();
     @chdir($publicDir);
 
-    /* Keep one shared admin navigation without duplicating markup in every
-     * legacy-compatible view. These views render a complete Geeklog page, so
-     * capture it and inject the navigation immediately before their <main>. */
     ob_start();
     require $target;
     $renderedAdminPage = ob_get_clean();
@@ -67,13 +64,21 @@ if (isset($adminViews[$mode])) {
         @chdir($oldDirectory);
     }
 
-    $adminNavigation = DOCUMENTS_adminNavigation($mode);
+    /* The Geeklog page header/welcome area must stay before plugin controls.
+     * Insert the shared Documents navigation inside the page's <main>, never
+     * before it. Do not duplicate navigation in views that already render it. */
     if (is_string($renderedAdminPage) && $renderedAdminPage !== '') {
-        $mainPos = strpos($renderedAdminPage, '<main');
-        if ($mainPos !== false) {
-            $renderedAdminPage = substr($renderedAdminPage, 0, $mainPos)
-                . $adminNavigation
-                . substr($renderedAdminPage, $mainPos);
+        if (strpos($renderedAdminPage, 'documents-admin-navigation') === false) {
+            $mainPos = strpos($renderedAdminPage, '<main');
+            if ($mainPos !== false) {
+                $mainEnd = strpos($renderedAdminPage, '>', $mainPos);
+                if ($mainEnd !== false) {
+                    $insertPos = $mainEnd + 1;
+                    $renderedAdminPage = substr($renderedAdminPage, 0, $insertPos)
+                        . DOCUMENTS_adminNavigation($mode)
+                        . substr($renderedAdminPage, $insertPos);
+                }
+            }
         }
         echo $renderedAdminPage;
     }
@@ -130,8 +135,9 @@ if ($mode === 'integrity') {
             => count($report['unreferenced_image_files'])
     );
 
-    $content = DOCUMENTS_adminNavigation('integrity')
-        . '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
+    $content = '<main class="documents-admin-page">'
+        . DOCUMENTS_adminNavigation('integrity')
+        . '<header class="documents-admin-page__header"><h1>'
         . htmlspecialchars($isFrench ? 'Intégrité des données' : 'Data integrity', ENT_QUOTES, 'UTF-8')
         . '</h1></header><section class="documents-admin-card"><div class="documents-admin-card__body"><ul>';
     foreach ($checks as $label => $count) {
@@ -144,8 +150,9 @@ if ($mode === 'integrity') {
     exit;
 }
 
-$content = DOCUMENTS_adminNavigation('')
-    . '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
+$content = '<main class="documents-admin-page">'
+    . DOCUMENTS_adminNavigation('')
+    . '<header class="documents-admin-page__header"><h1>'
     . htmlspecialchars($pluginName, ENT_QUOTES, 'UTF-8') . '</h1><p class="documents-admin-page__lead">'
     . htmlspecialchars(
         $isFrench
