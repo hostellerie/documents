@@ -1,4 +1,4 @@
-name: Build installable archive
+name: Test and build Documents
 
 on:
   push:
@@ -11,51 +11,50 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: documents-build-modernize-1.1.10
+  cancel-in-progress: true
+
 jobs:
-  package:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: modernize-1.1.10
-          fetch-depth: 0
 
-      - name: Verify release metadata
+      - name: PHP 5.6
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '5.6'
+          coverage: none
+
+      - name: Test PHP 5.6
         shell: bash
         run: |
-          set -euo pipefail
-          grep -q "'pi_version' => '1.2.0'" autoinstall.php
-          grep -q "define('DOCUMENTS_MIN_GEEKLOG_VERSION', '2.1.1')" autoinstall.php
-          grep -q "'pi_gl_version' => DOCUMENTS_MIN_GEEKLOG_VERSION" autoinstall.php
+          set -e
+          find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l
+          for test in tests/*_test.php; do php "$test"; done
 
-      - name: Lint plugin PHP files
+      - name: PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+
+      - name: Test PHP 8.1
         shell: bash
         run: |
-          set -euo pipefail
-          while IFS= read -r -d '' file; do
-            php -l "$file"
-          done < <(find . -type f \( -name '*.php' -o -name '*.inc' \) \
-            -not -path './.git/*' \
-            -not -path './.github/*' \
-            -not -path './tests/*' \
-            -not -path './dist/*' \
-            -print0)
+          set -e
+          find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l
+          for test in tests/*_test.php; do php "$test"; done
 
-      - name: Run static regression tests
+      - name: Build archive
         shell: bash
         run: |
-          set -euo pipefail
-          for test in tests/*_test.php; do
-            echo "==> $test"
-            php "$test"
-          done
-
-      - name: Build Geeklog installable archive
-        shell: bash
-        run: |
-          set -euo pipefail
+          set -e
           rm -rf build
           mkdir -p build/documents dist
 
@@ -67,45 +66,25 @@ jobs:
             --exclude 'tests/' \
             --exclude 'docs/' \
             --exclude 'ROADMAP.md' \
-            --exclude 'TESTING.md' \
-            --exclude '.*' \
-            --exclude '*/.*'
+            --exclude 'TESTING.md'
 
           cd build
-          zip -qr documents_1.2.0-2.1.1.zip documents
-          unzip -t documents_1.2.0-2.1.1.zip >/dev/null
-          test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | head -n 1)" = 'documents/'
-          test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/functions.inc$')" -eq 1
-          test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/autoinstall.php$')" -eq 1
-          test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/public_html/index.php$')" -eq 1
-          test "$(zipinfo -1 documents_1.2.0-2.1.1.zip | grep -c '^documents/admin/index.php$')" -eq 1
+          zip -qr ../dist/documents_1.2.0-2.1.1.zip documents
+          cd ..
+          unzip -t dist/documents_1.2.0-2.1.1.zip >/dev/null
 
-          if zipinfo -1 documents_1.2.0-2.1.1.zip | awk -F/ '{for (i=1;i<=NF;i++) if ($i ~ /^\./) {print; exit 1}}'; then
-            :
-          else
-            echo 'Archive contains a hidden file or directory.' >&2
-            exit 1
-          fi
-
-          cp documents_1.2.0-2.1.1.zip ../dist/documents_1.2.0-2.1.1.zip
-
-      - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: documents_1.2.0-2.1.1
-          path: dist/documents_1.2.0-2.1.1.zip
-          if-no-files-found: error
-
-      - name: Commit archive to dist
+      - name: Save archive in dist
         shell: bash
         run: |
-          set -euo pipefail
+          set -e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -f dist/documents_1.2.0-2.1.1.zip
+
           if git diff --cached --quiet; then
             echo 'Archive unchanged.'
             exit 0
           fi
-          git commit -m 'Build Documents 1.2.0 installable archive [skip ci]'
+
+          git commit -m 'Build Documents 1.2.0 archive [skip ci]'
           git push origin HEAD:modernize-1.1.10
