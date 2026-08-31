@@ -2,7 +2,7 @@
 
 /* Modern Documents field editor. PHP 5.6+. */
 
-require_once '../lib-common.php';
+require_once dirname(__DIR__) . '/lib-common.php';
 
 if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGINS, true)
     || !SEC_hasRights('documents.admin')) {
@@ -40,7 +40,7 @@ $text = $isFrench ? array(
     'type_help' => 'Le type détermine le contrôle de saisie et la manière dont la valeur est stockée. Un champ déjà utilisé ne peut pas changer directement de type.',
     'text_format' => 'Format d’affichage du texte',
     'selection_group' => 'Groupe de choix',
-    'selection_group_help' => 'Obligatoire pour un champ de type liste. Gérez les groupes et leurs options depuis « Groupes de choix ».',
+    'selection_group_help' => 'Obligatoire pour un champ de type liste ou boutons radio. Gérez les groupes et leurs options depuis « Groupes de choix ».',
     'help' => 'Aide affichée à l’utilisateur',
     'help_help' => 'Ajoutez une indication courte si le sens du champ ou le format attendu n’est pas évident.',
     'required' => 'Champ obligatoire',
@@ -77,7 +77,7 @@ $text = $isFrench ? array(
     'type_help' => 'The type controls input and storage. A field already used by documents cannot directly change type.',
     'text_format' => 'Text display format',
     'selection_group' => 'Selection group',
-    'selection_group_help' => 'Required for a list field. Manage groups and their options from “Selection groups”.',
+    'selection_group_help' => 'Required for selection-list or radio-button fields. Manage groups and their options from “Selection groups”.',
     'help' => 'Help shown to users',
     'help_help' => 'Add short guidance when the meaning or expected format is not obvious.',
     'required' => 'Required field',
@@ -149,7 +149,9 @@ while ($selectionGroup = DB_fetchArray($groupResult)) {
 
 $title = $fid > 0 ? $text['title_edit'] : $text['title_new'];
 $token = SEC_createToken();
-$content = '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
+$content = '<main class="documents-admin-page">'
+    . DOCUMENTS_adminNavigation('edit_field')
+    . '<header class="documents-admin-page__header"><h1>'
     . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p class="documents-admin-page__lead">'
     . htmlspecialchars($text['lead'], ENT_QUOTES, 'UTF-8') . '</p></header>';
 
@@ -166,6 +168,7 @@ $content .= '<div class="documents-admin-toolbar"><a class="documents-admin-butt
 
 if (empty($categories)) {
     $content .= '<p class="documents-admin-empty">' . htmlspecialchars($text['no_category'], ENT_QUOTES, 'UTF-8') . '</p></main>';
+    $content = DOCUMENTS_wrapBlock($content, 'admin', 'edit_field');
     $pageOptions = array('pagetitle' => $title);
     COM_output(COM_createHTMLDocument($content, $pageOptions));
     exit;
@@ -203,6 +206,7 @@ $content .= '<div class="documents-admin-form__row"><label class="documents-admi
 $typeLabels = array(
     'text' => 'Text', 'textarea' => 'Textarea', 'decimal' => 'Decimal', 'date' => 'Date',
     'image' => 'Image', 'checkbox' => 'Checkbox', 'select' => ($isFrench ? 'Liste de choix' : 'Selection list'),
+    'radio' => ($isFrench ? 'Boutons radio' : 'Radio buttons'),
     'category' => ($isFrench ? 'Catégorie' : 'Category'), 'marker' => 'Map marker', 'album' => 'MediaGallery album'
 );
 $content .= '<section class="documents-admin-form__section"><h2>' . htmlspecialchars($text['display'], ENT_QUOTES, 'UTF-8') . '</h2>';
@@ -227,7 +231,7 @@ foreach ($formats as $value => $label) {
 }
 $content .= '</select></div>';
 
-$groupSel = ((string) $field['f_type'] === 'select') ? (int) $field['sel_id'] : 0;
+$groupSel = in_array((string) $field['f_type'], array('select', 'radio'), true) ? (int) $field['sel_id'] : 0;
 $content .= '<div class="documents-admin-form__row" id="documents-selection-group-row"><label class="documents-admin-form__label" for="documents-selection-group">'
     . htmlspecialchars($text['selection_group'], ENT_QUOTES, 'UTF-8') . '</label><select class="documents-admin-form__control" id="documents-selection-group" name="sel_id"><option value="0">—</option>';
 foreach ($selectionGroups as $selectionGroup) {
@@ -289,12 +293,13 @@ $js = "(function(){"
     . "name.addEventListener('input',function(){if(!manual){variable.value=normalize(name.value);showPreview();}});"
     . "variable.addEventListener('input',function(){manual=true;variable.value=normalize(variable.value);showPreview();});"
     . "category.addEventListener('change',function(){if(variable.getAttribute('data-existing')!=='1'&&orders[this.value]){order.value=orders[this.value];}});"
-    . "function typeState(){var isText=type.value==='text';var isSelect=type.value==='select';textRow.style.display=isText?'':'none';textSelect.disabled=!isText;groupRow.style.display=isSelect?'':'none';groupSelect.disabled=!isSelect;}"
+    . "function typeState(){var isText=type.value==='text';var usesGroup=type.value==='select'||type.value==='radio';textRow.style.display=isText?'':'none';textSelect.disabled=!isText;groupRow.style.display=usesGroup?'':'none';groupSelect.disabled=!usesGroup;}"
     . "type.addEventListener('change',typeState);typeState();showPreview();"
     . "})();";
 if (isset($_SCRIPTS) && is_object($_SCRIPTS) && method_exists($_SCRIPTS, 'setJavaScript')) {
     $_SCRIPTS->setJavaScript($js, true);
 }
 
+$content = DOCUMENTS_wrapBlock($content, 'admin', 'edit_field');
 $pageOptions = array('pagetitle' => $title);
 COM_output(COM_createHTMLDocument($content, $pageOptions));
