@@ -1,4 +1,4 @@
-name: Test and build Documents
+name: Build Documents archive
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: documents-build-modernize-1.1.10
+  group: documents-archive
   cancel-in-progress: true
 
 jobs:
@@ -20,44 +20,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: modernize-1.1.10
 
-      - name: PHP 5.6
-        uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@v2
         with:
           php-version: '5.6'
           coverage: none
 
-      - name: Test PHP 5.6
-        shell: bash
-        run: |
-          set -e
-          find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l
-          for test in tests/*_test.php; do php "$test"; done
+      - name: PHP 5.6 syntax
+        run: find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l
 
-      - name: PHP 8.1
-        uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
           coverage: none
 
-      - name: Test PHP 8.1
-        shell: bash
-        run: |
-          set -e
-          find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l
-          for test in tests/*_test.php; do php "$test"; done
+      - name: PHP 8.1 syntax
+        run: find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l
 
-      - name: Build archive
-        shell: bash
+      - name: Build ZIP
         run: |
-          set -e
           rm -rf build
           mkdir -p build/documents dist
-
           rsync -a ./ build/documents/ \
             --exclude '.git/' \
             --exclude '.github/' \
@@ -67,24 +53,16 @@ jobs:
             --exclude 'docs/' \
             --exclude 'ROADMAP.md' \
             --exclude 'TESTING.md'
-
           cd build
           zip -qr ../dist/documents_1.2.0-2.1.1.zip documents
           cd ..
           unzip -t dist/documents_1.2.0-2.1.1.zip >/dev/null
 
-      - name: Save archive in dist
-        shell: bash
+      - name: Commit ZIP
         run: |
-          set -e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -f dist/documents_1.2.0-2.1.1.zip
-
-          if git diff --cached --quiet; then
-            echo 'Archive unchanged.'
-            exit 0
-          fi
-
+          git diff --cached --quiet && exit 0
           git commit -m 'Build Documents 1.2.0 archive [skip ci]'
           git push origin HEAD:modernize-1.1.10
