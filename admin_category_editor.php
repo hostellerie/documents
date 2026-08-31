@@ -6,6 +6,13 @@ if (isset($_SERVER['PHP_SELF']) && strpos(strtolower((string) $_SERVER['PHP_SELF
     die('This file can not be used on its own.');
 }
 
+if (isset($_CONF['path'])) {
+    $documentsLayout = $_CONF['path'] . 'plugins/documents/page_layout.php';
+    if (is_file($documentsLayout)) {
+        require_once $documentsLayout;
+    }
+}
+
 if ((!isset($LANG_DOCUMENTS_1) || !is_array($LANG_DOCUMENTS_1)) && isset($_CONF['path'])) {
     $documentsLanguage = isset($_CONF['language']) ? (string) $_CONF['language'] : 'english';
     $documentsLanguageFile = $_CONF['path'] . 'plugins/documents/language/' . $documentsLanguage . '.php';
@@ -42,26 +49,28 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
     );
 
     if ($categoryId > 0) {
-        $categoryResult = DB_query(
-            "SELECT * FROM {$_TABLES['documents_cat']} WHERE cid={$categoryId} LIMIT 1"
-        );
-        $row = DB_fetchArray($categoryResult);
+        $result = DB_query("SELECT * FROM {$_TABLES['documents_cat']} WHERE cid={$categoryId} LIMIT 1");
+        $row = DB_fetchArray($result);
         if (!is_array($row) || empty($row['cid'])) {
-            $errorLabel = $lang('error', 'Error');
-            $errorText = '<p>' . htmlspecialchars($errorLabel, ENT_QUOTES, 'UTF-8') . '</p>';
-            return COM_createHTMLDocument($errorText, array('pagetitle' => $errorLabel));
+            $pageTitle = $lang('error', 'Error');
+            $body = '<main class="documents-admin-page">'
+                . (function_exists('DOCUMENTS_adminNavigation') ? DOCUMENTS_adminNavigation('edit_cat') : '')
+                . '<header class="documents-admin-page__header"><h1>'
+                . htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8')
+                . '</h1></header><section class="documents-admin-card"><div class="documents-admin-card__body"><p>'
+                . htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8')
+                . '</p></div></section></main>';
+            if (function_exists('DOCUMENTS_wrapBlock')) {
+                $body = DOCUMENTS_wrapBlock($body, 'admin');
+            }
+            return COM_createHTMLDocument($body, array('pagetitle' => $pageTitle));
         }
         $category = array_merge($category, $row);
     }
 
     if ($category['cat_order'] === '') {
-        $category['cat_order'] = (int) DB_getItem(
-            $_TABLES['documents_cat'],
-            'MAX(cat_order)',
-            '1=1'
-        ) + 10;
+        $category['cat_order'] = (int) DB_getItem($_TABLES['documents_cat'], 'MAX(cat_order)', '1=1') + 10;
     }
-
     if ($category['perm_owner'] === '') {
         SEC_setDefaultPermissions($category, $_DOCUMENTS_CONF['default_permissions']);
     }
@@ -69,33 +78,24 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
         $category['owner_id'] = isset($_USER['uid']) ? (int) $_USER['uid'] : 1;
     }
     if ($category['group_id'] === '') {
-        $category['group_id'] = isset($_GROUPS['Documents Admin'])
-            ? (int) $_GROUPS['Documents Admin'] : 1;
+        $category['group_id'] = isset($_GROUPS['Documents Admin']) ? (int) $_GROUPS['Documents Admin'] : 1;
     }
+
+    $editCatLabel = $lang('edit_cat', 'Edit a category');
+    $newCatLabel = $lang('new_cat', 'Create a new category');
+    $pageTitle = $categoryId > 0 ? $editCatLabel : $newCatLabel;
 
     $template = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
     $template->set_file(array('cat' => 'cat_form.thtml'));
     $template->set_var('doc_url', $_DOCUMENTS_CONF['site_url']);
     $template->set_var('xhtml', XHTML);
-
-    $token = SEC_createToken();
     $template->set_var('gltoken_name', CSRF_TOKEN);
-    $template->set_var('gltoken', $token);
-
-    $editCatLabel = $lang('edit_cat', 'Edit a category');
-    $newCatLabel = $lang('new_cat', 'Create a new category');
-    $template->set_var(
-        'cat_informations',
-        $categoryId > 0
-            ? $editCatLabel . ' ' . htmlspecialchars(stripslashes((string) $category['cat_name']), ENT_QUOTES, 'UTF-8')
-            : $newCatLabel
-    );
-    $template->set_var(
-        'cid',
-        $categoryId > 0
-            ? '<input type="hidden" name="cid" value="' . $categoryId . '"' . XHTML . '>'
-            : ''
-    );
+    $template->set_var('gltoken', SEC_createToken());
+    $template->set_var('cat_informations', $categoryId > 0
+        ? $editCatLabel . ' ' . htmlspecialchars(stripslashes((string) $category['cat_name']), ENT_QUOTES, 'UTF-8')
+        : $newCatLabel);
+    $template->set_var('cid', $categoryId > 0
+        ? '<input type="hidden" name="cid" value="' . $categoryId . '"' . XHTML . '>' : '');
 
     $isFrench = isset($_CONF['language'])
         && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
@@ -157,7 +157,6 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
         'action_help' => 'Save or delete the category.',
         'map_help' => 'Associate a map if required.'
     );
-
     foreach ($help as $key => $value) {
         $template->set_var($key, htmlspecialchars($value, ENT_QUOTES, 'UTF-8'));
     }
@@ -193,9 +192,7 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
     }
 
     $categoriesOrder = '';
-    $result = DB_query(
-        "SELECT cat_order, cat_name, cat_url FROM {$_TABLES['documents_cat']} ORDER BY cat_order ASC, cid ASC"
-    );
+    $result = DB_query("SELECT cat_order, cat_name, cat_url FROM {$_TABLES['documents_cat']} ORDER BY cat_order ASC, cid ASC");
     while ($row = DB_fetchArray($result)) {
         $categoriesOrder .= (int) $row['cat_order'] . '. '
             . htmlspecialchars(stripslashes((string) $row['cat_name']), ENT_QUOTES, 'UTF-8')
@@ -209,11 +206,11 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
 
     if (DOCUMENTS_hasMaps() && function_exists('MAPS_recurseMaps')) {
         $mapOptions = MAPS_recurseMaps((int) $category['map']);
-        $map = '<div><p><label>' . htmlspecialchars($lang('use_map', 'Use map'), ENT_QUOTES, 'UTF-8')
+        $template->set_var('map', '<div><p><label>'
+            . htmlspecialchars($lang('use_map', 'Use map'), ENT_QUOTES, 'UTF-8')
             . '</label> <select id="map" name="map"><option value="0">'
             . htmlspecialchars($lang('no_map', 'No map'), ENT_QUOTES, 'UTF-8')
-            . '</option>' . $mapOptions . '</select></p></div>';
-        $template->set_var('map', $map);
+            . '</option>' . $mapOptions . '</select></p></div>');
     } else {
         $template->set_var('map', '');
     }
@@ -224,8 +221,7 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
         $options .= '<option value="delete">'
             . htmlspecialchars($lang('delete_button', 'Delete'), ENT_QUOTES, 'UTF-8') . '</option>';
     }
-    $options .= '</select>';
-    $template->set_var('admin_options', $options);
+    $template->set_var('admin_options', $options . '</select>');
 
     $ownerName = COM_getDisplayName((int) $category['owner_id']);
     $template->set_var('lang_owner', isset($LANG_ACCESS['owner']) ? $LANG_ACCESS['owner'] : ($isFrench ? 'Propriétaire' : 'Owner'));
@@ -233,23 +229,27 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
     $template->set_var('owner_id', (int) $category['owner_id']);
     $template->set_var('lang_group', isset($LANG_ACCESS['group']) ? $LANG_ACCESS['group'] : ($isFrench ? 'Groupe' : 'Group'));
     $template->set_var('group_dropdown', SEC_getGroupDropdown((int) $category['group_id'], 3));
-    $template->set_var(
-        'permissions_editor',
-        SEC_getPermissionsHTML(
-            $category['perm_owner'],
-            $category['perm_group'],
-            $category['perm_members'],
-            $category['perm_anon']
-        )
-    );
+    $template->set_var('permissions_editor', SEC_getPermissionsHTML(
+        $category['perm_owner'],
+        $category['perm_group'],
+        $category['perm_members'],
+        $category['perm_anon']
+    ));
     $template->set_var('lang_perm_key', isset($LANG_ACCESS['permissionskey']) ? $LANG_ACCESS['permissionskey'] : 'Permissions');
     $template->set_var('lang_permissions_msg', isset($LANG_ACCESS['permmsg']) ? $LANG_ACCESS['permmsg'] : '');
 
-    $content = $template->parse('output', 'cat');
-    if (function_exists('DOCUMENTS_adminNavigation')) {
-        $content = DOCUMENTS_adminNavigation('edit_cat') . $content;
+    $content = '<main class="documents-admin-page">'
+        . (function_exists('DOCUMENTS_adminNavigation') ? DOCUMENTS_adminNavigation('edit_cat') : '')
+        . '<header class="documents-admin-page__header"><h1>'
+        . htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8')
+        . '</h1></header>'
+        . '<section class="documents-admin-card"><div class="documents-admin-card__body">'
+        . $template->parse('output', 'cat')
+        . '</div></section></main>';
+
+    if (function_exists('DOCUMENTS_wrapBlock')) {
+        $content = DOCUMENTS_wrapBlock($content, 'admin');
     }
 
-    $pageTitle = $categoryId > 0 ? $editCatLabel : $newCatLabel;
     return COM_createHTMLDocument($content, array('pagetitle' => $pageTitle));
 }
