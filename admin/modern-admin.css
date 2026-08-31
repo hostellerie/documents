@@ -19,6 +19,28 @@
 .documents-admin-navigation a {
     white-space: nowrap;
 }
+.documents-admin-navigation__form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+.documents-admin-navigation__link {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.documents-admin-navigation__link:hover,
+.documents-admin-navigation__link:focus {
+    color: inherit;
+    text-decoration: underline;
+}
 
 .documents-admin-page__header {
     margin: 0 0 28px;
