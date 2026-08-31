@@ -6,13 +6,11 @@
 // +---------------------------------------------------------------------------+
 // | runtime.php                                                               |
 // |                                                                           |
-// | Shared runtime dependencies and lifecycle helpers.                        |
+// | Shared runtime dependencies and filesystem helpers.                       |
 // +---------------------------------------------------------------------------+
 
-/* Runtime is intentionally side-effect free for presentation. Loading this
- * file must never start an output buffer, emit markup or change the current
- * public controller. Navigation is safe here because it only defines helpers;
- * page presentation remains controller-owned. */
+/* Runtime must stay side-effect free: it loads helpers only. Save lifecycle
+ * events are emitted by the dedicated document-save.php controller. */
 if (isset($_CONF['path'])) {
     $documentsRuntimeFiles = array(
         'security.php',
@@ -29,104 +27,6 @@ if (isset($_CONF['path'])) {
         }
     }
 }
-
-function DOCUMENTS_runtimeDocumentSnapshot($id)
-{
-    global $_TABLES;
-
-    $id = trim((string) $id);
-    if ($id === '') {
-        return array();
-    }
-
-    $safeId = DB_escapeString($id);
-    $row = DB_fetchArray(DB_query(
-        "SELECT doc_url, active, created, modified FROM {$_TABLES['documents_docs']} "
-        . "WHERE doc_url='{$safeId}' LIMIT 1"
-    ));
-
-    return is_array($row) ? $row : array();
-}
-
-function DOCUMENTS_runtimeLifecycleAfterSave($requestedId, $operation, $before, $wasPublic)
-{
-    $id = trim((string) $requestedId);
-    if ($id === '' && defined('DOC_URL')) {
-        $id = (string) DOC_URL;
-    }
-    if ($id === '') {
-        return;
-    }
-
-    $wasPublic = (bool) $wasPublic;
-
-    if ($operation === 'delete') {
-        $after = DOCUMENTS_runtimeDocumentSnapshot($id);
-        if (empty($after)) {
-            DOCUMENTS_notifyPublicTransition($id, $wasPublic, false);
-        }
-        return;
-    }
-
-    $after = DOCUMENTS_runtimeDocumentSnapshot($id);
-    if (empty($after)) {
-        return;
-    }
-
-    $previousStatus = is_array($before) && isset($before['active'])
-        ? (int) $before['active'] : DOCUMENTS_STATUS_INACTIVE;
-    $newStatus = isset($after['active']) ? (int) $after['active'] : DOCUMENTS_STATUS_INACTIVE;
-    $beforeModified = is_array($before) && isset($before['modified']) ? (string) $before['modified'] : '';
-    $afterModified = isset($after['modified']) ? (string) $after['modified'] : '';
-    $createdNow = empty($before);
-    $changed = $createdNow || $previousStatus !== $newStatus || $beforeModified !== $afterModified;
-
-    if (!$changed) {
-        return;
-    }
-
-    $isPublic = DOCUMENTS_isPubliclyIndexable($id);
-    DOCUMENTS_notifyPublicTransition($id, $wasPublic, $isPublic);
-}
-
-function DOCUMENTS_runtimePrepareLifecycle()
-{
-    /* The modern document-save.php controller snapshots visibility and emits
-     * the lifecycle event itself. Registering this legacy shutdown observer as
-     * well caused the same save to be processed twice and could make external
-     * PLG_itemSaved listeners recurse or hold the database connection long
-     * enough to hit PHP's execution timeout. */
-    if (!empty($GLOBALS['DOCUMENTS_SECURE_SAVE_CONTROLLER'])) {
-        return;
-    }
-
-    if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST'
-        || !isset($_REQUEST['mode']) || $_REQUEST['mode'] !== 'save') {
-        return;
-    }
-
-    $operation = isset($_REQUEST['op']) ? (string) $_REQUEST['op'] : 'save';
-    $id = isset($_REQUEST['doc_url']) ? trim((string) $_REQUEST['doc_url']) : '';
-    $before = ($id !== '') ? DOCUMENTS_runtimeDocumentSnapshot($id) : array();
-    $wasPublic = ($id !== '') ? DOCUMENTS_isPubliclyIndexable($id) : false;
-
-    if ($wasPublic) {
-        $url = DOCUMENTS_interopResolveStoredUrl($id);
-        if ($url !== '') {
-            DOCUMENTS_interopRememberUrl($id, $url);
-        }
-    }
-
-    register_shutdown_function(
-        'DOCUMENTS_runtimeLifecycleAfterSave',
-        $id,
-        $operation,
-        $before,
-        $wasPublic
-    );
-}
-
-DOCUMENTS_runtimePrepareLifecycle();
 
 function DOCUMENTS_ensureImageDirectory()
 {
