@@ -72,17 +72,19 @@ $content .= DOCUMENTS_sectionBlock(
 
 $stats = DOCUMENTS_homeStatsBlock();
 if ($stats !== '') {
-    $content .= DOCUMENTS_sectionBlock(
-        isset($LANG_DOCUMENTS_1['stats_title']) ? $LANG_DOCUMENTS_1['stats_title'] : 'Statistics',
-        $stats
-    );
+    $statsTitle = isset($LANG_DOCUMENTS_1['stats_title']) ? $LANG_DOCUMENTS_1['stats_title'] : 'Statistics';
+    $content .= '<section class="documents-secondary-section documents-home-statistics">'
+        . '<h2 class="documents-secondary-section__title">'
+        . htmlspecialchars($statsTitle, ENT_QUOTES, 'UTF-8') . '</h2>'
+        . $stats . '</section>';
 }
 
 if (!empty($_DOCUMENTS_CONF['documents_main_footer'])) {
-    $content .= DOCUMENTS_sectionBlock(
-        isset($LANG_DOCUMENTS_1['more_information']) ? $LANG_DOCUMENTS_1['more_information'] : 'More information',
-        '<div class="documents-page-footer">' . (string) $_DOCUMENTS_CONF['documents_main_footer'] . '</div>'
-    );
+    $moreTitle = isset($LANG_DOCUMENTS_1['more_information']) ? $LANG_DOCUMENTS_1['more_information'] : 'More information';
+    $content .= '<section class="documents-secondary-section documents-page-footer">'
+        . '<h2 class="documents-secondary-section__title">'
+        . htmlspecialchars($moreTitle, ENT_QUOTES, 'UTF-8') . '</h2>'
+        . (string) $_DOCUMENTS_CONF['documents_main_footer'] . '</section>';
 }
 $content .= '</main>';
 
