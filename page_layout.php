@@ -40,6 +40,7 @@ function DOCUMENTS_adminSectionTitle($active)
     $isFrench = isset($_CONF['language'])
         && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
     $titles = array(
+        '' => $isFrench ? 'Catégories' : 'Categories',
         'dashboard' => $isFrench ? 'Catégories' : 'Categories',
         'edit_cat' => $isFrench ? 'Formulaire de catégorie' : 'Category form',
         'list_fields' => $isFrench ? 'Liste des champs' : 'Fields list',
