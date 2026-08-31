@@ -54,6 +54,30 @@ function DOCUMENTS_adminSectionTitle($active)
     return isset($titles[$active]) ? $titles[$active] : ($isFrench ? 'Gestion' : 'Management');
 }
 
+function DOCUMENTS_inferAdminSectionTitle($body, $active = '')
+{
+    global $_CONF;
+
+    if ($active !== '') {
+        return DOCUMENTS_adminSectionTitle($active);
+    }
+
+    $isFrench = isset($_CONF['language'])
+        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+
+    if (stripos($body, '<form') !== false) {
+        return $isFrench ? 'Formulaire' : 'Form';
+    }
+    if (strpos($body, 'documents-admin-table') !== false) {
+        return $isFrench ? 'Catégories' : 'Categories';
+    }
+    if (stripos($body, '<ul') !== false) {
+        return $isFrench ? 'Contrôles d’intégrité' : 'Integrity checks';
+    }
+
+    return DOCUMENTS_adminSectionTitle($active);
+}
+
 function DOCUMENTS_sectionBlock($title, $content)
 {
     if (function_exists('COM_startBlock') && function_exists('COM_endBlock')) {
@@ -117,7 +141,10 @@ function DOCUMENTS_wrapAdminStructure($content, $active = '')
     $top = substr($inner, 0, $headerEnd);
     $body = trim(substr($inner, $headerEnd));
     if ($body !== '' && strpos($body, 'block-center') === false) {
-        $body = DOCUMENTS_sectionBlock(DOCUMENTS_adminSectionTitle($active), $body);
+        $body = DOCUMENTS_sectionBlock(
+            DOCUMENTS_inferAdminSectionTitle($body, $active),
+            $body
+        );
     }
 
     $rebuilt = $mainOpen . $top . $body . '</main>';
