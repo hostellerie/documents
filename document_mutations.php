@@ -9,16 +9,11 @@ if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'doc
 function DOCUMENTS_documentMutationCategory($categoryId)
 {
     global $_TABLES;
-
     $categoryId = (int) $categoryId;
     if ($categoryId <= 0) {
         return array();
     }
-
-    $row = DB_fetchArray(DB_query(
-        "SELECT * FROM {$_TABLES['documents_cat']} WHERE cid={$categoryId} LIMIT 1"
-    ));
-
+    $row = DB_fetchArray(DB_query("SELECT * FROM {$_TABLES['documents_cat']} WHERE cid={$categoryId} LIMIT 1"));
     return is_array($row) ? $row : array();
 }
 
@@ -27,7 +22,6 @@ function DOCUMENTS_documentMutationCategoryAccess($category)
     if (!is_array($category) || empty($category['cid'])) {
         return 0;
     }
-
     return SEC_hasAccess(
         (int) $category['owner_id'],
         (int) $category['group_id'],
@@ -41,24 +35,20 @@ function DOCUMENTS_documentMutationCategoryAccess($category)
 function DOCUMENTS_documentMutationFields($categoryId)
 {
     global $_TABLES;
-
-    $categoryId = (int) $categoryId;
     $fields = array();
+    $categoryId = (int) $categoryId;
     if ($categoryId <= 0) {
         return $fields;
     }
-
     $result = DB_query(
         "SELECT fid, cat_id, f_name, f_order, f_type, sel_id, var_name, f_required "
-        . "FROM {$_TABLES['documents_fields']} WHERE cat_id={$categoryId} "
-        . "ORDER BY f_order ASC, fid ASC"
+        . "FROM {$_TABLES['documents_fields']} WHERE cat_id={$categoryId} ORDER BY f_order ASC, fid ASC"
     );
     while ($row = DB_fetchArray($result)) {
         if (is_array($row)) {
             $fields[] = $row;
         }
     }
-
     return $fields;
 }
 
@@ -71,43 +61,34 @@ function DOCUMENTS_documentMutationIsStandardCategory($categoryId)
             return false;
         }
     }
-
     return !empty($fields);
 }
 
 function DOCUMENTS_documentMutationExisting($documentId)
 {
     global $_TABLES;
-
     $documentId = trim((string) $documentId);
     if ($documentId === '') {
         return array();
     }
-
     $safeId = DB_escapeString($documentId);
-    $row = DB_fetchArray(DB_query(
-        "SELECT * FROM {$_TABLES['documents_docs']} WHERE doc_url='{$safeId}' LIMIT 1"
-    ));
-
+    $row = DB_fetchArray(DB_query("SELECT * FROM {$_TABLES['documents_docs']} WHERE doc_url='{$safeId}' LIMIT 1"));
     return is_array($row) ? $row : array();
 }
 
 function DOCUMENTS_documentMutationDocumentCategoryId($documentId)
 {
     global $_TABLES;
-
     $documentId = trim((string) $documentId);
     if ($documentId === '') {
         return 0;
     }
-
     $safeId = DB_escapeString($documentId);
     $row = DB_fetchArray(DB_query(
         "SELECT f.cat_id FROM {$_TABLES['documents_values']} AS v "
         . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
         . "WHERE v.doc_url='{$safeId}' ORDER BY f.f_order ASC, f.fid ASC LIMIT 1"
     ));
-
     return is_array($row) && isset($row['cat_id']) ? (int) $row['cat_id'] : 0;
 }
 
@@ -120,29 +101,28 @@ function DOCUMENTS_documentMutationUniqueUrl($title)
         $slug = 'document';
     }
 
-    $next = (int) DB_getItem($_TABLES['documents_docs'], 'MAX(did)', '1=1') + 1;
+    $row = DB_fetchArray(DB_query("SELECT MAX(did) AS max_did FROM {$_TABLES['documents_docs']}"));
+    $next = is_array($row) && isset($row['max_did']) ? ((int) $row['max_did'] + 1) : 1;
     if ($next < 1) {
         $next = 1;
     }
 
-    do {
+    for ($attempt = 0; $attempt < 10000; $attempt++, $next++) {
         $prefix = (string) $next . '-';
-        $available = 40 - strlen($prefix);
-        if ($available < 1) {
-            $available = 1;
-        }
-        $shortSlug = substr($slug, 0, $available);
-        $shortSlug = rtrim($shortSlug, '-');
+        $available = max(1, 40 - strlen($prefix));
+        $shortSlug = rtrim(substr($slug, 0, $available), '-');
         if ($shortSlug === '') {
             $shortSlug = 'd';
         }
         $candidate = $prefix . $shortSlug;
         $safeCandidate = DB_escapeString($candidate);
-        $exists = DB_getItem($_TABLES['documents_docs'], 'did', "doc_url='{$safeCandidate}'") !== '';
-        $next++;
-    } while ($exists);
+        $result = DB_query("SELECT did FROM {$_TABLES['documents_docs']} WHERE doc_url='{$safeCandidate}' LIMIT 1");
+        if (DB_numRows($result) === 0) {
+            return $candidate;
+        }
+    }
 
-    return $candidate;
+    return COM_makeSid();
 }
 
 function DOCUMENTS_documentMutationNormalizeValues($request, $fields, $documentId = '')
@@ -179,13 +159,12 @@ function DOCUMENTS_documentMutationNormalizeValues($request, $fields, $documentI
 
         if ($type === 'select' && $value !== '') {
             $safeValue = DB_escapeString((string) $value);
-            $selectGroupId = isset($field['sel_id']) ? (int) $field['sel_id'] : 0;
-            $valid = DB_getItem(
-                $_TABLES['documents_selects'],
-                'sid',
-                "s_group={$selectGroupId} AND s_name='{$safeValue}'"
+            $groupId = isset($field['sel_id']) ? (int) $field['sel_id'] : 0;
+            $result = DB_query(
+                "SELECT sid FROM {$_TABLES['documents_selects']} "
+                . "WHERE s_group={$groupId} AND s_name='{$safeValue}' LIMIT 1"
             );
-            if ($valid === '') {
+            if (DB_numRows($result) === 0) {
                 $value = '';
             }
         }
@@ -216,7 +195,6 @@ function DOCUMENTS_documentMutationPermissions($request, $existing)
             (int) $existing['perm_members'],
             (int) $existing['perm_anon']
         );
-
         if (SEC_hasRights('documents.admin')) {
             $ownerId = isset($request['owner_id']) ? max(1, (int) $request['owner_id']) : $ownerId;
             $groupId = isset($request['group_id']) ? max(1, (int) $request['group_id']) : $groupId;
@@ -227,7 +205,6 @@ function DOCUMENTS_documentMutationPermissions($request, $existing)
                 'perm_anon' => $permissions[3]
             ));
         }
-
         return array($ownerId, $groupId, $permissions);
     }
 
@@ -240,10 +217,8 @@ function DOCUMENTS_documentMutationPermissions($request, $existing)
         $permissions = DOCUMENTS_requestPermissions($request, $defaults);
     } else {
         $ownerId = isset($_USER['uid']) ? max(1, (int) $_USER['uid']) : 1;
-        $groupId = (int) DB_getItem($_TABLES['groups'], 'grp_id', "grp_name='Documents Admin'");
-        if ($groupId <= 0) {
-            $groupId = 1;
-        }
+        $groupRow = DB_fetchArray(DB_query("SELECT grp_id FROM {$_TABLES['groups']} WHERE grp_name='Documents Admin' LIMIT 1"));
+        $groupId = is_array($groupRow) && !empty($groupRow['grp_id']) ? (int) $groupRow['grp_id'] : 1;
         $permissions = array(
             isset($defaults['perm_owner']) ? (int) $defaults['perm_owner'] : 3,
             isset($defaults['perm_group']) ? (int) $defaults['perm_group'] : 3,
@@ -267,19 +242,20 @@ function DOCUMENTS_documentMutationUpsertValues($documentId, $values, $fields, $
         }
 
         $safeValue = DB_escapeString((string) $values[$fieldId]);
-        $existingValue = DB_getItem(
-            $_TABLES['documents_values'],
-            'vid',
-            "doc_url='{$safeDocument}' AND field_id={$fieldId}"
+        $existingResult = DB_query(
+            "SELECT vid FROM {$_TABLES['documents_values']} "
+            . "WHERE doc_url='{$safeDocument}' AND field_id={$fieldId} LIMIT 1"
         );
+        $existingRow = DB_numRows($existingResult) > 0 ? DB_fetchArray($existingResult) : array();
+        $existingValue = is_array($existingRow) && !empty($existingRow['vid']) ? (int) $existingRow['vid'] : 0;
 
-        if ($existingValue !== '') {
+        if ($existingValue > 0) {
             DB_query(
                 "UPDATE {$_TABLES['documents_values']} SET v_value='{$safeValue}', "
                 . "owner_id={$ownerId}, group_id={$groupId}, "
                 . "perm_owner=" . (int) $permissions[0] . ", perm_group=" . (int) $permissions[1] . ", "
                 . "perm_members=" . (int) $permissions[2] . ", perm_anon=" . (int) $permissions[3] . " "
-                . "WHERE vid=" . (int) $existingValue
+                . "WHERE vid={$existingValue}"
             );
         } else {
             DB_query(
@@ -294,7 +270,6 @@ function DOCUMENTS_documentMutationUpsertValues($documentId, $values, $fields, $
             return false;
         }
     }
-
     return true;
 }
 
@@ -318,11 +293,12 @@ function DOCUMENTS_saveStandardDocument($request)
     if ((int) $category['submitable'] !== 1 && !SEC_hasRights('documents.admin')) {
         return array(false, 'This category does not accept submissions.', '', '', array());
     }
-    if (!DOCUMENTS_documentMutationIsStandardCategory($categoryId)) {
+
+    $fields = DOCUMENTS_documentMutationFields($categoryId);
+    if (empty($fields) || !DOCUMENTS_documentMutationIsStandardCategory($categoryId)) {
         return array(false, 'legacy-required', '', '', array());
     }
 
-    $fields = DOCUMENTS_documentMutationFields($categoryId);
     $existing = array();
     if ($documentId !== '') {
         $existing = DOCUMENTS_documentMutationExisting($documentId);
@@ -343,8 +319,8 @@ function DOCUMENTS_saveStandardDocument($request)
     }
 
     if ($documentId === '') {
-        $firstFieldId = !empty($fields) ? (int) $fields[0]['fid'] : 0;
-        $title = ($firstFieldId > 0 && isset($values[$firstFieldId])) ? (string) $values[$firstFieldId] : '';
+        $firstFieldId = (int) $fields[0]['fid'];
+        $title = isset($values[$firstFieldId]) ? (string) $values[$firstFieldId] : '';
         $documentId = DOCUMENTS_documentMutationUniqueUrl($title);
     }
 
@@ -363,10 +339,7 @@ function DOCUMENTS_saveStandardDocument($request)
 
     list($ownerId, $groupId, $permissions) = DOCUMENTS_documentMutationPermissions($request, $existing);
     $requestedStatus = isset($request['active']) ? (int) $request['active'] : DOCUMENTS_STATUS_SUBMISSION;
-    $status = DOCUMENTS_normalizeDocumentStatus(
-        $requestedStatus,
-        empty($existing) ? null : (int) $existing['active']
-    );
+    $status = DOCUMENTS_normalizeDocumentStatus($requestedStatus, empty($existing) ? null : (int) $existing['active']);
     $safeDocument = DB_escapeString($documentId);
 
     if (empty($existing)) {
@@ -376,12 +349,6 @@ function DOCUMENTS_saveStandardDocument($request)
             . "perm_owner=" . (int) $permissions[0] . ", perm_group=" . (int) $permissions[1] . ", "
             . "perm_members=" . (int) $permissions[2] . ", perm_anon=" . (int) $permissions[3]
         );
-        if (DB_error()) {
-            if (function_exists('DOCUMENTS_imageDeleteFiles')) {
-                DOCUMENTS_imageDeleteFiles(array_values($uploadedImages));
-            }
-            return array(false, 'Unable to create document.', '', (string) $category['cat_url'], array());
-        }
     } else {
         DB_query(
             "UPDATE {$_TABLES['documents_docs']} SET active={$status}, modified=NOW(), "
@@ -390,22 +357,16 @@ function DOCUMENTS_saveStandardDocument($request)
             . "perm_members=" . (int) $permissions[2] . ", perm_anon=" . (int) $permissions[3] . " "
             . "WHERE doc_url='{$safeDocument}'"
         );
-        if (DB_error()) {
-            if (function_exists('DOCUMENTS_imageDeleteFiles')) {
-                DOCUMENTS_imageDeleteFiles(array_values($uploadedImages));
-            }
-            return array(false, 'Unable to update document.', '', (string) $category['cat_url'], array());
-        }
     }
 
-    if (!DOCUMENTS_documentMutationUpsertValues(
-        $documentId,
-        $values,
-        $fields,
-        $ownerId,
-        $groupId,
-        $permissions
-    )) {
+    if (DB_error()) {
+        if (function_exists('DOCUMENTS_imageDeleteFiles')) {
+            DOCUMENTS_imageDeleteFiles(array_values($uploadedImages));
+        }
+        return array(false, empty($existing) ? 'Unable to create document.' : 'Unable to update document.', '', (string) $category['cat_url'], array());
+    }
+
+    if (!DOCUMENTS_documentMutationUpsertValues($documentId, $values, $fields, $ownerId, $groupId, $permissions)) {
         if (function_exists('DOCUMENTS_imageDeleteFiles')) {
             DOCUMENTS_imageDeleteFiles(array_values($uploadedImages));
         }
@@ -416,9 +377,7 @@ function DOCUMENTS_saveStandardDocument($request)
         return array(false, 'Unable to save document fields.', '', (string) $category['cat_url'], array());
     }
 
-    if (!empty($oldImages)
-        && !empty($uploadedImages)
-        && function_exists('DOCUMENTS_cleanupReplacedImages')) {
+    if (!empty($oldImages) && !empty($uploadedImages) && function_exists('DOCUMENTS_cleanupReplacedImages')) {
         DOCUMENTS_cleanupReplacedImages($oldImages, $documentId);
     }
 
