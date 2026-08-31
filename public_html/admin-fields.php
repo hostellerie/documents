@@ -2,7 +2,7 @@
 
 /* Modern Documents fields administration view. PHP 5.6+. */
 
-require_once '../lib-common.php';
+require_once dirname(__DIR__) . '/lib-common.php';
 
 if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGINS, true)
     || !SEC_hasRights('documents.admin')) {
@@ -79,8 +79,9 @@ $result = DB_query(
     . " ORDER BY c.cat_order ASC, c.cat_name ASC, f.f_order ASC, f.fid ASC"
 );
 
-$content = '<main class="documents-admin-page">';
-$content .= '<header class="documents-admin-page__header"><h1>'
+$content = '<main class="documents-admin-page">'
+    . DOCUMENTS_adminNavigation('list_fields')
+    . '<header class="documents-admin-page__header"><h1>'
     . htmlspecialchars($text['title'], ENT_QUOTES, 'UTF-8') . '</h1><p class="documents-admin-page__lead">'
     . htmlspecialchars($text['lead'], ENT_QUOTES, 'UTF-8') . '</p></header>';
 
@@ -147,5 +148,6 @@ if (empty($rows)) {
 }
 
 $content .= '</main>';
+$content = DOCUMENTS_wrapBlock($content, 'admin', 'list_fields');
 $pageOptions = array('pagetitle' => $text['title']);
 COM_output(COM_createHTMLDocument($content, $pageOptions));
