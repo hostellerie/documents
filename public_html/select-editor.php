@@ -2,7 +2,7 @@
 
 /* Modern Documents selection-option editor. PHP 5.6+. */
 
-require_once '../lib-common.php';
+require_once dirname(__DIR__) . '/lib-common.php';
 
 if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGINS, true)
     || !SEC_hasRights('documents.admin')) {
@@ -91,7 +91,9 @@ if ($sid === 0 && (int) $option['s_group'] > 0 && isset($nextOrders[(int) $optio
 }
 
 $title = $sid > 0 ? $text['title_edit'] : $text['title_new'];
-$content = '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
+$content = '<main class="documents-admin-page">'
+    . DOCUMENTS_adminNavigation('edit_select')
+    . '<header class="documents-admin-page__header"><h1>'
     . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p class="documents-admin-page__lead">'
     . htmlspecialchars($text['lead'], ENT_QUOTES, 'UTF-8') . '</p></header>';
 if (!empty($_GET['msg'])) {
@@ -109,6 +111,7 @@ $content .= '<div class="documents-admin-toolbar"><a class="documents-admin-butt
 
 if (empty($groups)) {
     $content .= '<p class="documents-admin-empty">' . htmlspecialchars($text['no_groups'], ENT_QUOTES, 'UTF-8') . '</p></main>';
+    $content = DOCUMENTS_wrapBlock($content, 'admin', 'edit_select');
     $pageOptions = array('pagetitle' => $title);
     COM_output(COM_createHTMLDocument($content, $pageOptions));
     exit;
@@ -161,5 +164,6 @@ if (isset($_SCRIPTS) && is_object($_SCRIPTS) && method_exists($_SCRIPTS, 'setJav
     $_SCRIPTS->setJavaScript($js, true);
 }
 
+$content = DOCUMENTS_wrapBlock($content, 'admin', 'edit_select');
 $pageOptions = array('pagetitle' => $title);
 COM_output(COM_createHTMLDocument($content, $pageOptions));
