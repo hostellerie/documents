@@ -154,6 +154,7 @@ $content .= '<div class="documents-admin-primary-content">'
     . '<a class="documents-admin-button documents-admin-button--primary" href="'
     . htmlspecialchars($adminUrl . '/index.php?mode=edit_cat', ENT_QUOTES, 'UTF-8') . '">'
     . htmlspecialchars($isFrench ? 'Nouvelle catégorie' : 'New category', ENT_QUOTES, 'UTF-8') . '</a>'
+    . DOCUMENTS_adminConfigurationForm()
     . '<a class="documents-admin-button" href="'
     . htmlspecialchars($publicUrl . '/', ENT_QUOTES, 'UTF-8') . '">'
     . htmlspecialchars($isFrench ? 'Voir les documents' : 'View documents', ENT_QUOTES, 'UTF-8') . '</a></div>';
