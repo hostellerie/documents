@@ -26,8 +26,6 @@ if ($categorySlug === '' || $documentSlug === '') {
     exit;
 }
 
-/* document.php is an implementation detail. Preserve direct legacy links but
- * immediately canonicalize them to /documents/category/document. */
 $requestPath = isset($_SERVER['REQUEST_URI'])
     ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH)
     : '';
@@ -48,4 +46,20 @@ if ($page === false) {
     exit;
 }
 
-COM_output(DOCUMENTS_createPublicPage($page['body'], $page['title']));
+$navigation = DOCUMENTS_renderNavigation();
+$body = (string) $page['body'];
+if (strpos($body, $navigation) === 0) {
+    $body = substr($body, strlen($navigation));
+}
+
+$isFrench = isset($_CONF['language'])
+    && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+$content = $navigation
+    . '<main class="documents-document-page">'
+    . '<header class="documents-page-header"><h1>'
+    . htmlspecialchars((string) $page['title'], ENT_QUOTES, 'UTF-8')
+    . '</h1></header>'
+    . DOCUMENTS_sectionBlock($isFrench ? 'Détails du document' : 'Document details', $body)
+    . '</main>';
+
+COM_output(DOCUMENTS_createPublicPage($content, $page['title']));
