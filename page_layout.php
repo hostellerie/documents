@@ -44,12 +44,41 @@ function DOCUMENTS_sectionBlock($title, $content)
         . (string) $content . '</section>';
 }
 
+function DOCUMENTS_wrapPublicFormSection($content)
+{
+    global $_CONF;
+
+    $open = '<section class="documents-form-card">';
+    $start = strpos($content, $open);
+    if ($start === false) {
+        return $content;
+    }
+
+    $endMarker = '</section></main>';
+    $end = strrpos($content, $endMarker);
+    if ($end === false || $end <= $start) {
+        return $content;
+    }
+
+    $innerStart = $start + strlen($open);
+    $inner = substr($content, $innerStart, $end - $innerStart);
+    $isFrench = isset($_CONF['language'])
+        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+    $block = DOCUMENTS_sectionBlock($isFrench ? 'Formulaire' : 'Form', $inner);
+
+    return substr($content, 0, $start) . $block . substr($content, $end + strlen('</section>'));
+}
+
 function DOCUMENTS_wrapBlock($content, $context = 'public')
 {
     $context = ($context === 'admin') ? 'admin' : 'public';
     $content = (string) $content;
     if (strpos($content, 'documents-shell--' . $context) !== false) {
         return $content;
+    }
+
+    if ($context === 'public') {
+        $content = DOCUMENTS_wrapPublicFormSection($content);
     }
 
     $content = '<div class="documents-shell documents-shell--' . $context . '">'
