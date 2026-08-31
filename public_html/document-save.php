@@ -1,6 +1,6 @@
 <?php
 
-/* Progressive secure save dispatcher for Documents 1.2.0. */
+/* Secure save dispatcher for Documents 1.2.0. */
 
 require_once '../lib-common.php';
 
@@ -25,32 +25,17 @@ require_once $pluginPath . 'document_mutations.php';
 require_once $pluginPath . 'maps_adapter.php';
 require_once $pluginPath . 'document_delete.php';
 
-function DOCUMENTS_documentSaveTrace($message)
-{
-    if (function_exists('COM_errorLog')) {
-        COM_errorLog('DOCUMENTS SAVE TRACE: ' . (string) $message);
-    }
-}
-
 $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
 $operation = isset($_REQUEST['op']) ? (string) $_REQUEST['op'] : 'save';
 $documentId = isset($_REQUEST['doc_url']) ? trim((string) $_REQUEST['doc_url']) : '';
-
-DOCUMENTS_documentSaveTrace('document controller begin cid=' . $categoryId . ' op=' . $operation);
 
 /* Decide ownership before consuming Geeklog's one-time token. Non-marker
  * integrations without a service contract may still use the compatibility
  * controller. Any category containing a marker is forbidden from doing so. */
 if ($operation !== 'delete') {
-    DOCUMENTS_documentSaveTrace('document classify category begin');
     $standardCategory = $categoryId > 0 && DOCUMENTS_documentMutationIsStandardCategory($categoryId);
     $hasMarkerCategory = $categoryId > 0 && DOCUMENTS_mapsCategoryHasMarker($categoryId);
     $mapsCategory = $categoryId > 0 && DOCUMENTS_mapsCategorySupported($categoryId);
-    DOCUMENTS_documentSaveTrace(
-        'document classify category end standard=' . ($standardCategory ? '1' : '0')
-        . ' marker=' . ($hasMarkerCategory ? '1' : '0')
-        . ' maps=' . ($mapsCategory ? '1' : '0')
-    );
 
     if ($hasMarkerCategory && !$mapsCategory) {
         COM_errorLog('DOCUMENTS: marker category refused legacy save fallback; Maps service ownership is mandatory.');
@@ -59,7 +44,6 @@ if ($operation !== 'delete') {
     }
 
     if ($categoryId <= 0 || (!$standardCategory && !$mapsCategory)) {
-        DOCUMENTS_documentSaveTrace('document legacy save dispatch begin');
         $GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'] = true;
         require __DIR__ . '/index.php';
         exit;
@@ -70,7 +54,6 @@ if ($operation !== 'delete') {
     $mapsCategory = false;
 }
 
-DOCUMENTS_documentSaveTrace('document token check begin');
 if (!SEC_checkToken()) {
     if (function_exists('http_response_code')) {
         http_response_code(403);
@@ -79,7 +62,6 @@ if (!SEC_checkToken()) {
     }
     exit;
 }
-DOCUMENTS_documentSaveTrace('document token check end');
 
 if ($operation === 'delete') {
     if ($documentId === '' || !SEC_hasRights('documents.admin')) {
@@ -87,9 +69,7 @@ if ($operation === 'delete') {
         exit;
     }
 
-    DOCUMENTS_documentSaveTrace('document delete mutation begin');
     list($deleteOk, $deleteMessage) = DOCUMENTS_deleteDocumentSecure($documentId);
-    DOCUMENTS_documentSaveTrace('document delete mutation end ok=' . ($deleteOk ? '1' : '0'));
     if (!$deleteOk) {
         $returnUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
             . '/index.php?mode=edit&doc_url=' . rawurlencode($documentId)
@@ -113,9 +93,7 @@ if ($isCreation && COM_isAnonUser()) {
     exit;
 }
 
-DOCUMENTS_documentSaveTrace('document category load begin');
 $category = DOCUMENTS_documentMutationCategory($categoryId);
-DOCUMENTS_documentSaveTrace('document category load end');
 if (empty($category) || DOCUMENTS_documentMutationCategoryAccess($category) < 2) {
     echo COM_refresh($_CONF['site_url'] . '/404.php');
     exit;
@@ -125,9 +103,7 @@ if ((int) $category['submitable'] !== 1 && !SEC_hasRights('documents.admin')) {
     exit;
 }
 
-DOCUMENTS_documentSaveTrace('document existing load begin');
 $existing = $isCreation ? array() : DOCUMENTS_documentMutationExisting($documentId);
-DOCUMENTS_documentSaveTrace('document existing load end');
 if (!$isCreation) {
     if (empty($existing)
         || DOCUMENTS_documentMutationDocumentCategoryId($documentId) !== $categoryId
@@ -153,13 +129,9 @@ if ($isCreation && !SEC_hasRights('documents.admin')) {
 }
 
 if ($mapsCategory) {
-    DOCUMENTS_documentSaveTrace('document maps mutation begin');
     list($ok, $message, $savedId, $categorySlug, $details) = DOCUMENTS_saveMapsDocument($_REQUEST);
-    DOCUMENTS_documentSaveTrace('document maps mutation end ok=' . ($ok ? '1' : '0'));
 } else {
-    DOCUMENTS_documentSaveTrace('document standard mutation begin');
     list($ok, $message, $savedId, $categorySlug, $details) = DOCUMENTS_saveStandardDocument($_REQUEST);
-    DOCUMENTS_documentSaveTrace('document standard mutation end ok=' . ($ok ? '1' : '0'));
 }
 
 if (!$ok) {
@@ -206,6 +178,5 @@ if ($newStatus === DOCUMENTS_STATUS_SUBMISSION) {
     exit;
 }
 
-DOCUMENTS_documentSaveTrace('document controller redirect');
 header('Location: ' . DOCUMENTS_interopCanonicalUrl($categorySlug, $savedId), true, 303);
 exit;
