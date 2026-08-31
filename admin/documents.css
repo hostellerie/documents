@@ -18,6 +18,19 @@
     display:inline-block;
     padding:7px 10px;
 }
+.documents-admin-navigation {
+    box-sizing:border-box;
+    width:100%;
+    max-width:1040px;
+    margin-left:auto;
+    margin-right:auto;
+}
+.documents-admin-navigation + .documents-category-form {
+    width:100%;
+    max-width:1040px;
+    margin-left:auto;
+    margin-right:auto;
+}
 .documents-admin-help {
     margin:15px 0;
     padding:10px 14px;
