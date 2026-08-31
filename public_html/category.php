@@ -81,7 +81,7 @@ if ($pageNumber > $totalPages) {
     exit;
 }
 
-$sql = "SELECT DISTINCT d.doc_url, d.did, COALESCE(d.modified,d.created) AS changed_at "
+$sql = "SELECT DISTINCT d.doc_url, d.did, d.active, COALESCE(d.modified,d.created) AS changed_at "
     . "FROM {$_TABLES['documents_docs']} AS d "
     . "INNER JOIN {$_TABLES['documents_values']} AS v ON v.doc_url=d.doc_url "
     . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
@@ -117,6 +117,15 @@ if ((int) $category['submitable'] === 1 && !COM_isAnonUser()) {
         . '</a></p>';
 }
 
+$isDocumentsAdmin = SEC_hasRights('documents.admin');
+$statusLabels = array(
+    DOCUMENTS_STATUS_INACTIVE => isset($LANG_DOCUMENTS_1['not_active']) ? $LANG_DOCUMENTS_1['not_active'] : 'Inactive',
+    DOCUMENTS_STATUS_ACTIVE => isset($LANG_DOCUMENTS_1['active']) ? $LANG_DOCUMENTS_1['active'] : 'Active',
+    DOCUMENTS_STATUS_DRAFT => isset($LANG_DOCUMENTS_1['draft']) ? $LANG_DOCUMENTS_1['draft'] : 'Draft',
+    DOCUMENTS_STATUS_SUBMISSION => isset($LANG_DOCUMENTS_1['pending_moderation'])
+        ? $LANG_DOCUMENTS_1['pending_moderation'] : 'Pending moderation'
+);
+
 $cards = array();
 while ($row = DB_fetchArray($result)) {
     if (!is_array($row) || empty($row['doc_url'])) {
@@ -124,7 +133,16 @@ while ($row = DB_fetchArray($result)) {
     }
     $item = DOCUMENTS_interopItem($row['doc_url'], 0);
     if (!empty($item)) {
-        $cards[] = DOCUMENTS_renderItemCard($item);
+        $card = DOCUMENTS_renderItemCard($item);
+        if ($isDocumentsAdmin) {
+            $status = isset($row['active']) ? (int) $row['active'] : DOCUMENTS_STATUS_INACTIVE;
+            $statusLabel = isset($statusLabels[$status]) ? $statusLabels[$status] : (string) $status;
+            $card = '<div class="documents-admin-list-item">'
+                . '<div class="documents-admin-status documents-admin-status--' . $status . '">'
+                . htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8')
+                . '</div>' . $card . '</div>';
+        }
+        $cards[] = $card;
     }
 }
 if (empty($cards)) {
