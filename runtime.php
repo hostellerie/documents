@@ -29,42 +29,45 @@ if (isset($_CONF['path'])) {
     }
 }
 
+function DOCUMENTS_ensureWritableDirectory($path, $label)
+{
+    $path = rtrim((string) $path, "/\\") . DIRECTORY_SEPARATOR;
+    if ($path === DIRECTORY_SEPARATOR) {
+        if (function_exists('COM_errorLog')) {
+            COM_errorLog('Documents runtime: ' . $label . ' path is empty.');
+        }
+        return false;
+    }
+
+    if (!is_dir($path) && !@mkdir($path, 0755, true) && !is_dir($path)) {
+        if (function_exists('COM_errorLog')) {
+            COM_errorLog('Documents runtime: unable to create ' . $label . ' directory ' . $path);
+        }
+        return false;
+    }
+
+    if (!is_writable($path)) {
+        if (function_exists('COM_errorLog')) {
+            COM_errorLog('Documents runtime: ' . $label . ' directory is not writable ' . $path);
+        }
+        return false;
+    }
+
+    return true;
+}
+
 function DOCUMENTS_ensureImageDirectory()
 {
     global $_DOCUMENTS_CONF;
 
-    if (!isset($_DOCUMENTS_CONF['path_images'])) {
+    if (empty($_DOCUMENTS_CONF['path_images'])) {
         if (function_exists('COM_errorLog')) {
             COM_errorLog('Documents runtime: path_images is not configured.');
         }
         return false;
     }
 
-    $path = rtrim((string) $_DOCUMENTS_CONF['path_images'], "/\\") . DIRECTORY_SEPARATOR;
-    if ($path === DIRECTORY_SEPARATOR) {
-        if (function_exists('COM_errorLog')) {
-            COM_errorLog('Documents runtime: path_images is empty.');
-        }
-        return false;
-    }
-
-    if (!is_dir($path)) {
-        if (!@mkdir($path, 0755, true) && !is_dir($path)) {
-            if (function_exists('COM_errorLog')) {
-                COM_errorLog('Documents runtime: unable to create image directory ' . $path);
-            }
-            return false;
-        }
-    }
-
-    if (!is_writable($path)) {
-        if (function_exists('COM_errorLog')) {
-            COM_errorLog('Documents runtime: image directory is not writable ' . $path);
-        }
-        return false;
-    }
-
-    return true;
+    return DOCUMENTS_ensureWritableDirectory($_DOCUMENTS_CONF['path_images'], 'image');
 }
 
 function DOCUMENTS_previewDirectory()
@@ -82,27 +85,8 @@ function DOCUMENTS_previewDirectory()
 function DOCUMENTS_ensurePreviewDirectory()
 {
     $path = DOCUMENTS_previewDirectory();
-    if ($path === '') {
-        return false;
-    }
 
-    if (!is_dir($path)) {
-        if (!@mkdir($path, 0755, true) && !is_dir($path)) {
-            if (function_exists('COM_errorLog')) {
-                COM_errorLog('Documents runtime: unable to create preview directory ' . $path);
-            }
-            return false;
-        }
-    }
-
-    if (!is_writable($path)) {
-        if (function_exists('COM_errorLog')) {
-            COM_errorLog('Documents runtime: preview directory is not writable ' . $path);
-        }
-        return false;
-    }
-
-    return true;
+    return $path !== '' && DOCUMENTS_ensureWritableDirectory($path, 'preview');
 }
 
 function DOCUMENTS_removeImagePreviews($filename)
