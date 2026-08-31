@@ -18,6 +18,10 @@ if (isset($_CONF['path'])) {
     if (is_file($documentsCustomAssetsFile)) {
         require_once $documentsCustomAssetsFile;
     }
+    $documentsLayoutFile = $_CONF['path'] . 'plugins/documents/page_layout.php';
+    if (is_file($documentsLayoutFile)) {
+        require_once $documentsLayoutFile;
+    }
 }
 
 function DOCUMENTS_loadPublicStyles()
@@ -64,6 +68,10 @@ function DOCUMENTS_preparePublicPresentation($loadCategoryStyle = true)
 function DOCUMENTS_createPublicPage($content, $title)
 {
     global $_CONF;
+
+    if (function_exists('DOCUMENTS_wrapBlock')) {
+        $content = DOCUMENTS_wrapBlock($content, 'public');
+    }
 
     $page = COM_createHTMLDocument(
         $content,
