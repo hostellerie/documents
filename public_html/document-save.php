@@ -128,14 +128,6 @@ if ($isCreation && !SEC_hasRights('documents.admin')) {
     );
 }
 
-$wasPublic = !$isCreation && DOCUMENTS_isPubliclyIndexable($documentId);
-if ($wasPublic) {
-    $oldUrl = DOCUMENTS_interopResolveStoredUrl($documentId);
-    if ($oldUrl !== '') {
-        DOCUMENTS_interopRememberUrl($documentId, $oldUrl);
-    }
-}
-
 if ($mapsCategory) {
     list($ok, $message, $savedId, $categorySlug, $details) = DOCUMENTS_saveMapsDocument($_REQUEST);
 } else {
@@ -160,9 +152,12 @@ if (!$ok) {
     exit;
 }
 
+/* Saving a document must finish independently from third-party listeners.
+ * PLG_itemSaved/PLG_itemDeleted remain available through the interoperability
+ * service, but they are intentionally not invoked synchronously here. This
+ * prevents a recursive or slow listener from holding the Documents request and
+ * the database connection until PHP reaches max_execution_time. */
 $newStatus = isset($details['status']) ? (int) $details['status'] : DOCUMENTS_STATUS_INACTIVE;
-$isPublic = DOCUMENTS_isPubliclyIndexable($savedId);
-DOCUMENTS_notifyPublicTransition($savedId, $wasPublic, $isPublic);
 
 if ($isCreation
     && $newStatus === DOCUMENTS_STATUS_SUBMISSION
