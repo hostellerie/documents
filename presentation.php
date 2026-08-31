@@ -197,7 +197,7 @@ function DOCUMENTS_canShowStats()
 
 function DOCUMENTS_homeStatsBlock()
 {
-    global $_TABLES, $LANG_DOCUMENTS_1;
+    global $_CONF, $_TABLES, $LANG_DOCUMENTS_1;
 
     if (!DOCUMENTS_canShowStats()) {
         return '';
@@ -211,8 +211,9 @@ function DOCUMENTS_homeStatsBlock()
     $total = is_array($row) && isset($row['total']) ? (int) $row['total'] : 0;
     $views = is_array($row) && isset($row['views']) ? (int) $row['views'] : 0;
 
-    $title = isset($LANG_DOCUMENTS_1['stats_title'])
-        ? $LANG_DOCUMENTS_1['stats_title'] : 'Statistics';
+    $isFrench = isset($_CONF['language'])
+        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+    $title = $isFrench ? 'Statistiques' : 'Statistics';
     $documents = isset($LANG_DOCUMENTS_1['stats_documents'])
         ? $LANG_DOCUMENTS_1['stats_documents'] : 'Published documents';
     $viewsLabel = isset($LANG_DOCUMENTS_1['stats_views'])
