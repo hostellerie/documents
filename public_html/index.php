@@ -17,6 +17,15 @@ if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGIN
 }
 
 $pluginPath = $_CONF['path'] . 'plugins/documents/';
+$requestedMode = isset($_REQUEST['mode']) && !is_array($_REQUEST['mode'])
+    ? trim((string) $_REQUEST['mode']) : '';
+
+/* Tell runtime.php not to register its historical shutdown observer for the
+ * modern secure save controller. document-save.php owns that lifecycle. */
+if ($requestedMode === 'save' && empty($GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'])) {
+    $GLOBALS['DOCUMENTS_SECURE_SAVE_CONTROLLER'] = true;
+}
+
 require_once $pluginPath . 'rewrite.php';
 require_once $pluginPath . 'runtime.php';
 require_once $pluginPath . 'include_compat.php';
@@ -25,16 +34,13 @@ DOCUMENTS_writeHtaccess(false);
 DOCUMENTS_ensureImageDirectory();
 DOCUMENTS_initializeRequestDefaults($_REQUEST);
 
-$mode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', '');
+$mode = (string) DOCUMENTS_requestValue($_REQUEST, 'mode', $requestedMode);
 
-/* Root public page. */
 if ($mode === '') {
     require __DIR__ . '/home.php';
     exit;
 }
 
-/* Clean URLs are rewritten here. index.php?mode=view remains a compatibility
- * URL and redirects to the canonical /documents/category/document form. */
 if ($mode === 'view') {
     $category = trim((string) DOCUMENTS_requestValue($_REQUEST, 'cat', ''));
     $document = trim((string) DOCUMENTS_requestValue($_REQUEST, 'doc', ''));
@@ -71,21 +77,32 @@ if ($mode === 'view') {
     exit;
 }
 
-/* Public document creation/editing remains a public contribution feature.
- * The historical form renderer is retained temporarily, isolated from public
- * reading and from structural administration. */
 if ($mode === 'new' || $mode === 'edit') {
     if ($mode === 'new' && COM_isAnonUser()) {
         echo COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
         exit;
     }
 
+    /* Public contribution forms must use public presentation assets, not an
+     * administration stylesheet. Keep the old renderer temporarily, but give
+     * it the same page-level CSS/SEO preparation as the other public pages. */
+    require_once $pluginPath . 'presentation.php';
+    DOCUMENTS_preparePublicPresentation();
+
+    /* Historical option rows sometimes have an empty display label. Preserve
+     * the internal value and repair only missing labels so existing categories
+     * immediately render useful <option> text. */
+    if (isset($_TABLES['documents_selects'])) {
+        DB_query(
+            "UPDATE {$_TABLES['documents_selects']} SET s_value=s_name "
+            . "WHERE (s_value='' OR s_value IS NULL) AND s_name<>''"
+        );
+    }
+
     require_once $pluginPath . 'include_html.php';
     exit;
 }
 
-/* Document writes have their own secure controller. document-save.php may
- * explicitly return here for a legacy non-standard integration fallback. */
 if ($mode === 'save') {
     if (empty($GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'])) {
         require __DIR__ . '/document-save.php';
@@ -95,9 +112,6 @@ if ($mode === 'save') {
     exit;
 }
 
-/* Structural administration belongs under /admin/plugins/documents/. Keep old
- * GET URLs as redirects and old POST targets as a compatibility bridge until
- * every installed template points directly at the administration surface. */
 $adminModes = array(
     'edit_cat', 'save_cat',
     'edit_field', 'save_field', 'list_fields',
