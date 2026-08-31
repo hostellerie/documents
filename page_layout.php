@@ -33,6 +33,27 @@ function DOCUMENTS_adminPageTitle($active)
     return isset($titles[$active]) ? $titles[$active] : 'Documents';
 }
 
+function DOCUMENTS_adminSectionTitle($active)
+{
+    global $_CONF;
+
+    $isFrench = isset($_CONF['language'])
+        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+    $titles = array(
+        '' => $isFrench ? 'Catégories' : 'Categories',
+        'edit_cat' => $isFrench ? 'Formulaire de catégorie' : 'Category form',
+        'list_fields' => $isFrench ? 'Liste des champs' : 'Fields list',
+        'edit_field' => $isFrench ? 'Formulaire du champ' : 'Field form',
+        'list_groups' => $isFrench ? 'Liste des groupes de choix' : 'Selection groups list',
+        'edit_group' => $isFrench ? 'Formulaire du groupe' : 'Selection group form',
+        'list_selects' => $isFrench ? 'Valeurs du groupe' : 'Selection values',
+        'edit_select' => $isFrench ? 'Formulaire de la valeur' : 'Selection value form',
+        'integrity' => $isFrench ? 'Contrôles d’intégrité' : 'Integrity checks'
+    );
+
+    return isset($titles[$active]) ? $titles[$active] : ($isFrench ? 'Gestion' : 'Management');
+}
+
 function DOCUMENTS_sectionBlock($title, $content)
 {
     if (function_exists('COM_startBlock') && function_exists('COM_endBlock')) {
@@ -69,7 +90,44 @@ function DOCUMENTS_wrapPublicFormSection($content)
     return substr($content, 0, $start) . $block . substr($content, $end + strlen('</section>'));
 }
 
-function DOCUMENTS_wrapBlock($content, $context = 'public')
+function DOCUMENTS_wrapAdminStructure($content, $active = '')
+{
+    $content = (string) $content;
+    $mainOpen = '<main class="documents-admin-page">';
+    $start = strpos($content, $mainOpen);
+    if ($start === false) {
+        return '<div class="documents-shell documents-shell--admin">' . $content . '</div>';
+    }
+
+    $end = strrpos($content, '</main>');
+    if ($end === false || $end <= $start) {
+        return '<div class="documents-shell documents-shell--admin">' . $content . '</div>';
+    }
+
+    $innerStart = $start + strlen($mainOpen);
+    $inner = substr($content, $innerStart, $end - $innerStart);
+
+    $navEnd = strpos($inner, '</nav>');
+    $headerEnd = strpos($inner, '</header>');
+    if ($navEnd === false || $headerEnd === false || $headerEnd < $navEnd) {
+        return '<div class="documents-shell documents-shell--admin">' . $content . '</div>';
+    }
+
+    $headerEnd += strlen('</header>');
+    $top = substr($inner, 0, $headerEnd);
+    $body = trim(substr($inner, $headerEnd));
+    if ($body !== '' && strpos($body, 'block-center') === false) {
+        $body = DOCUMENTS_sectionBlock(DOCUMENTS_adminSectionTitle($active), $body);
+    }
+
+    $rebuilt = $mainOpen . $top . $body . '</main>';
+
+    return '<div class="documents-shell documents-shell--admin">'
+        . substr($content, 0, $start) . $rebuilt . substr($content, $end + strlen('</main>'))
+        . '</div>';
+}
+
+function DOCUMENTS_wrapBlock($content, $context = 'public', $active = '')
 {
     $context = ($context === 'admin') ? 'admin' : 'public';
     $content = (string) $content;
@@ -79,22 +137,13 @@ function DOCUMENTS_wrapBlock($content, $context = 'public')
 
     if ($context === 'public') {
         $content = DOCUMENTS_wrapPublicFormSection($content);
+        return '<div class="documents-shell documents-shell--public">'
+            . $content . '</div>';
     }
 
-    $content = '<div class="documents-shell documents-shell--' . $context . '">'
-        . $content . '</div>';
-
-    /* Public pages keep navigation, H1 and introduction outside Geeklog blocks.
-     * Only their content sections use COM_startBlock(), yielding semantic H2s. */
-    if ($context === 'public') {
-        return $content;
-    }
-
-    if (function_exists('COM_startBlock') && function_exists('COM_endBlock')) {
-        return COM_startBlock(DOCUMENTS_blockTitle()) . $content . COM_endBlock();
-    }
-
-    return $content;
+    /* Admin pages follow the same semantic order as public pages:
+     * plugin navigation, H1/introduction, then Geeklog H2 content blocks. */
+    return DOCUMENTS_wrapAdminStructure($content, $active);
 }
 
 function DOCUMENTS_wrapRenderedAdminPage($page, $active = '')
@@ -135,7 +184,7 @@ function DOCUMENTS_wrapRenderedAdminPage($page, $active = '')
             . $prefix . substr($fragment, $insertPos);
     }
 
-    $wrapped = DOCUMENTS_wrapBlock($fragment, 'admin');
+    $wrapped = DOCUMENTS_wrapBlock($fragment, 'admin', $active);
 
     return substr($page, 0, $start) . $wrapped . substr($page, $end);
 }
