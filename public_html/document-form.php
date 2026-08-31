@@ -134,15 +134,16 @@ if ($mode === 'new') {
         exit;
     }
 
-    $access = SEC_hasAccess(
-        (int) $row['document_owner_id'],
-        (int) $row['document_group_id'],
-        (int) $row['document_perm_owner'],
-        (int) $row['document_perm_group'],
-        (int) $row['document_perm_members'],
-        (int) $row['document_perm_anon']
+    $editableDocument = array(
+        'active' => $row['document_active'],
+        'owner_id' => $row['document_owner_id'],
+        'group_id' => $row['document_group_id'],
+        'perm_owner' => $row['document_perm_owner'],
+        'perm_group' => $row['document_perm_group'],
+        'perm_members' => $row['document_perm_members'],
+        'perm_anon' => $row['document_perm_anon']
     );
-    if ($access < 3 && !SEC_hasRights('documents.admin')) {
+    if (!DOCUMENTS_canEditDocument($editableDocument)) {
         echo COM_refresh($_CONF['site_url'] . '/404.php');
         exit;
     }
