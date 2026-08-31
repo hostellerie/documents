@@ -72,7 +72,7 @@ $categoryId = (int) $category['cid'];
 $countSql = "SELECT COUNT(DISTINCT d.doc_url) AS total FROM {$_TABLES['documents_docs']} AS d "
     . "INNER JOIN {$_TABLES['documents_values']} AS v ON v.doc_url=d.doc_url "
     . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
-    . "WHERE f.cat_id={$categoryId} AND d.active=1" . COM_getPermSQL('AND', 0, 2, 'd');
+    . "WHERE f.cat_id={$categoryId}" . COM_getPermSQL('AND', 0, 2, 'd');
 $countRow = DB_fetchArray(DB_query($countSql));
 $total = is_array($countRow) && isset($countRow['total']) ? (int) $countRow['total'] : 0;
 $totalPages = ($total > 0) ? (int) ceil($total / $perPage) : 1;
@@ -85,7 +85,7 @@ $sql = "SELECT DISTINCT d.doc_url, d.did, COALESCE(d.modified,d.created) AS chan
     . "FROM {$_TABLES['documents_docs']} AS d "
     . "INNER JOIN {$_TABLES['documents_values']} AS v ON v.doc_url=d.doc_url "
     . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
-    . "WHERE f.cat_id={$categoryId} AND d.active=1" . COM_getPermSQL('AND', 0, 2, 'd')
+    . "WHERE f.cat_id={$categoryId}" . COM_getPermSQL('AND', 0, 2, 'd')
     . " ORDER BY changed_at DESC, d.did DESC LIMIT {$offset}, {$perPage}";
 $result = DB_query($sql);
 
