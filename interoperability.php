@@ -189,7 +189,7 @@ function DOCUMENTS_interopItem($documentId, $uid = 0)
         . "ON image_value.doc_url=d.doc_url AND image_value.field_id=("
         . "SELECT fi.fid FROM {$_TABLES['documents_fields']} AS fi "
         . "WHERE fi.cat_id=c.cid AND fi.f_type='image' ORDER BY fi.f_order ASC, fi.fid ASC LIMIT 1) "
-        . "WHERE d.doc_url='{$safeId}' AND d.active=1 "
+        . "WHERE d.doc_url='{$safeId}' "
         . "AND first_field.f_order=(SELECT MIN(fmin.f_order) FROM {$_TABLES['documents_fields']} AS fmin "
         . "WHERE fmin.cat_id=c.cid)"
         . COM_getPermSQL('AND', $uid, 2, 'd')
