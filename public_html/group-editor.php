@@ -2,7 +2,7 @@
 
 /* Modern Documents selection-group editor. PHP 5.6+. */
 
-require_once '../lib-common.php';
+require_once dirname(__DIR__) . '/lib-common.php';
 
 if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGINS, true)
     || !SEC_hasRights('documents.admin')) {
@@ -77,7 +77,9 @@ if ($gid > 0) {
 $title = $gid > 0 ? $text['title_edit'] : $text['title_new'];
 $token = SEC_createToken();
 
-$content = '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
+$content = '<main class="documents-admin-page">'
+    . DOCUMENTS_adminNavigation('edit_group')
+    . '<header class="documents-admin-page__header"><h1>'
     . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p class="documents-admin-page__lead">'
     . htmlspecialchars($text['lead'], ENT_QUOTES, 'UTF-8') . '</p></header>';
 
@@ -130,5 +132,6 @@ $content .= '<input type="hidden" name="mode" value="save_group">'
     . '<input type="hidden" name="' . htmlspecialchars(CSRF_TOKEN, ENT_QUOTES, 'UTF-8') . '" value="'
     . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '"></form></main>';
 
+$content = DOCUMENTS_wrapBlock($content, 'admin', 'edit_group');
 $pageOptions = array('pagetitle' => $title);
 COM_output(COM_createHTMLDocument($content, $pageOptions));
