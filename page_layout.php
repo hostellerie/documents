@@ -33,6 +33,17 @@ function DOCUMENTS_adminPageTitle($active)
     return isset($titles[$active]) ? $titles[$active] : 'Documents';
 }
 
+function DOCUMENTS_sectionBlock($title, $content)
+{
+    if (function_exists('COM_startBlock') && function_exists('COM_endBlock')) {
+        return COM_startBlock((string) $title) . (string) $content . COM_endBlock();
+    }
+
+    return '<section class="documents-section"><h2>'
+        . htmlspecialchars((string) $title, ENT_QUOTES, 'UTF-8') . '</h2>'
+        . (string) $content . '</section>';
+}
+
 function DOCUMENTS_wrapBlock($content, $context = 'public')
 {
     $context = ($context === 'admin') ? 'admin' : 'public';
@@ -43,6 +54,12 @@ function DOCUMENTS_wrapBlock($content, $context = 'public')
 
     $content = '<div class="documents-shell documents-shell--' . $context . '">'
         . $content . '</div>';
+
+    /* Public pages keep navigation, H1 and introduction outside Geeklog blocks.
+     * Only their content sections use COM_startBlock(), yielding semantic H2s. */
+    if ($context === 'public') {
+        return $content;
+    }
 
     if (function_exists('COM_startBlock') && function_exists('COM_endBlock')) {
         return COM_startBlock(DOCUMENTS_blockTitle()) . $content . COM_endBlock();
