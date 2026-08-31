@@ -12,6 +12,27 @@ function DOCUMENTS_blockTitle()
     return 'Documents 1.2.0';
 }
 
+function DOCUMENTS_adminPageTitle($active)
+{
+    global $_CONF;
+
+    $isFrench = isset($_CONF['language'])
+        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+    $titles = array(
+        '' => $isFrench ? 'Administration des documents' : 'Documents administration',
+        'edit_cat' => $isFrench ? 'Catégorie' : 'Category',
+        'list_fields' => $isFrench ? 'Champs' : 'Fields',
+        'edit_field' => $isFrench ? 'Modifier un champ' : 'Edit field',
+        'list_groups' => $isFrench ? 'Groupes de choix' : 'Selection groups',
+        'edit_group' => $isFrench ? 'Modifier un groupe de choix' : 'Edit selection group',
+        'list_selects' => $isFrench ? 'Valeurs du groupe' : 'Selection values',
+        'edit_select' => $isFrench ? 'Modifier une valeur' : 'Edit selection value',
+        'integrity' => $isFrench ? 'Intégrité des données' : 'Data integrity'
+    );
+
+    return isset($titles[$active]) ? $titles[$active] : 'Documents';
+}
+
 function DOCUMENTS_wrapBlock($content, $context = 'public')
 {
     $context = ($context === 'admin') ? 'admin' : 'public';
@@ -52,12 +73,20 @@ function DOCUMENTS_wrapRenderedAdminPage($page, $active = '')
     $end += strlen('</main>');
 
     $fragment = substr($page, $start, $end - $start);
+    $insertPos = strlen($mainOpen);
+    $prefix = '';
     if (strpos($fragment, 'documents-admin-navigation') === false
         && function_exists('DOCUMENTS_adminNavigation')) {
-        $insertPos = strlen($mainOpen);
+        $prefix .= DOCUMENTS_adminNavigation($active);
+    }
+    if (stripos($fragment, '<h1') === false) {
+        $prefix .= '<header class="documents-admin-page__header"><h1>'
+            . htmlspecialchars(DOCUMENTS_adminPageTitle($active), ENT_QUOTES, 'UTF-8')
+            . '</h1></header>';
+    }
+    if ($prefix !== '') {
         $fragment = substr($fragment, 0, $insertPos)
-            . DOCUMENTS_adminNavigation($active)
-            . substr($fragment, $insertPos);
+            . $prefix . substr($fragment, $insertPos);
     }
 
     $wrapped = DOCUMENTS_wrapBlock($fragment, 'admin');
