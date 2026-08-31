@@ -75,20 +75,16 @@ function DOCUMENTS_wrapAdminStructure($content, $active)
     $content = (string) $content;
     $mainOpen = '<main class="documents-admin-page">';
     $start = strpos($content, $mainOpen);
-    if ($start === false) {
-        return '<div class="documents-shell documents-shell--admin">' . $content . '</div>';
-    }
-
     $end = strrpos($content, '</main>');
-    if ($end === false || $end <= $start) {
+
+    if ($start === false || $end === false || $end <= $start) {
         return '<div class="documents-shell documents-shell--admin">' . $content . '</div>';
     }
 
     $innerStart = $start + strlen($mainOpen);
     $inner = substr($content, $innerStart, $end - $innerStart);
-    $navEnd = strpos($inner, '</nav>');
     $headerEnd = strpos($inner, '</header>');
-    if ($navEnd === false || $headerEnd === false || $headerEnd < $navEnd) {
+    if ($headerEnd === false) {
         return '<div class="documents-shell documents-shell--admin">' . $content . '</div>';
     }
 
