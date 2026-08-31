@@ -218,6 +218,35 @@
     min-width: 0;
 }
 
+.documents-admin-list-item {
+    position: relative;
+}
+
+.documents-admin-status {
+    display: inline-block;
+    margin: 0 0 .35rem .15rem;
+    padding: .2rem .55rem;
+    border: 1px solid rgba(0, 0, 0, .14);
+    border-radius: 999px;
+    background: #f5f6f8;
+    font-size: .76rem;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: .01em;
+}
+
+.documents-admin-status--0 {
+    opacity: .7;
+}
+
+.documents-admin-status--2 {
+    border-style: dashed;
+}
+
+.documents-admin-status--3 {
+    font-style: italic;
+}
+
 .documents-category__actions {
     margin: 1rem 0;
 }
