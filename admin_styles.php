@@ -9,7 +9,7 @@ if (isset($_SERVER['PHP_SELF'])
 
 function DOCUMENTS_loadAdminStyles()
 {
-    global $_SCRIPTS;
+    global $_CONF, $_SCRIPTS;
 
     if (!isset($_SCRIPTS)
         || !is_object($_SCRIPTS)
@@ -17,15 +17,17 @@ function DOCUMENTS_loadAdminStyles()
         return false;
     }
 
-    /* Geeklog 2.2.x resolves plugin CSS more reliably when setCSSFile() gets a
-     * public_html-relative path without a query string or leading slash. */
+    /* Use absolute site URLs. Geeklog 2.1.1 and 2.2.x both treat these as
+     * external CSS resources, avoiding their different local-path checks. */
+    $base = rtrim((string) $_CONF['site_admin_url'], '/') . '/plugins/documents';
+
     $legacyLoaded = (bool) $_SCRIPTS->setCSSFile(
         'documents_admin_css',
-        'admin/plugins/documents/documents.css'
+        $base . '/documents.css'
     );
     $modernLoaded = (bool) $_SCRIPTS->setCSSFile(
         'documents_modern_admin_css',
-        'admin/plugins/documents/modern-admin.css'
+        $base . '/modern-admin.css'
     );
 
     return $legacyLoaded && $modernLoaded;
