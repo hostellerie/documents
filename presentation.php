@@ -22,7 +22,7 @@ if (isset($_CONF['path'])) {
 
 function DOCUMENTS_loadPublicStyles()
 {
-    global $_DOCUMENTS_CONF, $_SCRIPTS;
+    global $_CONF, $_DOCUMENTS_CONF, $_SCRIPTS;
 
     if (!isset($_SCRIPTS) || !is_object($_SCRIPTS)
         || !method_exists($_SCRIPTS, 'setCSSFile')) {
@@ -36,15 +36,14 @@ function DOCUMENTS_loadPublicStyles()
         $folder = 'documents';
     }
 
-    return (bool) $_SCRIPTS->setCSSFile(
-        'documents_public',
-        '/' . $folder . '/css/documents.css?v=1.2.0-4'
-    );
+    /* Absolute URL avoids the different local-file resolution rules used by
+     * Geeklog 2.1.1 and 2.2.x. */
+    $url = rtrim((string) $_CONF['site_url'], '/')
+        . '/' . rawurlencode($folder) . '/css/documents.css';
+
+    return (bool) $_SCRIPTS->setCSSFile('documents_public', $url);
 }
 
-/**
- * Explicitly prepare assets for one public Documents page.
- */
 function DOCUMENTS_preparePublicPresentation($loadCategoryStyle = true)
 {
     DOCUMENTS_loadPublicStyles();
@@ -54,11 +53,6 @@ function DOCUMENTS_preparePublicPresentation($loadCategoryStyle = true)
     }
 }
 
-/**
- * Build the complete Geeklog page, then apply Documents SEO exactly once.
- * No output buffering is required and loading presentation.php has no effect
- * on unrelated requests.
- */
 function DOCUMENTS_createPublicPage($content, $title)
 {
     global $_CONF;
