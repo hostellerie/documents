@@ -42,6 +42,7 @@ if (!isset($_DOCUMENTS_CONF)) {
 }
 
 require_once $plugin_path . 'interoperability.php';
+require_once $plugin_path . 'moderation.php';
 
 function DOCUMENTS_dataDir()
 {
