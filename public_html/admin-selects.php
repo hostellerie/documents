@@ -2,7 +2,7 @@
 
 /* Modern Documents selection-options administration view. PHP 5.6+. */
 
-require_once '../lib-common.php';
+require_once dirname(__DIR__) . '/lib-common.php';
 
 if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('documents', $_PLUGINS, true)
     || !SEC_hasRights('documents.admin')) {
@@ -71,7 +71,9 @@ if ($selectedGroup > 0) {
 $sql .= ' ORDER BY g.g_name ASC, s.s_order ASC, s.sid ASC';
 $result = DB_query($sql);
 
-$content = '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
+$content = '<main class="documents-admin-page">'
+    . DOCUMENTS_adminNavigation('list_selects')
+    . '<header class="documents-admin-page__header"><h1>'
     . htmlspecialchars($text['title'], ENT_QUOTES, 'UTF-8') . '</h1><p class="documents-admin-page__lead">'
     . htmlspecialchars($text['lead'], ENT_QUOTES, 'UTF-8') . '</p></header>';
 if (!empty($_GET['msg'])) {
@@ -127,5 +129,6 @@ if (empty($rows)) {
         . htmlspecialchars($text['actions'], ENT_QUOTES, 'UTF-8') . '</th></tr></thead><tbody>' . implode('', $rows) . '</tbody></table></div></section>';
 }
 $content .= '</main>';
+$content = DOCUMENTS_wrapBlock($content, 'admin', 'list_selects');
 $pageOptions = array('pagetitle' => $text['title']);
 COM_output(COM_createHTMLDocument($content, $pageOptions));
