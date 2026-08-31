@@ -206,6 +206,16 @@ function DOCUMENTS_publicDocumentData($categorySlug, $documentSlug)
     );
 }
 
+function DOCUMENTS_publicFieldBlock($field, $rendered, $className)
+{
+    $label = isset($field['f_name']) ? stripslashes((string) $field['f_name']) : '';
+
+    return '<section class="documents-content-section ' . htmlspecialchars($className, ENT_QUOTES, 'UTF-8') . '">'
+        . ($label !== '' ? '<h2 class="documents-content-section__title">'
+            . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</h2>' : '')
+        . '<div class="documents-content-section__body">' . $rendered . '</div></section>';
+}
+
 function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
 {
     global $_CONF, $_DOCUMENTS_CONF, $_SCRIPTS, $_TABLES, $LANG_DOCUMENTS_1;
@@ -218,7 +228,6 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     $category = $data['category'];
     $document = $data['document'];
     $fields = $data['fields'];
-
     $title = DOCUMENTS_publicDocumentTitle($fields, $documentSlug);
 
     $templateName = isset($category['template'])
@@ -241,12 +250,18 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     $template->set_file(array('doc' => 'document.thtml'));
     $template->set_var('doc_name', htmlspecialchars($title, ENT_QUOTES, 'UTF-8'));
 
-    $details = '<dl class="documents-fields">';
+    $properties = '';
+    $richFields = '';
+    $mainImage = '';
+    $mainContent = '';
+    $titleFieldConsumed = false;
+
     foreach ($fields as $field) {
         $value = isset($field['v_value']) ? $field['v_value'] : '';
-        $rendered = DOCUMENTS_publicFieldHtml($field, $value, $title);
+        $type = isset($field['f_type']) ? strtolower((string) $field['f_type']) : '';
         $variable = isset($field['var_name']) ? (string) $field['var_name'] : '';
         $normalizedVariable = strtolower(trim($variable));
+        $rendered = DOCUMENTS_publicFieldHtml($field, $value, $title);
 
         if ($variable !== '') {
             $template->set_var($variable, $rendered);
@@ -257,23 +272,58 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
             continue;
         }
 
-        if (trim(stripslashes((string) $value)) === $title
-            && ($field['f_type'] === 'text' || $field['f_type'] === 'textarea')) {
+        $plainValue = trim(stripslashes((string) $value));
+        if (!$titleFieldConsumed
+            && $plainValue === $title
+            && ($type === 'text' || $type === 'textarea')) {
+            $titleFieldConsumed = true;
             continue;
         }
 
-        if ($rendered === '' && $field['f_type'] !== 'checkbox') {
+        if ($rendered === '' && $type !== 'checkbox') {
             continue;
         }
 
-        $details .= '<div class="documents-field documents-field--'
-            . htmlspecialchars((string) $field['f_type'], ENT_QUOTES, 'UTF-8') . '">'
-            . '<dt class="documents-field__label">'
-            . htmlspecialchars(stripslashes((string) $field['f_name']), ENT_QUOTES, 'UTF-8')
-            . '</dt><dd class="documents-field__value">' . $rendered . '</dd></div>';
+        if (!$customTemplate && $type === 'image' && $mainImage === '') {
+            $mainImage = '<figure class="documents-document__media">' . $rendered . '</figure>';
+            continue;
+        }
+
+        if (!$customTemplate && $type === 'textarea' && $mainContent === '') {
+            $mainContent = '<section class="documents-document__body">'
+                . '<div class="documents-document__prose">' . $rendered . '</div></section>';
+            continue;
+        }
+
+        if (!$customTemplate && in_array($type, array('text', 'select', 'radio', 'checkbox'), true)) {
+            $properties .= '<div class="documents-property">'
+                . '<dt class="documents-property__label">'
+                . htmlspecialchars(stripslashes((string) $field['f_name']), ENT_QUOTES, 'UTF-8')
+                . '</dt><dd class="documents-property__value">' . $rendered . '</dd></div>';
+            continue;
+        }
+
+        if (!$customTemplate) {
+            $richFields .= DOCUMENTS_publicFieldBlock(
+                $field,
+                $rendered,
+                'documents-content-section--' . preg_replace('/[^a-z0-9_-]/', '', $type)
+            );
+        }
     }
-    $details .= '</dl>';
-    $template->set_var('raws', $customTemplate ? '' : $details);
+
+    if (!$customTemplate) {
+        $template->set_var('main_image', $mainImage);
+        $template->set_var('main_content', $mainContent);
+        $template->set_var(
+            'properties',
+            $properties === '' ? '' : '<dl class="documents-properties">' . $properties . '</dl>'
+        );
+        $template->set_var('rich_fields', $richFields);
+        $template->set_var('raws', '');
+    } else {
+        $template->set_var('raws', '');
+    }
 
     $status = (int) $document['active'];
     $statusLabel = '';
@@ -287,7 +337,7 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     $template->set_var(
         'active',
         $statusLabel === '' ? '' : '<span class="documents-status">'
-            . htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') . '</span> '
+            . htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') . '</span>'
     );
 
     $edit = '';
@@ -308,6 +358,19 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     $template->set_var('displayed', isset($LANG_DOCUMENTS_1['displayed']) ? $LANG_DOCUMENTS_1['displayed'] : 'Viewed');
     $template->set_var('times', isset($LANG_DOCUMENTS_1['times']) ? $LANG_DOCUMENTS_1['times'] : 'times');
 
+    $isFrench = isset($_CONF['language'])
+        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+    $modifiedTimestamp = isset($document['modified']) ? strtotime((string) $document['modified']) : false;
+    if ($modifiedTimestamp === false || $modifiedTimestamp <= 0) {
+        $modifiedTimestamp = isset($document['created']) ? strtotime((string) $document['created']) : false;
+    }
+    $modifiedDate = ($modifiedTimestamp !== false && $modifiedTimestamp > 0)
+        ? date(isset($_DOCUMENTS_CONF['date']) ? $_DOCUMENTS_CONF['date'] : 'Y-m-d', $modifiedTimestamp)
+        : '';
+    $template->set_var('modified_label', $isFrench ? 'Mis à jour le' : 'Updated');
+    $template->set_var('modified', htmlspecialchars($modifiedDate, ENT_QUOTES, 'UTF-8'));
+    $template->set_var('comments_title', $isFrench ? 'Commentaires' : 'Comments');
+
     DB_query("UPDATE {$_TABLES['documents_docs']} SET hits=hits+1 WHERE doc_url='"
         . DB_escapeString($documentSlug) . "'");
     $hits = isset($document['hits']) ? ((int) $document['hits'] + 1) : 1;
@@ -315,21 +378,20 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     $template->set_var('document_url', DOCUMENTS_interopCanonicalUrl($categorySlug, $documentSlug));
 
     require_once $_CONF['path_system'] . 'lib-comment.php';
-    $template->set_var(
-        'commentbar',
-        CMT_userComments(
-            $documentSlug,
-            $title,
-            'documents',
-            'ASC',
-            'nested',
-            0,
-            1,
-            false,
-            false,
-            0
-        )
+    $commentbar = CMT_userComments(
+        $documentSlug,
+        $title,
+        'documents',
+        'ASC',
+        'nested',
+        0,
+        1,
+        false,
+        false,
+        0
     );
+    $template->set_var('commentbar', $commentbar);
+    $template->set_var('has_comments', trim((string) $commentbar) === '' ? '' : '1');
 
     $body = '';
     if (function_exists('DOCUMENTS_renderNavigation')) {
