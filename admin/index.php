@@ -34,11 +34,6 @@ $publicUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/');
 $mode = isset($_REQUEST['mode']) && !is_array($_REQUEST['mode'])
     ? trim((string) $_REQUEST['mode']) : '';
 
-/* Structural administration views were modernized earlier under the public
- * plugin directory. Reuse those implementations behind the real Geeklog admin
- * URL while they are progressively moved into reusable private renderers. The
- * public base URL is temporarily replaced so every form and admin link remains
- * inside /admin/plugins/documents/. */
 $adminViews = array(
     'edit_cat' => 'category-editor.php',
     'list_fields' => 'admin-fields.php',
@@ -60,16 +55,31 @@ if (isset($adminViews[$mode])) {
     $_DOCUMENTS_CONF['site_url'] = $adminUrl;
     $oldDirectory = getcwd();
     @chdir($publicDir);
+
+    /* Keep one shared admin navigation without duplicating markup in every
+     * legacy-compatible view. These views render a complete Geeklog page, so
+     * capture it and inject the navigation immediately before their <main>. */
+    ob_start();
     require $target;
+    $renderedAdminPage = ob_get_clean();
+
     if ($oldDirectory !== false) {
         @chdir($oldDirectory);
+    }
+
+    $adminNavigation = DOCUMENTS_adminNavigation($mode);
+    if (is_string($renderedAdminPage) && $renderedAdminPage !== '') {
+        $mainPos = strpos($renderedAdminPage, '<main');
+        if ($mainPos !== false) {
+            $renderedAdminPage = substr($renderedAdminPage, 0, $mainPos)
+                . $adminNavigation
+                . substr($renderedAdminPage, $mainPos);
+        }
+        echo $renderedAdminPage;
     }
     exit;
 }
 
-/* All structural writes are owned by the admin application. Old public POST
- * targets are still accepted by public_html/index.php as a compatibility
- * bridge, but new forms post here because their base URL is $adminUrl. */
 $adminSaveModes = array('save_cat', 'save_field', 'save_group', 'save_select');
 if (in_array($mode, $adminSaveModes, true)) {
     if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -120,12 +130,10 @@ if ($mode === 'integrity') {
             => count($report['unreferenced_image_files'])
     );
 
-    $content = '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
+    $content = DOCUMENTS_adminNavigation('integrity')
+        . '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
         . htmlspecialchars($isFrench ? 'Intégrité des données' : 'Data integrity', ENT_QUOTES, 'UTF-8')
-        . '</h1></header><div class="documents-admin-toolbar"><a class="documents-admin-button" href="'
-        . htmlspecialchars($adminUrl . '/index.php', ENT_QUOTES, 'UTF-8') . '">← '
-        . htmlspecialchars($isFrench ? 'Administration' : 'Administration', ENT_QUOTES, 'UTF-8')
-        . '</a></div><section class="documents-admin-card"><div class="documents-admin-card__body"><ul>';
+        . '</h1></header><section class="documents-admin-card"><div class="documents-admin-card__body"><ul>';
     foreach ($checks as $label => $count) {
         $content .= '<li>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . ' : <strong>'
             . (int) $count . '</strong></li>';
@@ -136,8 +144,8 @@ if ($mode === 'integrity') {
     exit;
 }
 
-/* Dashboard: administration and public reading are deliberately separate. */
-$content = '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
+$content = DOCUMENTS_adminNavigation('')
+    . '<main class="documents-admin-page"><header class="documents-admin-page__header"><h1>'
     . htmlspecialchars($pluginName, ENT_QUOTES, 'UTF-8') . '</h1><p class="documents-admin-page__lead">'
     . htmlspecialchars(
         $isFrench
@@ -151,15 +159,6 @@ $content .= '<div class="documents-admin-toolbar">'
     . '<a class="documents-admin-button documents-admin-button--primary" href="'
     . htmlspecialchars($adminUrl . '/index.php?mode=edit_cat', ENT_QUOTES, 'UTF-8') . '">'
     . htmlspecialchars($isFrench ? 'Nouvelle catégorie' : 'New category', ENT_QUOTES, 'UTF-8') . '</a>'
-    . '<a class="documents-admin-button" href="'
-    . htmlspecialchars($adminUrl . '/index.php?mode=list_fields', ENT_QUOTES, 'UTF-8') . '">'
-    . htmlspecialchars($isFrench ? 'Champs' : 'Fields', ENT_QUOTES, 'UTF-8') . '</a>'
-    . '<a class="documents-admin-button" href="'
-    . htmlspecialchars($adminUrl . '/index.php?mode=list_groups', ENT_QUOTES, 'UTF-8') . '">'
-    . htmlspecialchars($isFrench ? 'Groupes de choix' : 'Selection groups', ENT_QUOTES, 'UTF-8') . '</a>'
-    . '<a class="documents-admin-button" href="'
-    . htmlspecialchars($adminUrl . '/index.php?mode=integrity', ENT_QUOTES, 'UTF-8') . '">'
-    . htmlspecialchars($isFrench ? 'Intégrité' : 'Integrity', ENT_QUOTES, 'UTF-8') . '</a>'
     . '<a class="documents-admin-button" href="'
     . htmlspecialchars($publicUrl . '/', ENT_QUOTES, 'UTF-8') . '">'
     . htmlspecialchars($isFrench ? 'Voir les documents' : 'View documents', ENT_QUOTES, 'UTF-8') . '</a></div>';
