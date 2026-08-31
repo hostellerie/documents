@@ -19,7 +19,7 @@ function DOCUMENTS_adminPageTitle($active)
     $isFrench = isset($_CONF['language'])
         && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
     $titles = array(
-        '' => $isFrench ? 'Administration des documents' : 'Documents administration',
+        'dashboard' => 'Documents',
         'edit_cat' => $isFrench ? 'Catégorie' : 'Category',
         'list_fields' => $isFrench ? 'Champs' : 'Fields',
         'edit_field' => $isFrench ? 'Modifier un champ' : 'Edit field',
@@ -40,7 +40,7 @@ function DOCUMENTS_adminSectionTitle($active)
     $isFrench = isset($_CONF['language'])
         && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
     $titles = array(
-        '' => $isFrench ? 'Catégories' : 'Categories',
+        'dashboard' => $isFrench ? 'Catégories' : 'Categories',
         'edit_cat' => $isFrench ? 'Formulaire de catégorie' : 'Category form',
         'list_fields' => $isFrench ? 'Liste des champs' : 'Fields list',
         'edit_field' => $isFrench ? 'Formulaire du champ' : 'Field form',
@@ -52,30 +52,6 @@ function DOCUMENTS_adminSectionTitle($active)
     );
 
     return isset($titles[$active]) ? $titles[$active] : ($isFrench ? 'Gestion' : 'Management');
-}
-
-function DOCUMENTS_inferAdminSectionTitle($body, $active = '')
-{
-    global $_CONF;
-
-    if ($active !== '') {
-        return DOCUMENTS_adminSectionTitle($active);
-    }
-
-    $isFrench = isset($_CONF['language'])
-        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
-
-    if (stripos($body, '<form') !== false) {
-        return $isFrench ? 'Formulaire' : 'Form';
-    }
-    if (strpos($body, 'documents-admin-table') !== false) {
-        return $isFrench ? 'Catégories' : 'Categories';
-    }
-    if (stripos($body, '<ul') !== false) {
-        return $isFrench ? 'Contrôles d’intégrité' : 'Integrity checks';
-    }
-
-    return DOCUMENTS_adminSectionTitle($active);
 }
 
 function DOCUMENTS_sectionBlock($title, $content)
@@ -114,7 +90,7 @@ function DOCUMENTS_wrapPublicFormSection($content)
     return substr($content, 0, $start) . $block . substr($content, $end + strlen('</section>'));
 }
 
-function DOCUMENTS_wrapAdminStructure($content, $active = '')
+function DOCUMENTS_wrapAdminStructure($content, $active)
 {
     $content = (string) $content;
     $mainOpen = '<main class="documents-admin-page">';
@@ -141,10 +117,7 @@ function DOCUMENTS_wrapAdminStructure($content, $active = '')
     $top = substr($inner, 0, $headerEnd);
     $body = trim(substr($inner, $headerEnd));
     if ($body !== '' && strpos($body, 'block-center') === false) {
-        $body = DOCUMENTS_sectionBlock(
-            DOCUMENTS_inferAdminSectionTitle($body, $active),
-            $body
-        );
+        $body = DOCUMENTS_sectionBlock(DOCUMENTS_adminSectionTitle($active), $body);
     }
 
     $rebuilt = $mainOpen . $top . $body . '</main>';
@@ -168,8 +141,6 @@ function DOCUMENTS_wrapBlock($content, $context = 'public', $active = '')
             . $content . '</div>';
     }
 
-    /* Admin pages follow the same semantic order as public pages:
-     * plugin navigation, H1/introduction, then Geeklog H2 content blocks. */
     return DOCUMENTS_wrapAdminStructure($content, $active);
 }
 
