@@ -125,13 +125,13 @@ if ($mode === 'integrity') {
         . DOCUMENTS_adminNavigation('integrity')
         . '<header class="documents-admin-page__header"><h1>'
         . htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8')
-        . '</h1></header><section class="documents-admin-card"><div class="documents-admin-card__body"><ul>';
+        . '</h1></header><div class="documents-admin-primary-content"><ul class="documents-admin-check-list">';
     foreach ($checks as $label => $count) {
         $content .= '<li>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . ' : <strong>'
             . (int) $count . '</strong></li>';
     }
-    $content .= '</ul></div></section></main>';
-    $content = DOCUMENTS_wrapBlock($content, 'admin');
+    $content .= '</ul></div></main>';
+    $content = DOCUMENTS_wrapBlock($content, 'admin', 'integrity');
 
     COM_output(COM_createHTMLDocument($content, array('pagetitle' => $pageTitle)));
     exit;
@@ -149,14 +149,14 @@ $content = '<main class="documents-admin-page">'
         'UTF-8'
     ) . '</p></header>';
 
-$content .= '<section class="documents-admin-card"><div class="documents-admin-card__body">'
-    . '<div class="documents-admin-toolbar">'
+$content .= '<div class="documents-admin-primary-content">'
+    . '<div class="documents-admin-toolbar documents-admin-toolbar--section">'
     . '<a class="documents-admin-button documents-admin-button--primary" href="'
     . htmlspecialchars($adminUrl . '/index.php?mode=edit_cat', ENT_QUOTES, 'UTF-8') . '">'
     . htmlspecialchars($isFrench ? 'Nouvelle catégorie' : 'New category', ENT_QUOTES, 'UTF-8') . '</a>'
     . '<a class="documents-admin-button" href="'
     . htmlspecialchars($publicUrl . '/', ENT_QUOTES, 'UTF-8') . '">'
-    . htmlspecialchars($isFrench ? 'Voir les documents' : 'View documents', ENT_QUOTES, 'UTF-8') . '</a></div></div></section>';
+    . htmlspecialchars($isFrench ? 'Voir les documents' : 'View documents', ENT_QUOTES, 'UTF-8') . '</a></div>';
 
 $rows = array();
 $result = DB_query(
@@ -189,18 +189,17 @@ while ($category = DB_fetchArray($result)) {
 }
 
 if (empty($rows)) {
-    $content .= '<section class="documents-admin-card"><div class="documents-admin-card__body">'
-        . '<p class="documents-admin-empty">'
+    $content .= '<p class="documents-admin-empty">'
         . htmlspecialchars($isFrench ? 'Aucune catégorie.' : 'No categories.', ENT_QUOTES, 'UTF-8')
-        . '</p></div></section>';
+        . '</p>';
 } else {
-    $content .= '<section class="documents-admin-card"><div class="documents-admin-table-wrap"><table class="documents-admin-table">'
+    $content .= '<div class="documents-admin-table-wrap"><table class="documents-admin-table">'
         . '<thead><tr><th>' . htmlspecialchars($isFrench ? 'Catégorie' : 'Category', ENT_QUOTES, 'UTF-8')
         . '</th><th>' . htmlspecialchars($isFrench ? 'Champs' : 'Fields', ENT_QUOTES, 'UTF-8')
         . '</th><th>' . htmlspecialchars($isFrench ? 'Actions' : 'Actions', ENT_QUOTES, 'UTF-8')
-        . '</th></tr></thead><tbody>' . implode('', $rows) . '</tbody></table></div></section>';
+        . '</th></tr></thead><tbody>' . implode('', $rows) . '</tbody></table></div>';
 }
 
-$content .= '</main>';
-$content = DOCUMENTS_wrapBlock($content, 'admin');
+$content .= '</div></main>';
+$content = DOCUMENTS_wrapBlock($content, 'admin', '');
 COM_output(COM_createHTMLDocument($content, array('pagetitle' => $pluginName)));
