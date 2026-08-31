@@ -13,7 +13,7 @@ $pluginPath = $_CONF['path'] . 'plugins/documents/';
 require_once $pluginPath . 'runtime.php';
 require_once $pluginPath . 'include_compat.php';
 require_once $pluginPath . 'presentation.php';
-require_once $pluginPath . 'include_edit.php';
+require_once $pluginPath . 'public_form.php';
 
 DOCUMENTS_preparePublicPresentation();
 
@@ -173,7 +173,12 @@ if ($mode === 'edit' && !defined('DOC_URL')) {
     define('DOC_URL', (string) $doc['doc_url']);
 }
 
-$form = DOCUMENTS_editDoc($doc);
+$form = DOCUMENTS_renderPublicDocumentForm($doc);
+if ($form === '') {
+    echo COM_refresh($_CONF['site_url'] . '/404.php');
+    exit;
+}
+
 $title = $mode === 'new'
     ? ($isFrench ? 'Créer un document' : 'Create a document')
     : ($isFrench ? 'Modifier le document' : 'Edit document');
