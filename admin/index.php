@@ -45,28 +45,17 @@ $adminViews = array(
 );
 
 if (isset($adminViews[$mode])) {
-    $publicDir = rtrim((string) $_DOCUMENTS_CONF['path_html'], "/\\") . DIRECTORY_SEPARATOR;
-    $target = $publicDir . $adminViews[$mode];
+    $target = rtrim((string) $_DOCUMENTS_CONF['path_html'], "/\\")
+        . DIRECTORY_SEPARATOR . $adminViews[$mode];
     if (!is_file($target)) {
         echo COM_refresh($_CONF['site_url'] . '/404.php');
         exit;
     }
 
+    /* Modern admin views are path-independent and render their own navigation
+     * and primary Geeklog block. Only the base URL changes in admin context. */
     $_DOCUMENTS_CONF['site_url'] = $adminUrl;
-    $oldDirectory = getcwd();
-    @chdir($publicDir);
-
-    ob_start();
     require $target;
-    $renderedAdminPage = ob_get_clean();
-
-    if ($oldDirectory !== false) {
-        @chdir($oldDirectory);
-    }
-
-    if (is_string($renderedAdminPage) && $renderedAdminPage !== '') {
-        echo DOCUMENTS_wrapRenderedAdminPage($renderedAdminPage, $mode);
-    }
     exit;
 }
 
