@@ -52,8 +52,6 @@ if (strpos($body, $navigation) === 0) {
     $body = substr($body, strlen($navigation));
 }
 
-$isFrench = isset($_CONF['language'])
-    && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
 $documentsLabel = isset($LANG_DOCUMENTS_1['plugin_name'])
     ? $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
 $categoryName = isset($page['category_name'])
@@ -81,7 +79,7 @@ $content = $navigation
     . '<header class="documents-page-header"><h1>'
     . htmlspecialchars((string) $page['title'], ENT_QUOTES, 'UTF-8')
     . '</h1></header>'
-    . DOCUMENTS_sectionBlock($isFrench ? 'Détails du document' : 'Document details', $body)
+    . $body
     . '</main>';
 
 COM_output(DOCUMENTS_createPublicPage($content, $page['title']));
