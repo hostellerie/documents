@@ -36,8 +36,16 @@ function DOCUMENTS_loadPublicStyles()
         $folder = 'documents';
     }
 
-    /* Absolute URL avoids the different local-file resolution rules used by
-     * Geeklog 2.1.1 and 2.2.x. */
+    /* Geeklog 2.1.1 scripts::setCSSFile() checks a local file below
+     * public_html. Geeklog 2.2.x Resource accepts the absolute site URL. */
+    if (strtolower(get_class($_SCRIPTS)) === 'scripts') {
+        return (bool) $_SCRIPTS->setCSSFile(
+            'documents_public',
+            '/' . $folder . '/css/documents.css',
+            false
+        );
+    }
+
     $url = rtrim((string) $_CONF['site_url'], '/')
         . '/' . rawurlencode($folder) . '/css/documents.css';
 
