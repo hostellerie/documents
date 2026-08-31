@@ -15,6 +15,7 @@ if (isset($_CONF['path'])) {
     $documentsRuntimeFiles = array(
         'security.php',
         'navigation.php',
+        'page_layout.php',
         'mediagallery_adapter.php',
         'interoperability.php',
         'indexability.php'
