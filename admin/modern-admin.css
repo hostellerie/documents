@@ -35,13 +35,22 @@
     line-height: 1.6;
 }
 
-/* Geeklog blocks are the main H2 sections of administration pages. */
+/* One Geeklog block is the primary H2 section of an administration page. */
 .documents-shell--admin .block-center {
     margin-top: 0;
     margin-bottom: 24px;
 }
 .documents-shell--admin .block-center-content {
     line-height: 1.55;
+}
+.documents-admin-primary-content {
+    min-width: 0;
+}
+.documents-admin-primary-content > :first-child {
+    margin-top: 0;
+}
+.documents-admin-primary-content > :last-child {
+    margin-bottom: 0;
 }
 
 .documents-admin-toolbar {
@@ -50,6 +59,9 @@
     gap: 10px;
     align-items: center;
     margin: 0 0 20px;
+}
+.documents-admin-toolbar--section {
+    margin-bottom: 18px;
 }
 .documents-admin-button {
     display: inline-flex;
@@ -101,6 +113,9 @@
     margin-top: 8px;
     margin-bottom: 0;
 }
+
+/* Cards remain available for meaningful subgroups in complex forms, but the
+ * primary dashboard/list content is no longer wrapped in extra cards. */
 .documents-admin-card {
     margin: 0 0 18px;
     border: 1px solid #dde2e8;
@@ -131,6 +146,11 @@
 .documents-admin-table-wrap {
     width: 100%;
     overflow-x: auto;
+}
+.documents-admin-primary-content > .documents-admin-table-wrap {
+    border: 1px solid #e1e5ea;
+    border-radius: 8px;
+    background: #fff;
 }
 .documents-admin-table {
     width: 100%;
@@ -190,6 +210,13 @@
     background: #fafbfc;
     color: #616a77;
     line-height: 1.55;
+}
+.documents-admin-check-list {
+    margin: 0;
+    padding-left: 1.35rem;
+}
+.documents-admin-check-list li + li {
+    margin-top: .4rem;
 }
 .documents-admin-message {
     margin: 0 0 18px;
