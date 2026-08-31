@@ -64,18 +64,15 @@ function DOCUMENTS_adminNavigation($active = '')
         'integrity' => $isFrench ? 'Intégrité' : 'Integrity'
     );
 
-    $html = '<nav class="documents-admin-toolbar documents-admin-navigation" aria-label="Documents">';
+    $links = array();
     foreach ($items as $mode => $label) {
         $url = $adminUrl . ($mode === '' ? '' : '?mode=' . rawurlencode($mode));
-        $class = 'documents-admin-button';
-        if ((string) $active === (string) $mode) {
-            $class .= ' documents-admin-button--primary';
-        }
-        $html .= '<a class="' . $class . '" href="'
-            . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">'
-            . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+        $current = ((string) $active === (string) $mode)
+            ? ' aria-current="page"' : '';
+        $links[] = '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"'
+            . $current . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
     }
-    $html .= '</nav>';
 
-    return $html;
+    return '<div class="user_menu documents-admin-navigation" role="navigation" aria-label="Documents">'
+        . implode(' | ', $links) . '</div>';
 }
