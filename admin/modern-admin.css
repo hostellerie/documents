@@ -2,20 +2,31 @@
     box-sizing: border-box;
     width: 100%;
     max-width: 1040px;
-    margin: 0 auto 40px;
+    margin: 0 auto 48px;
 }
 .documents-admin-page *,
 .documents-admin-page *::before,
 .documents-admin-page *::after {
     box-sizing: border-box;
 }
+
+/* Keep the plugin navigation deliberately close to Geeklog/Maps user_menu:
+ * simple inline links, but with enough vertical rhythm before the page title. */
+.documents-admin-navigation {
+    margin: 0 0 18px;
+    line-height: 1.7;
+}
+.documents-admin-navigation a {
+    white-space: nowrap;
+}
+
 .documents-admin-page__header {
-    margin: 0 0 22px;
+    margin: 0 0 28px;
 }
 .documents-admin-page__header h1 {
-    margin: 0 0 8px;
-    font-size: 1.65em;
-    line-height: 1.25;
+    margin: 0 0 10px;
+    font-size: 1.75em;
+    line-height: 1.2;
 }
 .documents-admin-page__lead {
     max-width: 78ch;
@@ -23,6 +34,16 @@
     color: #596273;
     line-height: 1.6;
 }
+
+/* Geeklog blocks are the main H2 sections of administration pages. */
+.documents-shell--admin .block-center {
+    margin-top: 0;
+    margin-bottom: 24px;
+}
+.documents-shell--admin .block-center-content {
+    line-height: 1.55;
+}
+
 .documents-admin-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -81,11 +102,14 @@
     margin-bottom: 0;
 }
 .documents-admin-card {
-    margin: 0 0 16px;
+    margin: 0 0 18px;
     border: 1px solid #dde2e8;
     border-radius: 10px;
     background: #fff;
     overflow: hidden;
+}
+.documents-admin-card:last-child {
+    margin-bottom: 0;
 }
 .documents-admin-card__header {
     display: flex;
@@ -102,7 +126,7 @@
     font-size: 1.05em;
 }
 .documents-admin-card__body {
-    padding: 18px 16px;
+    padding: 20px 18px;
 }
 .documents-admin-table-wrap {
     width: 100%;
@@ -115,7 +139,7 @@
 }
 .documents-admin-table th,
 .documents-admin-table td {
-    padding: 12px 13px;
+    padding: 13px 14px;
     border-bottom: 1px solid #e8ebef;
     text-align: left;
     vertical-align: top;
@@ -179,7 +203,7 @@
     max-width: 920px;
 }
 .documents-admin-form__section {
-    margin: 0 0 18px;
+    margin: 0 0 20px;
     padding: 22px;
     border: 1px solid #dde2e8;
     border-radius: 10px;
@@ -326,9 +350,20 @@ textarea.documents-admin-form__control {
     font-size: .9em;
     line-height: 1.5;
 }
+
 @media (max-width: 700px) {
     .documents-admin-page {
-        margin-bottom: 28px;
+        margin-bottom: 32px;
+    }
+    .documents-admin-navigation {
+        margin-bottom: 16px;
+        line-height: 1.9;
+    }
+    .documents-admin-page__header {
+        margin-bottom: 22px;
+    }
+    .documents-admin-page__header h1 {
+        font-size: 1.55em;
     }
     .documents-admin-card__body,
     .documents-admin-form__section {
