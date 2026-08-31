@@ -17,18 +17,33 @@ function DOCUMENTS_loadAdminStyles()
         return false;
     }
 
-    /* Use absolute site URLs. Geeklog 2.1.1 and 2.2.x both treat these as
-     * external CSS resources, avoiding their different local-path checks. */
-    $base = rtrim((string) $_CONF['site_admin_url'], '/') . '/plugins/documents';
+    /* Geeklog 2.1.1 scripts::setCSSFile() expects a local path relative to
+     * public_html and verifies that the file exists. Geeklog 2.2.x accepts the
+     * absolute site URL used by its Resource class. */
+    $legacyScripts = strtolower(get_class($_SCRIPTS)) === 'scripts';
 
-    $legacyLoaded = (bool) $_SCRIPTS->setCSSFile(
-        'documents_admin_css',
-        $base . '/documents.css'
-    );
-    $modernLoaded = (bool) $_SCRIPTS->setCSSFile(
-        'documents_modern_admin_css',
-        $base . '/modern-admin.css'
-    );
+    if ($legacyScripts) {
+        $legacyLoaded = (bool) $_SCRIPTS->setCSSFile(
+            'documents_admin_css',
+            '/admin/plugins/documents/documents.css',
+            false
+        );
+        $modernLoaded = (bool) $_SCRIPTS->setCSSFile(
+            'documents_modern_admin_css',
+            '/admin/plugins/documents/modern-admin.css',
+            false
+        );
+    } else {
+        $base = rtrim((string) $_CONF['site_admin_url'], '/') . '/plugins/documents';
+        $legacyLoaded = (bool) $_SCRIPTS->setCSSFile(
+            'documents_admin_css',
+            $base . '/documents.css'
+        );
+        $modernLoaded = (bool) $_SCRIPTS->setCSSFile(
+            'documents_modern_admin_css',
+            $base . '/modern-admin.css'
+        );
+    }
 
     return $legacyLoaded && $modernLoaded;
 }
@@ -42,7 +57,7 @@ function DOCUMENTS_adminNavigation($active = '')
         && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
 
     $items = array(
-        '' => $isFrench ? 'Administration' : 'Administration',
+        '' => 'Administration',
         'edit_cat' => $isFrench ? 'Nouvelle catégorie' : 'New category',
         'list_fields' => $isFrench ? 'Champs' : 'Fields',
         'list_groups' => $isFrench ? 'Groupes de choix' : 'Selection groups',
