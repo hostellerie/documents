@@ -7,16 +7,29 @@ if (isset($_SERVER['PHP_SELF'])
     die('This file can not be used on its own.');
 }
 
-function plugin_ismoderator_documents()
+function DOCUMENTS_canModerateSubmissions()
 {
     return SEC_hasRights('documents.admin');
+}
+
+function plugin_ismoderator_documents()
+{
+    /* Geeklog 2.1.1 has a core SEC_hasModerationAccess() regression: when
+     * PLG_isModerator() is true it resets access to false. Do not trigger that
+     * regression; Root/core moderators still see the Documents list through
+     * PLG_showModerationList(). Later Geeklog versions use the normal callback. */
+    if (defined('VERSION') && version_compare(VERSION, '2.1.2', '<')) {
+        return false;
+    }
+
+    return DOCUMENTS_canModerateSubmissions();
 }
 
 function plugin_submissioncount_documents()
 {
     global $_TABLES;
 
-    if (!plugin_ismoderator_documents()) {
+    if (!DOCUMENTS_canModerateSubmissions()) {
         return 0;
     }
 
@@ -27,7 +40,7 @@ function plugin_itemlist_documents()
 {
     global $_TABLES, $_CONF;
 
-    if (!plugin_ismoderator_documents()) {
+    if (!DOCUMENTS_canModerateSubmissions()) {
         return;
     }
 
@@ -75,7 +88,7 @@ function plugin_moderationapprove_documents($id)
 {
     global $_CONF, $_TABLES;
 
-    if (!plugin_ismoderator_documents()) {
+    if (!DOCUMENTS_canModerateSubmissions()) {
         return '';
     }
 
@@ -110,7 +123,7 @@ function plugin_moderationdelete_documents($id)
 {
     global $_CONF;
 
-    if (!plugin_ismoderator_documents()) {
+    if (!DOCUMENTS_canModerateSubmissions()) {
         return '';
     }
 
