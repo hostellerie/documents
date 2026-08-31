@@ -17,6 +17,27 @@ require_once $pluginPath . 'public_form.php';
 
 DOCUMENTS_preparePublicPresentation();
 
+if (isset($_SCRIPTS) && is_object($_SCRIPTS) && method_exists($_SCRIPTS, 'setCSSFile')) {
+    $folder = isset($_DOCUMENTS_CONF['documents_folder'])
+        ? trim((string) $_DOCUMENTS_CONF['documents_folder'], '/') : 'documents';
+    if ($folder === '') {
+        $folder = 'documents';
+    }
+    if (strtolower(get_class($_SCRIPTS)) === 'scripts') {
+        $_SCRIPTS->setCSSFile(
+            'documents_public_form',
+            '/' . $folder . '/css/document-form.css',
+            false
+        );
+    } else {
+        $_SCRIPTS->setCSSFile(
+            'documents_public_form',
+            rtrim((string) $_CONF['site_url'], '/') . '/'
+                . rawurlencode($folder) . '/css/document-form.css'
+        );
+    }
+}
+
 $mode = isset($_REQUEST['mode']) && !is_array($_REQUEST['mode'])
     ? trim((string) $_REQUEST['mode']) : 'new';
 if ($mode !== 'new' && $mode !== 'edit') {
@@ -97,8 +118,10 @@ if ($mode === 'new') {
 
     $documentSql = DB_escapeString($documentSlug);
     $result = DB_query(
-        "SELECT d.doc_url, d.active, d.owner_id, d.group_id, d.perm_owner, d.perm_group, "
-        . "d.perm_members, d.perm_anon, f.cat_id, c.* "
+        "SELECT c.*, d.doc_url AS document_url, d.active AS document_active, "
+        . "d.owner_id AS document_owner_id, d.group_id AS document_group_id, "
+        . "d.perm_owner AS document_perm_owner, d.perm_group AS document_perm_group, "
+        . "d.perm_members AS document_perm_members, d.perm_anon AS document_perm_anon "
         . "FROM {$_TABLES['documents_docs']} AS d "
         . "LEFT JOIN {$_TABLES['documents_values']} AS v ON v.doc_url=d.doc_url "
         . "LEFT JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
@@ -106,18 +129,18 @@ if ($mode === 'new') {
         . "WHERE d.doc_url='{$documentSql}' ORDER BY f.f_order ASC LIMIT 1"
     );
     $row = DB_fetchArray($result);
-    if (!is_array($row) || empty($row['doc_url']) || empty($row['cid'])) {
+    if (!is_array($row) || empty($row['document_url']) || empty($row['cid'])) {
         echo COM_refresh($_CONF['site_url'] . '/404.php');
         exit;
     }
 
     $access = SEC_hasAccess(
-        (int) $row['owner_id'],
-        (int) $row['group_id'],
-        (int) $row['perm_owner'],
-        (int) $row['perm_group'],
-        (int) $row['perm_members'],
-        (int) $row['perm_anon']
+        (int) $row['document_owner_id'],
+        (int) $row['document_group_id'],
+        (int) $row['document_perm_owner'],
+        (int) $row['document_perm_group'],
+        (int) $row['document_perm_members'],
+        (int) $row['document_perm_anon']
     );
     if ($access < 3) {
         echo COM_refresh($_CONF['site_url'] . '/404.php');
@@ -131,7 +154,7 @@ if ($mode === 'new') {
     $category = $row;
     $doc = array(
         'cid' => (int) $row['cid'],
-        'doc_url' => $row['doc_url'],
+        'doc_url' => $row['document_url'],
         'cat_name' => $row['cat_name'],
         'cat_url' => $row['cat_url'],
         'cat_order' => $row['cat_order'],
@@ -142,13 +165,13 @@ if ($mode === 'new') {
         'cat_help' => $row['cat_help'],
         'custom_header' => $row['custom_header'],
         'custom_footer' => $row['custom_footer'],
-        'active' => $row['active'],
-        'owner_id' => $row['owner_id'],
-        'group_id' => $row['group_id'],
-        'perm_owner' => $row['perm_owner'],
-        'perm_group' => $row['perm_group'],
-        'perm_members' => $row['perm_members'],
-        'perm_anon' => $row['perm_anon'],
+        'active' => $row['document_active'],
+        'owner_id' => $row['document_owner_id'],
+        'group_id' => $row['document_group_id'],
+        'perm_owner' => $row['document_perm_owner'],
+        'perm_group' => $row['document_perm_group'],
+        'perm_members' => $row['document_perm_members'],
+        'perm_anon' => $row['document_perm_anon'],
         'v_value' => array()
     );
 
