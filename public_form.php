@@ -104,23 +104,34 @@ function DOCUMENTS_renderPublicDocumentForm($doc = array())
     }
     $template->set_var('raws', $raws);
 
-    $selected0 = ((int) $doc['active'] === 0) ? ' selected="selected"' : '';
-    $selected1 = ((int) $doc['active'] !== 0 && (int) $doc['active'] !== 2)
-        ? ' selected="selected"' : '';
-    $selected2 = ((int) $doc['active'] === 2) ? ' selected="selected"' : '';
+    $status = (int) $doc['active'];
+    $selected0 = ($status === DOCUMENTS_STATUS_INACTIVE) ? ' selected="selected"' : '';
+    $selected1 = ($status === DOCUMENTS_STATUS_ACTIVE) ? ' selected="selected"' : '';
+    $selected2 = ($status === DOCUMENTS_STATUS_DRAFT) ? ' selected="selected"' : '';
+    $selected3 = ($status === DOCUMENTS_STATUS_SUBMISSION) ? ' selected="selected"' : '';
 
     $active = '<p><label class="document_field_edit">'
         . htmlspecialchars($LANG_DOCUMENTS_1['active_label'], ENT_QUOTES, 'UTF-8')
         . '</label><select name="active">';
     if (SEC_hasRights('documents.admin')) {
-        $active .= '<option value="0"' . $selected0 . '>'
+        $active .= '<option value="' . DOCUMENTS_STATUS_INACTIVE . '"' . $selected0 . '>'
             . htmlspecialchars($LANG_DOCUMENTS_1['not_active'], ENT_QUOTES, 'UTF-8') . '</option>';
     }
-    $active .= '<option value="1"' . $selected1 . '>'
+    $active .= '<option value="' . DOCUMENTS_STATUS_ACTIVE . '"' . $selected1 . '>'
         . htmlspecialchars($LANG_DOCUMENTS_1['active'], ENT_QUOTES, 'UTF-8') . '</option>';
     if (!COM_isAnonUser()) {
-        $active .= '<option value="2"' . $selected2 . '>'
+        $active .= '<option value="' . DOCUMENTS_STATUS_DRAFT . '"' . $selected2 . '>'
             . htmlspecialchars($LANG_DOCUMENTS_1['draft'], ENT_QUOTES, 'UTF-8') . '</option>';
+    }
+    if (SEC_hasRights('documents.admin')) {
+        $isFrench = isset($_CONF['language'])
+            && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+        $active .= '<option value="' . DOCUMENTS_STATUS_SUBMISSION . '"' . $selected3 . '>'
+            . htmlspecialchars(
+                $isFrench ? 'En attente de modération' : 'Pending moderation',
+                ENT_QUOTES,
+                'UTF-8'
+            ) . '</option>';
     }
     $active .= '</select></p>';
     $template->set_var('active', $active);
