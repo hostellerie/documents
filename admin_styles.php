@@ -53,8 +53,7 @@ function DOCUMENTS_adminNavigation($active = '')
     global $_CONF;
 
     $adminUrl = rtrim((string) $_CONF['site_admin_url'], '/') . '/plugins/documents/index.php';
-    $configUrl = rtrim((string) $_CONF['site_admin_url'], '/')
-        . '/configuration.php?conf_group=documents';
+    $configUrl = rtrim((string) $_CONF['site_admin_url'], '/') . '/configuration.php';
     $isFrench = isset($_CONF['language'])
         && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
 
@@ -75,9 +74,13 @@ function DOCUMENTS_adminNavigation($active = '')
             . $current . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
     }
 
-    $links[] = '<a href="' . htmlspecialchars($configUrl, ENT_QUOTES, 'UTF-8') . '">'
-        . htmlspecialchars($isFrench ? 'Configuration' : 'Configuration', ENT_QUOTES, 'UTF-8')
-        . '</a>';
+    $configLabel = $isFrench ? 'Configuration' : 'Configuration';
+    $links[] = '<form class="documents-admin-navigation__form" method="post" action="'
+        . htmlspecialchars($configUrl, ENT_QUOTES, 'UTF-8') . '">'
+        . '<input type="hidden" name="conf_group" value="documents">'
+        . '<button class="documents-admin-navigation__link" type="submit">'
+        . htmlspecialchars($configLabel, ENT_QUOTES, 'UTF-8')
+        . '</button></form>';
 
     return '<div class="user_menu documents-admin-navigation" role="navigation" aria-label="Documents">'
         . implode(' | ', $links) . '</div>';
