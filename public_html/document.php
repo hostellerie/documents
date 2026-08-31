@@ -54,8 +54,30 @@ if (strpos($body, $navigation) === 0) {
 
 $isFrench = isset($_CONF['language'])
     && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+$documentsLabel = isset($LANG_DOCUMENTS_1['plugin_name'])
+    ? $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
+$categoryName = isset($page['category_name'])
+    ? trim((string) $page['category_name']) : '';
+$categoryUrl = DOCUMENTS_interopCanonicalUrl(
+    isset($page['category_slug']) ? (string) $page['category_slug'] : $categorySlug
+);
+
+$breadcrumb = '<nav class="documents-breadcrumb" aria-label="Breadcrumb">'
+    . '<a href="' . htmlspecialchars(rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/', ENT_QUOTES, 'UTF-8') . '">'
+    . htmlspecialchars($documentsLabel, ENT_QUOTES, 'UTF-8') . '</a>';
+if ($categoryName !== '') {
+    $breadcrumb .= ' <span aria-hidden="true">›</span> '
+        . '<a href="' . htmlspecialchars($categoryUrl, ENT_QUOTES, 'UTF-8') . '">'
+        . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</a>';
+}
+$breadcrumb .= ' <span aria-hidden="true">›</span> '
+    . '<span aria-current="page">'
+    . htmlspecialchars((string) $page['title'], ENT_QUOTES, 'UTF-8')
+    . '</span></nav>';
+
 $content = $navigation
     . '<main class="documents-document-page">'
+    . $breadcrumb
     . '<header class="documents-page-header"><h1>'
     . htmlspecialchars((string) $page['title'], ENT_QUOTES, 'UTF-8')
     . '</h1></header>'
