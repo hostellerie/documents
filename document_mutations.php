@@ -56,8 +56,7 @@ function DOCUMENTS_documentMutationIsStandardCategory($categoryId)
 {
     $fields = DOCUMENTS_documentMutationFields($categoryId);
     foreach ($fields as $field) {
-        $type = isset($field['f_type']) ? strtolower((string) $field['f_type']) : '';
-        if (in_array($type, array('marker', 'album', 'file', 'radio'), true)) {
+        if (isset($field['f_type']) && strtolower((string) $field['f_type']) === 'marker') {
             return false;
         }
     }
@@ -125,6 +124,25 @@ function DOCUMENTS_documentMutationUniqueUrl($title)
     return COM_makeSid();
 }
 
+function DOCUMENTS_documentMutationExistingFieldValue($documentId, $fieldId)
+{
+    global $_TABLES;
+
+    $documentId = trim((string) $documentId);
+    $fieldId = (int) $fieldId;
+    if ($documentId === '' || $fieldId <= 0) {
+        return '';
+    }
+
+    $safeId = DB_escapeString($documentId);
+    $row = DB_fetchArray(DB_query(
+        "SELECT v_value FROM {$_TABLES['documents_values']} "
+        . "WHERE doc_url='{$safeId}' AND field_id={$fieldId} LIMIT 1"
+    ));
+
+    return is_array($row) && isset($row['v_value']) ? (string) $row['v_value'] : '';
+}
+
 function DOCUMENTS_documentMutationNormalizeValues($request, $fields, $documentId = '')
 {
     global $_TABLES;
@@ -154,10 +172,17 @@ function DOCUMENTS_documentMutationNormalizeValues($request, $fields, $documentI
             continue;
         }
 
+        /* Historical file/category fields never had a complete input control.
+         * Preserve existing values instead of silently clearing them. */
+        if ($type === 'file' || $type === 'category') {
+            $values[$fieldId] = DOCUMENTS_documentMutationExistingFieldValue($documentId, $fieldId);
+            continue;
+        }
+
         $submitted = isset($request[$name]) ? $request[$name] : '';
         $value = DOCUMENTS_normalizeFieldInput($type, $submitted);
 
-        if ($type === 'select' && $value !== '') {
+        if (in_array($type, array('select', 'radio'), true) && $value !== '') {
             $safeValue = DB_escapeString((string) $value);
             $groupId = isset($field['sel_id']) ? (int) $field['sel_id'] : 0;
             $result = DB_query(
@@ -296,7 +321,7 @@ function DOCUMENTS_saveStandardDocument($request)
 
     $fields = DOCUMENTS_documentMutationFields($categoryId);
     if (empty($fields) || !DOCUMENTS_documentMutationIsStandardCategory($categoryId)) {
-        return array(false, 'legacy-required', '', '', array());
+        return array(false, 'Unsupported document category.', '', '', array());
     }
 
     $existing = array();
