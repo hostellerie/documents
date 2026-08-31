@@ -3,8 +3,7 @@
 /* Geeklog moderation bridge for Documents 1.2.0. PHP 5.6+. */
 
 if (isset($_SERVER['PHP_SELF'])
-    && strpos(strtolower((string) $_SERVER['PHP_SELF']), 'moderation.php') !== false
-    && strpos(strtolower((string) $_SERVER['PHP_SELF']), '/plugins/documents/') !== false) {
+    && strpos(strtolower((string) $_SERVER['PHP_SELF']), '/plugins/documents/moderation.php') !== false) {
     die('This file can not be used on its own.');
 }
 
@@ -74,7 +73,7 @@ function plugin_moderationvalues_documents()
 
 function plugin_moderationapprove_documents($id)
 {
-    global $_TABLES;
+    global $_CONF, $_TABLES;
 
     if (!plugin_ismoderator_documents()) {
         return '';
@@ -86,15 +85,23 @@ function plugin_moderationapprove_documents($id)
     }
 
     $safeId = DB_escapeString($id);
+    $before = (int) DB_getItem($_TABLES['documents_docs'], 'active', "doc_url='{$safeId}'");
+    if ($before !== DOCUMENTS_STATUS_SUBMISSION) {
+        return '';
+    }
+
     DB_query(
         "UPDATE {$_TABLES['documents_docs']} SET active=" . (int) DOCUMENTS_STATUS_ACTIVE
         . ", modified=NOW() WHERE doc_url='{$safeId}' AND active=" . (int) DOCUMENTS_STATUS_SUBMISSION
     );
-
-    if (!DB_error() && (int) DB_count($_TABLES['documents_docs'], array('doc_url', 'active'), array($id, DOCUMENTS_STATUS_ACTIVE)) > 0) {
-        PLG_itemSaved($id, 'documents');
-        COM_rdfUpToDateCheck('documents', '', $id);
+    if (DB_error()) {
+        return '';
     }
+
+    require_once $_CONF['path'] . 'plugins/documents/indexability.php';
+    $isPublic = DOCUMENTS_isPubliclyIndexable($id);
+    DOCUMENTS_notifyPublicTransition($id, false, $isPublic);
+    COM_rdfUpToDateCheck('documents', '', $id);
 
     return '';
 }
