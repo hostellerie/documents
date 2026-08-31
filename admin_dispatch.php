@@ -51,6 +51,13 @@ function DOCUMENTS_adminDispatchSelectIsUsed($selectId)
     return DB_numRows(DB_query($sql)) > 0;
 }
 
+function DOCUMENTS_adminSaveTrace($message)
+{
+    if (function_exists('COM_errorLog')) {
+        COM_errorLog('DOCUMENTS SAVE TRACE: ' . (string) $message);
+    }
+}
+
 function DOCUMENTS_adminDispatchMutation($mode, $request)
 {
     global $_CONF, $_DOCUMENTS_CONF;
@@ -67,10 +74,15 @@ function DOCUMENTS_adminDispatchMutation($mode, $request)
     $returnUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/index.php';
     $operation = isset($request['op']) ? (string) $request['op'] : 'save';
 
+    DOCUMENTS_adminSaveTrace('dispatch begin mode=' . $mode . ' op=' . $operation);
+
     switch ($mode) {
         case 'save_cat':
+            DOCUMENTS_adminSaveTrace('save_cat prepare begin');
             $request = DOCUMENTS_adminPrepareCategoryRequest($request);
+            DOCUMENTS_adminSaveTrace('save_cat mutation begin');
             list($ok, $message) = DOCUMENTS_adminSaveCategory($request);
+            DOCUMENTS_adminSaveTrace('save_cat mutation end ok=' . ($ok ? '1' : '0'));
             if (!$ok && !empty($request['cid'])) {
                 $returnUrl .= '?mode=edit_cat&cat=' . (int) $request['cid'];
             }
@@ -79,7 +91,9 @@ function DOCUMENTS_adminDispatchMutation($mode, $request)
         case 'save_field':
             require_once $pluginPath . 'integrity.php';
             require_once $pluginPath . 'field_mutations.php';
+            DOCUMENTS_adminSaveTrace('save_field mutation begin');
             list($ok, $message, $categoryId) = DOCUMENTS_adminSaveField($request);
+            DOCUMENTS_adminSaveTrace('save_field mutation end ok=' . ($ok ? '1' : '0'));
             $returnUrl .= '?mode=list_fields';
             if ($categoryId > 0) {
                 $returnUrl .= '&cat=' . (int) $categoryId;
@@ -91,7 +105,9 @@ function DOCUMENTS_adminDispatchMutation($mode, $request)
             break;
 
         case 'save_group':
+            DOCUMENTS_adminSaveTrace('save_group mutation begin');
             list($ok, $message) = DOCUMENTS_adminSaveGroup($request);
+            DOCUMENTS_adminSaveTrace('save_group mutation end ok=' . ($ok ? '1' : '0'));
             $returnUrl .= '?mode=list_groups';
             if (!$ok && !empty($request['gid'])) {
                 $returnUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
@@ -100,6 +116,7 @@ function DOCUMENTS_adminDispatchMutation($mode, $request)
             break;
 
         case 'save_select':
+            DOCUMENTS_adminSaveTrace('save_select mutation begin');
             if ($operation === 'delete'
                 && !empty($request['sid'])
                 && DOCUMENTS_adminDispatchSelectIsUsed((int) $request['sid'])) {
@@ -108,6 +125,7 @@ function DOCUMENTS_adminDispatchMutation($mode, $request)
             } else {
                 list($ok, $message) = DOCUMENTS_adminSaveSelect($request);
             }
+            DOCUMENTS_adminSaveTrace('save_select mutation end ok=' . ($ok ? '1' : '0'));
             $returnUrl .= '?mode=list_selects';
             if (!empty($request['s_group'])) {
                 $returnUrl .= '&group=' . (int) $request['s_group'];
@@ -119,9 +137,13 @@ function DOCUMENTS_adminDispatchMutation($mode, $request)
             break;
     }
 
+    DOCUMENTS_adminSaveTrace('dispatch mutation complete mode=' . $mode);
+
     $message = DOCUMENTS_adminMessage($message);
     $separator = (strpos($returnUrl, '?') === false) ? '?' : '&';
     $returnUrl .= $separator . 'msg=' . rawurlencode($message);
+
+    DOCUMENTS_adminSaveTrace('dispatch end mode=' . $mode);
 
     return array($ok, $returnUrl);
 }
