@@ -20,8 +20,6 @@ $pluginPath = $_CONF['path'] . 'plugins/documents/';
 $requestedMode = isset($_REQUEST['mode']) && !is_array($_REQUEST['mode'])
     ? trim((string) $_REQUEST['mode']) : '';
 
-/* Tell runtime.php not to register its historical shutdown observer for the
- * modern secure save controller. document-save.php owns that lifecycle. */
 if ($requestedMode === 'save' && empty($GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'])) {
     $GLOBALS['DOCUMENTS_SECURE_SAVE_CONTROLLER'] = true;
 }
@@ -78,28 +76,7 @@ if ($mode === 'view') {
 }
 
 if ($mode === 'new' || $mode === 'edit') {
-    if ($mode === 'new' && COM_isAnonUser()) {
-        echo COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
-        exit;
-    }
-
-    /* Public contribution forms must use public presentation assets, not an
-     * administration stylesheet. Keep the old renderer temporarily, but give
-     * it the same page-level CSS/SEO preparation as the other public pages. */
-    require_once $pluginPath . 'presentation.php';
-    DOCUMENTS_preparePublicPresentation();
-
-    /* Historical option rows sometimes have an empty display label. Preserve
-     * the internal value and repair only missing labels so existing categories
-     * immediately render useful <option> text. */
-    if (isset($_TABLES['documents_selects'])) {
-        DB_query(
-            "UPDATE {$_TABLES['documents_selects']} SET s_value=s_name "
-            . "WHERE (s_value='' OR s_value IS NULL) AND s_name<>''"
-        );
-    }
-
-    require_once $pluginPath . 'include_html.php';
+    require __DIR__ . '/document-form.php';
     exit;
 }
 
