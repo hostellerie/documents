@@ -64,20 +64,18 @@ if (isset($adminViews[$mode])) {
         @chdir($oldDirectory);
     }
 
-    /* The Geeklog page header/welcome area must stay before plugin controls.
-     * Insert the shared Documents navigation inside the page's <main>, never
-     * before it. Do not duplicate navigation in views that already render it. */
+    /* Keep Geeklog's own admin heading/welcome area first. The previous code
+     * targeted the theme's first <main>, which placed Documents navigation
+     * before Geeklog's page heading. Target the plugin page itself instead. */
     if (is_string($renderedAdminPage) && $renderedAdminPage !== '') {
         if (strpos($renderedAdminPage, 'documents-admin-navigation') === false) {
-            $mainPos = strpos($renderedAdminPage, '<main');
+            $pluginMain = '<main class="documents-admin-page">';
+            $mainPos = strpos($renderedAdminPage, $pluginMain);
             if ($mainPos !== false) {
-                $mainEnd = strpos($renderedAdminPage, '>', $mainPos);
-                if ($mainEnd !== false) {
-                    $insertPos = $mainEnd + 1;
-                    $renderedAdminPage = substr($renderedAdminPage, 0, $insertPos)
-                        . DOCUMENTS_adminNavigation($mode)
-                        . substr($renderedAdminPage, $insertPos);
-                }
+                $insertPos = $mainPos + strlen($pluginMain);
+                $renderedAdminPage = substr($renderedAdminPage, 0, $insertPos)
+                    . DOCUMENTS_adminNavigation($mode)
+                    . substr($renderedAdminPage, $insertPos);
             }
         }
         echo $renderedAdminPage;
