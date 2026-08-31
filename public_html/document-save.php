@@ -17,9 +17,7 @@ if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST')
 $pluginPath = $_CONF['path'] . 'plugins/documents/';
 require_once $pluginPath . 'security.php';
 require_once $pluginPath . 'include_compat.php';
-require_once $pluginPath . 'integrity.php';
 require_once $pluginPath . 'interoperability.php';
-require_once $pluginPath . 'indexability.php';
 require_once $pluginPath . 'document_images.php';
 require_once $pluginPath . 'document_mutations.php';
 require_once $pluginPath . 'maps_adapter.php';
@@ -28,30 +26,26 @@ require_once $pluginPath . 'document_delete.php';
 $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
 $operation = isset($_REQUEST['op']) ? (string) $_REQUEST['op'] : 'save';
 $documentId = isset($_REQUEST['doc_url']) ? trim((string) $_REQUEST['doc_url']) : '';
+$mapsCategory = false;
 
-/* Decide ownership before consuming Geeklog's one-time token. Non-marker
- * integrations without a service contract may still use the compatibility
- * controller. Any category containing a marker is forbidden from doing so. */
 if ($operation !== 'delete') {
-    $standardCategory = $categoryId > 0 && DOCUMENTS_documentMutationIsStandardCategory($categoryId);
-    $hasMarkerCategory = $categoryId > 0 && DOCUMENTS_mapsCategoryHasMarker($categoryId);
-    $mapsCategory = $categoryId > 0 && DOCUMENTS_mapsCategorySupported($categoryId);
-
-    if ($hasMarkerCategory && !$mapsCategory) {
-        COM_errorLog('DOCUMENTS: marker category refused legacy save fallback; Maps service ownership is mandatory.');
+    if ($categoryId <= 0) {
         echo COM_refresh($_CONF['site_url'] . '/404.php');
         exit;
     }
 
-    if ($categoryId <= 0 || (!$standardCategory && !$mapsCategory)) {
-        $GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'] = true;
-        require __DIR__ . '/index.php';
+    $hasMarkerCategory = DOCUMENTS_mapsCategoryHasMarker($categoryId);
+    $mapsCategory = DOCUMENTS_mapsCategorySupported($categoryId);
+    if ($hasMarkerCategory && !$mapsCategory) {
+        COM_errorLog('DOCUMENTS: marker category requires the Maps service contract.');
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
         exit;
     }
-} else {
-    $standardCategory = false;
-    $hasMarkerCategory = false;
-    $mapsCategory = false;
+
+    if (!$mapsCategory && !DOCUMENTS_documentMutationIsStandardCategory($categoryId)) {
+        echo COM_refresh($_CONF['site_url'] . '/404.php');
+        exit;
+    }
 }
 
 if (!SEC_checkToken()) {
@@ -87,7 +81,6 @@ if ($operation === 'delete') {
 }
 
 $isCreation = $documentId === '';
-
 if ($isCreation && COM_isAnonUser()) {
     echo COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
     exit;
@@ -104,26 +97,22 @@ if ((int) $category['submitable'] !== 1 && !SEC_hasRights('documents.admin')) {
 }
 
 $existing = $isCreation ? array() : DOCUMENTS_documentMutationExisting($documentId);
-if (!$isCreation) {
-    if (empty($existing)
+if (!$isCreation
+    && (empty($existing)
         || DOCUMENTS_documentMutationDocumentCategoryId($documentId) !== $categoryId
-        || !DOCUMENTS_canEditDocument($existing)) {
-        echo COM_refresh($_CONF['site_url'] . '/404.php');
-        exit;
-    }
+        || !DOCUMENTS_canEditDocument($existing))) {
+    echo COM_refresh($_CONF['site_url'] . '/404.php');
+    exit;
 }
 
 if ($isCreation && !SEC_hasRights('documents.admin')) {
     $defaults = array();
     SEC_setDefaultPermissions($defaults, $_DOCUMENTS_CONF['default_permissions']);
     $defaultGroup = (int) DB_getItem($_TABLES['groups'], 'grp_id', "grp_name='Documents Admin'");
-    if ($defaultGroup <= 0) {
-        $defaultGroup = 1;
-    }
     DOCUMENTS_lockSecurityFields(
         $_REQUEST,
         isset($_USER['uid']) ? (int) $_USER['uid'] : 1,
-        $defaultGroup,
+        $defaultGroup > 0 ? $defaultGroup : 1,
         $defaults
     );
 }
@@ -147,16 +136,11 @@ if (!$ok) {
             . '/index.php?mode=edit&doc_url=' . rawurlencode($documentId)
             . '&cat=' . $categoryId;
     }
-    $returnUrl .= '&msg=' . rawurlencode($message);
-    echo COM_refresh($returnUrl);
+    echo COM_refresh($returnUrl . '&msg=' . rawurlencode($message));
     exit;
 }
 
-/* Saving a document must finish independently from third-party listeners.
- * PLG_itemSaved/PLG_itemDeleted remain available through the interoperability
- * service, but they are intentionally not invoked synchronously here. */
 $newStatus = isset($details['status']) ? (int) $details['status'] : DOCUMENTS_STATUS_INACTIVE;
-
 if ($isCreation
     && $newStatus === DOCUMENTS_STATUS_SUBMISSION
     && !SEC_hasRights('documents.admin')
