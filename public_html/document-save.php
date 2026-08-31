@@ -18,6 +18,7 @@ $pluginPath = $_CONF['path'] . 'plugins/documents/';
 require_once $pluginPath . 'security.php';
 require_once $pluginPath . 'include_compat.php';
 require_once $pluginPath . 'interoperability.php';
+require_once $pluginPath . 'indexability.php';
 require_once $pluginPath . 'document_images.php';
 require_once $pluginPath . 'document_mutations.php';
 require_once $pluginPath . 'maps_adapter.php';
@@ -105,6 +106,8 @@ if (!$isCreation
     exit;
 }
 
+$wasPublic = !$isCreation && DOCUMENTS_isPubliclyIndexable($documentId);
+
 if ($isCreation && !SEC_hasRights('documents.admin')) {
     $defaults = array();
     SEC_setDefaultPermissions($defaults, $_DOCUMENTS_CONF['default_permissions']);
@@ -141,6 +144,8 @@ if (!$ok) {
 }
 
 $newStatus = isset($details['status']) ? (int) $details['status'] : DOCUMENTS_STATUS_INACTIVE;
+$isPublic = DOCUMENTS_isPubliclyIndexable($savedId);
+DOCUMENTS_notifyPublicTransition($savedId, $wasPublic, $isPublic);
 if ($isCreation
     && $newStatus === DOCUMENTS_STATUS_SUBMISSION
     && !SEC_hasRights('documents.admin')
