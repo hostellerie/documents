@@ -72,7 +72,9 @@ $content .= DOCUMENTS_sectionBlock(
 
 $stats = DOCUMENTS_homeStatsBlock();
 if ($stats !== '') {
-    $statsTitle = isset($LANG_DOCUMENTS_1['stats_title']) ? $LANG_DOCUMENTS_1['stats_title'] : 'Statistics';
+    $isFrench = isset($_CONF['language'])
+        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+    $statsTitle = $isFrench ? 'Statistiques' : 'Statistics';
     $content .= '<section class="documents-secondary-section documents-home-statistics">'
         . '<h2 class="documents-secondary-section__title">'
         . htmlspecialchars($statsTitle, ENT_QUOTES, 'UTF-8') . '</h2>'
