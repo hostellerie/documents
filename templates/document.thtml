@@ -4,10 +4,6 @@
     <div class="documents-document__content">
         {raws}
     </div>
-
-    <footer class="documents-document__footer">
-        <a href="{document_url}">{document_url}</a>
-    </footer>
 </article>
 
 <section id="comments" class="documents-document__comments" aria-label="Comments">
