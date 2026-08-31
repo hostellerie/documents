@@ -1,0 +1,141 @@
+.documents-document-form {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto 2.5rem;
+}
+
+.documents-form-card {
+    padding: 1.25rem;
+    border: 1px solid #e1e5ea;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.documents-form-card form,
+.documents-form-card fieldset {
+    margin: 0;
+}
+
+.documents-form-card fieldset {
+    padding: 1rem;
+    border: 1px solid #dde2e8;
+    border-radius: 10px;
+}
+
+.documents-form-card legend {
+    padding: 0 .4rem;
+    font-weight: 700;
+}
+
+.documents-form-field {
+    margin: 0 0 1rem;
+}
+
+.documents-form-field > p {
+    display: grid;
+    grid-template-columns: minmax(160px, 28%) minmax(0, 1fr);
+    gap: .45rem 1rem;
+    align-items: start;
+    margin: 0;
+}
+
+.documents-form-field .document_field_edit {
+    font-weight: 600;
+}
+
+.documents-form-field input[type="text"],
+.documents-form-field input[type="file"],
+.documents-form-field select,
+.documents-form-field textarea,
+.documents-form-card select {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.documents-form-field input[type="text"],
+.documents-form-field select,
+.documents-form-field textarea {
+    width: 100%;
+    padding: .55rem .65rem;
+    border: 1px solid #cfd6df;
+    border-radius: 7px;
+    background: #fff;
+    color: inherit;
+    font: inherit;
+}
+
+.documents-form-field textarea {
+    min-height: 180px;
+    resize: vertical;
+}
+
+.documents_help {
+    grid-column: 2;
+    margin-top: .3rem;
+    color: #68717e;
+    font-size: .9rem;
+    line-height: 1.5;
+}
+
+.documents_required,
+.documents-required-mark {
+    font-weight: 700;
+}
+
+.documents-required-note {
+    margin: 1rem 0;
+}
+
+.documents-radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem 1rem;
+}
+
+.documents-radio-group label {
+    display: inline-flex;
+    gap: .35rem;
+    align-items: center;
+}
+
+.documents-marker-field,
+.document_field_edit_right {
+    min-width: 0;
+}
+
+.documents-form-card input[type="submit"] {
+    margin-top: 1rem;
+    padding: .6rem 1rem;
+    border: 1px solid #cbd2dc;
+    border-radius: 7px;
+    cursor: pointer;
+    font: inherit;
+}
+
+.documents-form-card #map_canvas {
+    width: 100% !important;
+    max-width: 100%;
+}
+
+@media (max-width: 700px) {
+    .documents-form-card {
+        padding: .8rem;
+    }
+
+    .documents-form-card fieldset {
+        padding: .75rem;
+    }
+
+    .documents-form-field > p {
+        display: block;
+    }
+
+    .documents-form-field .document_field_edit {
+        display: block;
+        margin-bottom: .35rem;
+    }
+
+    .documents_help {
+        margin-top: .4rem;
+    }
+}
