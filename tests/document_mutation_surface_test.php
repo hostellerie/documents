@@ -42,12 +42,13 @@ if ($content === false) {
     documents_docmutation_require($content, 'DOCUMENTS_documentMutationCategoryAccess', 'Category permission enforcement is missing.', $failures);
     documents_docmutation_require($content, 'DOCUMENTS_canEditDocument($existing)', 'Existing document edit permission enforcement is missing.', $failures);
     documents_docmutation_require($content, 'DOCUMENTS_normalizeFieldInput', 'Dynamic field normalization is missing.', $failures);
-    documents_docmutation_require($content, 's_group={$selectGroupId} AND s_name=\'{$safeValue}\'', 'Select option validation is missing.', $failures);
-    documents_docmutation_require($content, 'in_array($type, array(\'marker\', \'album\', \'file\', \'radio\'), true)', 'Standard mutation path no longer isolates delegated field types.', $failures);
+    documents_docmutation_require($content, "in_array(\$type, array('select', 'radio'), true)", 'Select/radio option validation is missing.', $failures);
+    documents_docmutation_require($content, "WHERE s_group={\$groupId} AND s_name='{\$safeValue}' LIMIT 1", 'Select/radio values are not verified against their configured group.', $failures);
+    documents_docmutation_require($content, "strtolower((string) \$field['f_type']) === 'marker'", 'Standard category detection does not isolate Maps marker fields.', $failures);
     documents_docmutation_require($content, '$type === \'image\'', 'Image fields are not handled by the standard mutation path.', $failures);
     documents_docmutation_require($content, 'DOCUMENTS_uploadDocumentImages($documentId, $fields)', 'Image upload helper is not used before document persistence.', $failures);
     documents_docmutation_require($content, 'DOCUMENTS_cleanupReplacedImages($oldImages, $documentId)', 'Replaced document images are not cleaned after successful persistence.', $failures);
-    documents_docmutation_require($content, '$available = 40 - strlen($prefix);', 'Document URL generation does not enforce the 40-character schema limit.', $failures);
+    documents_docmutation_require($content, '40 - strlen($prefix)', 'Document URL generation does not enforce the 40-character schema limit.', $failures);
     documents_docmutation_require($content, 'Missing required fields.', 'Required-field rejection is missing.', $failures);
     documents_docmutation_require($content, 'Document/category mismatch.', 'Document/category binding check is missing.', $failures);
     documents_docmutation_require($content, 'DOCUMENTS_normalizeDocumentStatus(', 'Workflow status normalization is missing.', $failures);
@@ -87,21 +88,22 @@ documents_docmutation_require($endpoint, "'maps_adapter.php'", 'Secure document 
 documents_docmutation_require($endpoint, "'document_delete.php'", 'Secure document save dispatcher does not load secure deletion.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_mapsCategorySupported($categoryId)', 'Dispatcher does not identify Maps-delegated categories.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_saveMapsDocument($_REQUEST)', 'Marker categories are not routed through the Maps-owned save path.', $failures);
+documents_docmutation_require($endpoint, 'DOCUMENTS_saveStandardDocument($_REQUEST)', 'Standard categories are not routed through the secure mutation layer.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_deleteDocumentSecure($documentId)', 'Document deletion is not routed through the secure ownership boundary.', $failures);
-documents_docmutation_require($endpoint, '$GLOBALS[\'DOCUMENTS_LEGACY_SAVE_DISPATCH\'] = true', 'Intentional legacy fallback is not explicitly marked.', $failures);
 documents_docmutation_require($endpoint, 'SEC_checkToken()', 'Secure document save dispatcher does not validate CSRF.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_lockSecurityFields(', 'New non-admin document ownership/permissions are not locked.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_isPubliclyIndexable($documentId)', 'Previous anonymous visibility is not captured before a standard save.', $failures);
 documents_docmutation_require($endpoint, 'DOCUMENTS_notifyPublicTransition($savedId, $wasPublic, $isPublic)', 'Standard saves do not emit public-only lifecycle events.', $failures);
+documents_docmutation_forbid($endpoint, 'DOCUMENTS_LEGACY_SAVE_DISPATCH', 'Secure document dispatcher must not reopen a legacy save bypass.', $failures);
 documents_docmutation_forbid($endpoint, 'runtime.php', 'Secure document dispatcher must not register duplicate runtime lifecycle hooks.', $failures);
 
-/* index.php is now only a small router. All normal saves must enter the secure
- * document-save.php endpoint before any historical fallback can be requested. */
+/* index.php is now only a small router. Every save enters document-save.php;
+ * there is intentionally no direct legacy save fallback anymore. */
 documents_docmutation_require($index, "if (\$mode === 'save')", 'Public router does not identify document saves.', $failures);
-documents_docmutation_require($index, "empty(\$GLOBALS['DOCUMENTS_LEGACY_SAVE_DISPATCH'])", 'Public router does not isolate the explicit legacy save fallback.', $failures);
 documents_docmutation_require($index, "require __DIR__ . '/document-save.php';", 'Direct index.php saves are not delegated to the secure dispatcher.', $failures);
+documents_docmutation_forbid($index, 'DOCUMENTS_LEGACY_SAVE_DISPATCH', 'Public router still exposes a legacy document save bypass.', $failures);
 
-documents_docmutation_require($integrity, '$available = 40 - strlen($prefix);', 'Historical unique-document URL helper still ignores the 40-character schema limit.', $failures);
+documents_docmutation_require($integrity, '40 - strlen($prefix)', 'Historical unique-document URL helper still ignores the 40-character schema limit.', $failures);
 
 if (!empty($failures)) {
     fwrite(STDERR, "Documents standard mutation checks failed:\n");
