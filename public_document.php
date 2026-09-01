@@ -27,6 +27,32 @@ function DOCUMENTS_publicChoiceValue($groupId, $storedValue)
     return $label === '' ? $storedValue : (string) $label;
 }
 
+function DOCUMENTS_publicDateValue($value, $formatKey)
+{
+    global $_CONF;
+
+    $value = trim((string) $value);
+    if ($value === '') {
+        return '';
+    }
+
+    $timestamp = strtotime($value);
+    if ($timestamp === false || $timestamp <= 0) {
+        return $value;
+    }
+
+    $formatKey = ($formatKey === 'date') ? 'date' : 'shortdate';
+    $format = isset($_CONF[$formatKey]) && (string) $_CONF[$formatKey] !== ''
+        ? (string) $_CONF[$formatKey]
+        : '%Y-%m-%d';
+
+    if (function_exists('COM_strftime')) {
+        return (string) COM_strftime($format, $timestamp);
+    }
+
+    return date('Y-m-d', $timestamp);
+}
+
 function DOCUMENTS_publicMarkerHtml($markerId)
 {
     $markerId = preg_replace('/[^0-9]/', '', (string) $markerId);
@@ -83,7 +109,9 @@ function DOCUMENTS_publicFieldHtml($field, $value, $title)
         return '';
     }
 
-    if ($type === 'select' || $type === 'radio') {
+    if ($type === 'date') {
+        $value = DOCUMENTS_publicDateValue($value, 'shortdate');
+    } elseif ($type === 'select' || $type === 'radio') {
         $value = DOCUMENTS_publicChoiceValue(
             isset($field['sel_id']) ? (int) $field['sel_id'] : 0,
             $value
@@ -295,7 +323,7 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
             continue;
         }
 
-        if (!$customTemplate && in_array($type, array('text', 'select', 'radio', 'checkbox'), true)) {
+        if (!$customTemplate && in_array($type, array('text', 'date', 'select', 'radio', 'checkbox'), true)) {
             $properties .= '<div class="documents-property">'
                 . '<dt class="documents-property__label">'
                 . htmlspecialchars(stripslashes((string) $field['f_name']), ENT_QUOTES, 'UTF-8')
@@ -365,7 +393,7 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
         $modifiedTimestamp = isset($document['created']) ? strtotime((string) $document['created']) : false;
     }
     $modifiedDate = ($modifiedTimestamp !== false && $modifiedTimestamp > 0)
-        ? date(isset($_DOCUMENTS_CONF['date']) ? $_DOCUMENTS_CONF['date'] : 'Y-m-d', $modifiedTimestamp)
+        ? DOCUMENTS_publicDateValue(date('Y-m-d H:i:s', $modifiedTimestamp), 'date')
         : '';
     $template->set_var('modified_label', $isFrench ? 'Mis à jour le' : 'Updated');
     $template->set_var('modified', htmlspecialchars($modifiedDate, ENT_QUOTES, 'UTF-8'));
