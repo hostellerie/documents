@@ -90,8 +90,18 @@ $sql = "SELECT DISTINCT d.doc_url, d.did, d.active, COALESCE(d.modified,d.create
 $result = DB_query($sql);
 
 $categoryName = stripslashes((string) $category['cat_name']);
+$documentsLabel = isset($LANG_DOCUMENTS_1['plugin_name'])
+    ? (string) $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
+$documentsUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/';
+
 $content = DOCUMENTS_renderNavigation();
 $content .= '<main class="documents-category">';
+$content .= '<nav class="documents-breadcrumb" aria-label="Breadcrumb">'
+    . '<a href="' . htmlspecialchars($documentsUrl, ENT_QUOTES, 'UTF-8') . '">'
+    . htmlspecialchars($documentsLabel, ENT_QUOTES, 'UTF-8') . '</a>'
+    . '<span class="documents-breadcrumb__separator" aria-hidden="true"> &gt; </span>'
+    . '<span aria-current="page">' . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</span>'
+    . '</nav>';
 $content .= '<header class="documents-page-header"><h1>'
     . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</h1>';
 if (!empty($category['cat_help'])) {
@@ -101,10 +111,11 @@ if (!empty($category['cat_help'])) {
 $content .= '</header>';
 
 if (!empty($category['custom_header'])) {
-    $content .= DOCUMENTS_sectionBlock(
-        isset($LANG_DOCUMENTS_1['introduction']) ? $LANG_DOCUMENTS_1['introduction'] : 'Introduction',
-        '<div class="documents-category__custom-header">' . (string) $category['custom_header'] . '</div>'
-    );
+    $customHeader = (string) $category['custom_header'];
+    if (function_exists('PLG_replaceTags')) {
+        $customHeader = PLG_replaceTags($customHeader);
+    }
+    $content .= '<div class="documents-category-header">' . $customHeader . '</div>';
 }
 
 $documentsBlock = '';
@@ -171,10 +182,11 @@ $content .= DOCUMENTS_sectionBlock(
 );
 
 if (!empty($category['custom_footer'])) {
-    $content .= DOCUMENTS_sectionBlock(
-        isset($LANG_DOCUMENTS_1['more_information']) ? $LANG_DOCUMENTS_1['more_information'] : 'More information',
-        '<div class="documents-category__custom-footer">' . (string) $category['custom_footer'] . '</div>'
-    );
+    $customFooter = (string) $category['custom_footer'];
+    if (function_exists('PLG_replaceTags')) {
+        $customFooter = PLG_replaceTags($customFooter);
+    }
+    $content .= '<div class="documents-category-footer">' . $customFooter . '</div>';
 }
 $content .= '</main>';
 
