@@ -17,8 +17,11 @@ if ($content === false) {
     if (strpos($content, 'ORDER BY changed_at DESC, d.did DESC') === false) {
         $failures[] = 'Category document ordering is not deterministic.';
     }
-    if (strpos($content, 'DOCUMENTS_renderNavigation()') === false) {
-        $failures[] = 'Category renderer does not include shared Documents navigation explicitly.';
+    if (strpos($content, '<nav class="documents-breadcrumb"') === false) {
+        $failures[] = 'Category renderer does not include breadcrumb navigation.';
+    }
+    if (strpos($content, 'DOCUMENTS_renderNavigation()') !== false) {
+        $failures[] = 'Category renderer still includes the redundant public plugin menu.';
     }
     if (strpos($content, "if (empty(\$cards))") === false) {
         $failures[] = 'Empty category state is missing.';
