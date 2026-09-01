@@ -6,12 +6,14 @@ $root = dirname(__DIR__);
 $failures = array();
 
 $adapter = file_get_contents($root . '/maps_adapter.php');
+$form = file_get_contents($root . '/public_form.php');
 $renderer = file_get_contents($root . '/public_document.php');
 $delete = file_get_contents($root . '/document_delete.php');
 $autoinstall = file_get_contents($root . '/autoinstall.php');
 
 $files = array(
     'maps_adapter.php' => $adapter,
+    'public_form.php' => $form,
     'public_document.php' => $renderer,
     'document_delete.php' => $delete,
     'autoinstall.php' => $autoinstall
@@ -29,6 +31,16 @@ if ($adapter !== false) {
     }
     if (strpos($adapter, 'DOCUMENTS_hasMaps()') === false) {
         $failures[] = 'Maps integration must remain optional and capability-checked.';
+    }
+}
+
+if ($form !== false) {
+    if (strpos($form, "'marker_get'") === false
+        || strpos($form, 'PLG_invokeService(') === false) {
+        $failures[] = 'Existing marker data must be read through the Maps marker_get service.';
+    }
+    if (strpos($form, 'DOCUMENTS_publicMarkerEditData($markerId)') === false) {
+        $failures[] = 'Marker edit form does not use the service-backed marker reader.';
     }
 }
 
