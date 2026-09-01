@@ -26,12 +26,13 @@ function documents_first_run_require($content, $needle, $message, &$failures)
 }
 
 $admin = documents_first_run_read($root, 'admin/index.php', $failures);
+$adminStyles = documents_first_run_read($root, 'admin_styles.php', $failures);
 $categoryTemplate = documents_first_run_read($root, 'templates/cat_form.thtml', $failures);
 $categoryEditor = documents_first_run_read($root, 'admin_category_editor.php', $failures);
 
 documents_first_run_require($admin, "'/index.php?mode=edit_cat'", 'Admin home does not expose category creation.', $failures);
-documents_first_run_require($admin, "'/index.php?mode=list_fields'", 'Admin home does not expose field configuration.', $failures);
-documents_first_run_require($admin, "'/index.php?mode=list_groups'", 'Admin home does not expose selection-group configuration.', $failures);
+documents_first_run_require($adminStyles, "'list_fields'", 'Admin navigation does not expose field configuration.', $failures);
+documents_first_run_require($adminStyles, "'list_groups'", 'Admin navigation does not expose selection-group configuration.', $failures);
 documents_first_run_require($admin, "'/index.php?mode=new&cat='", 'Admin home does not expose document creation for configured categories.', $failures);
 documents_first_run_require($admin, 'COUNT(f.fid) AS field_count', 'Admin home does not detect whether a category has fields before offering document creation.', $failures);
 documents_first_run_require($admin, '$publicUrl', 'Admin home does not keep public document URLs separate from administration URLs.', $failures);
