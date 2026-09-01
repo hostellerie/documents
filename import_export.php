@@ -551,9 +551,11 @@ function DOCUMENTS_csvSelectionIsValid($groupId, $value)
         return false;
     }
     $safeValue = DB_escapeString($value);
-    return (int) DB_count(
-        $_TABLES['documents_selects'], 'sid', "s_group={$groupId} AND s_name='{$safeValue}'"
-    ) > 0;
+    $result = DB_query(
+        "SELECT sid FROM {$_TABLES['documents_selects']} "
+        . "WHERE s_group={$groupId} AND s_name='{$safeValue}' LIMIT 1"
+    );
+    return DB_numRows($result) > 0;
 }
 
 function DOCUMENTS_csvImport($parsed, $updateExisting, $importHits)
