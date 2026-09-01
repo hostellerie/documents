@@ -6,6 +6,7 @@ $failures = array();
 $indexability = file_get_contents($root . '/indexability.php');
 $runtime = file_get_contents($root . '/runtime.php');
 $standardSave = file_get_contents($root . '/public_html/document-save.php');
+$publicIndex = file_get_contents($root . '/public_html/index.php');
 
 function documents_indexability_require($content, $needle, $message, &$failures)
 {
@@ -30,9 +31,13 @@ documents_indexability_require($indexability, 'function DOCUMENTS_notifyPublicTr
 documents_indexability_require($indexability, 'PLG_itemSaved($documentId, \'documents\')', 'Public save event is missing.', $failures);
 documents_indexability_require($indexability, 'PLG_itemDeleted($documentId, \'documents\')', 'Public removal event is missing.', $failures);
 
-documents_indexability_require($runtime, '$wasPublic = ($id !== \'\') ? DOCUMENTS_isPubliclyIndexable($id) : false;', 'Legacy saves do not snapshot anonymous visibility.', $failures);
-documents_indexability_require($runtime, 'DOCUMENTS_notifyPublicTransition($id, $wasPublic, $isPublic);', 'Legacy saves do not use public-only lifecycle transitions.', $failures);
+/* Runtime must not retain an independent legacy save lifecycle. Every public
+ * save is routed through document-save.php, which owns the before/after
+ * indexability snapshot. */
 documents_indexability_forbid($runtime, 'DOCUMENTS_runtimeSaveCategoryMetaDescription', 'Obsolete category metadata shutdown handler remains.', $failures);
+documents_indexability_require($publicIndex, "if (\$mode === 'save')", 'Public router does not identify document saves.', $failures);
+documents_indexability_require($publicIndex, "require __DIR__ . '/document-save.php';", 'Public saves do not enter the secure lifecycle-aware dispatcher.', $failures);
+documents_indexability_forbid($publicIndex, 'DOCUMENTS_LEGACY_SAVE_DISPATCH', 'Public router still exposes a legacy save lifecycle bypass.', $failures);
 
 documents_indexability_require($standardSave, '$wasPublic = !$isCreation && DOCUMENTS_isPubliclyIndexable($documentId);', 'Standard saves do not snapshot anonymous visibility.', $failures);
 documents_indexability_require($standardSave, '$isPublic = DOCUMENTS_isPubliclyIndexable($savedId);', 'Standard saves do not compute post-save public visibility.', $failures);
