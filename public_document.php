@@ -397,15 +397,7 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     if (function_exists('DOCUMENTS_renderNavigation')) {
         $body .= DOCUMENTS_renderNavigation();
     }
-    if (!empty($category['custom_header'])) {
-        $body .= '<div class="documents-category-header">'
-            . PLG_replaceTags((string) $category['custom_header']) . '</div>';
-    }
     $body .= $template->finish($template->parse('output', 'doc'));
-    if (!empty($category['custom_footer'])) {
-        $body .= '<div class="documents-category-footer">'
-            . PLG_replaceTags((string) $category['custom_footer']) . '</div>';
-    }
 
     return array(
         'title' => $title,
