@@ -57,6 +57,11 @@ if ($mode === 'editsubmission') {
     exit;
 }
 
+if ($mode === 'import_export') {
+    require __DIR__ . '/import-export.php';
+    exit;
+}
+
 $adminViews = array(
     'edit_cat' => 'category-editor.php',
     'list_fields' => 'admin-fields.php',
