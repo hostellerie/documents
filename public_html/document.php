@@ -46,10 +46,10 @@ if ($page === false) {
     exit;
 }
 
-$navigation = DOCUMENTS_renderNavigation();
 $body = (string) $page['body'];
-if (strpos($body, $navigation) === 0) {
-    $body = substr($body, strlen($navigation));
+$legacyNavigation = DOCUMENTS_renderNavigation();
+if ($legacyNavigation !== '' && strpos($body, $legacyNavigation) === 0) {
+    $body = substr($body, strlen($legacyNavigation));
 }
 
 $documentsLabel = isset($LANG_DOCUMENTS_1['plugin_name'])
@@ -73,8 +73,7 @@ $breadcrumb .= ' <span aria-hidden="true">›</span> '
     . htmlspecialchars((string) $page['title'], ENT_QUOTES, 'UTF-8')
     . '</span></nav>';
 
-$content = $navigation
-    . '<main class="documents-document-page">'
+$content = '<main class="documents-document-page">'
     . $breadcrumb
     . '<header class="documents-page-header"><h1>'
     . htmlspecialchars((string) $page['title'], ENT_QUOTES, 'UTF-8')
