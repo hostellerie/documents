@@ -61,6 +61,7 @@ function DOCUMENTS_adminNavigation($active = '')
         'edit_cat' => $isFrench ? 'Nouvelle catégorie' : 'New category',
         'list_fields' => $isFrench ? 'Champs' : 'Fields',
         'list_groups' => $isFrench ? 'Groupes de choix' : 'Selection groups',
+        'import_export' => $isFrench ? 'Import / Export CSV' : 'CSV Import / Export',
         'integrity' => $isFrench ? 'Intégrité' : 'Integrity'
     );
 
