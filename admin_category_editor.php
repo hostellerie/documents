@@ -49,8 +49,8 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
     );
 
     if ($categoryId > 0) {
-        $result = DB_query("SELECT * FROM {$_TABLES['documents_cat']} WHERE cid={$categoryId} LIMIT 1");
-        $row = DB_fetchArray($result);
+        $categoryResult = DB_query("SELECT * FROM {$_TABLES['documents_cat']} WHERE cid={$categoryId} LIMIT 1");
+        $row = DB_fetchArray($categoryResult);
         if (!is_array($row) || empty($row['cid'])) {
             $pageTitle = $lang('error', 'Error');
             $body = '<main class="documents-admin-page">'
@@ -63,7 +63,8 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
             if (function_exists('DOCUMENTS_wrapBlock')) {
                 $body = DOCUMENTS_wrapBlock($body, 'admin');
             }
-            return COM_createHTMLDocument($body, array('pagetitle' => $pageTitle));
+            $errorOptions = array('pagetitle' => $pageTitle);
+            return COM_createHTMLDocument($body, $errorOptions);
         }
         $category = array_merge($category, $row);
     }
@@ -224,17 +225,24 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
     $template->set_var('admin_options', $options . '</select>');
 
     $ownerName = COM_getDisplayName((int) $category['owner_id']);
+    $groupId = (int) $category['group_id'];
+    $permOwner = (int) $category['perm_owner'];
+    $permGroup = (int) $category['perm_group'];
+    $permMembers = (int) $category['perm_members'];
+    $permAnon = (int) $category['perm_anon'];
+    $permissionsEditor = SEC_getPermissionsHTML(
+        $permOwner,
+        $permGroup,
+        $permMembers,
+        $permAnon
+    );
+
     $template->set_var('lang_owner', isset($LANG_ACCESS['owner']) ? $LANG_ACCESS['owner'] : ($isFrench ? 'Propriétaire' : 'Owner'));
     $template->set_var('owner_name', htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8'));
     $template->set_var('owner_id', (int) $category['owner_id']);
     $template->set_var('lang_group', isset($LANG_ACCESS['group']) ? $LANG_ACCESS['group'] : ($isFrench ? 'Groupe' : 'Group'));
-    $template->set_var('group_dropdown', SEC_getGroupDropdown((int) $category['group_id'], 3));
-    $template->set_var('permissions_editor', SEC_getPermissionsHTML(
-        $category['perm_owner'],
-        $category['perm_group'],
-        $category['perm_members'],
-        $category['perm_anon']
-    ));
+    $template->set_var('group_dropdown', SEC_getGroupDropdown($groupId, 3));
+    $template->set_var('permissions_editor', $permissionsEditor);
     $template->set_var('lang_perm_key', isset($LANG_ACCESS['permissionskey']) ? $LANG_ACCESS['permissionskey'] : 'Permissions');
     $template->set_var('lang_permissions_msg', isset($LANG_ACCESS['permmsg']) ? $LANG_ACCESS['permmsg'] : '');
 
@@ -251,5 +259,6 @@ function DOCUMENTS_renderCategoryEditor($categoryId)
         $content = DOCUMENTS_wrapBlock($content, 'admin');
     }
 
-    return COM_createHTMLDocument($content, array('pagetitle' => $pageTitle));
+    $pageOptions = array('pagetitle' => $pageTitle);
+    return COM_createHTMLDocument($content, $pageOptions);
 }
