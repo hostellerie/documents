@@ -25,6 +25,13 @@ function documents_defaults_require($content, $needle, $message, &$failures)
     }
 }
 
+function documents_defaults_forbid($content, $needle, $message, &$failures)
+{
+    if (strpos($content, $needle) !== false) {
+        $failures[] = $message;
+    }
+}
+
 $fieldEditor = documents_defaults_read($root, 'public_html/field-editor.php', $failures);
 $mutations = documents_defaults_read($root, 'admin_mutations.php', $failures);
 
@@ -97,8 +104,20 @@ documents_defaults_require(
 );
 documents_defaults_require(
     $mutations,
-    'var_name=\'{$safeVariable}\'',
+    "SELECT fid FROM {\$_TABLES['documents_fields']}",
+    'Default field duplicate check does not use an explicit compatible SELECT.',
+    $failures
+);
+documents_defaults_require(
+    $mutations,
+    "var_name='{$safeVariable}' LIMIT 1",
     'Default field creation does not guard against duplicate variables.',
+    $failures
+);
+documents_defaults_forbid(
+    $mutations,
+    "DB_count(\n            \$_TABLES['documents_fields'],\n            'fid'",
+    'Default field duplicate detection must not pass a SQL condition to DB_count().',
     $failures
 );
 
