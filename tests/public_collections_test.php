@@ -57,11 +57,19 @@ documents_public_require($home, 'DOCUMENTS_homeStatsBlock()', 'Configured home s
 documents_public_forbid($home, 'ADMIN_list(', 'Modern home must not depend on ADMIN_list().', $failures);
 
 documents_public_require($category, '<main class="documents-category">', 'Modern category semantic main element is missing.', $failures);
+documents_public_require($category, '<nav class="documents-breadcrumb"', 'Category breadcrumb is missing.', $failures);
+documents_public_require($category, 'aria-current="page"', 'Category breadcrumb does not identify the current category.', $failures);
 documents_public_require($category, 'COUNT(DISTINCT d.doc_url)', 'Modern category pagination count is missing.', $failures);
 documents_public_forbid($category, 'd.active=1', 'Public category listing must not use editorial status as its read-visibility authority.', $failures);
 documents_public_require($category, "COM_getPermSQL('AND', 0, 2, 'd')", 'Modern category document permissions are not enforced.', $failures);
 documents_public_require($category, 'DOCUMENTS_renderItemCard($item)', 'Modern category cards are not using the common item renderer.', $failures);
 documents_public_require($category, "header('Location: ' . \$cleanUrl, true, 301)", 'Direct category.php URLs are not canonicalized.', $failures);
+documents_public_require($category, 'PLG_replaceTags($customHeader)', 'Category custom header does not expand Geeklog autotags.', $failures);
+documents_public_require($category, 'PLG_replaceTags($customFooter)', 'Category custom footer does not expand Geeklog autotags.', $failures);
+documents_public_require($category, 'class="documents-category-header"', 'Category custom header is not rendered as free HTML content.', $failures);
+documents_public_require($category, 'class="documents-category-footer"', 'Category custom footer is not rendered as free HTML content.', $failures);
+documents_public_forbid($category, 'documents-category__custom-header', 'Category custom header is still coupled to the old section-block wrapper.', $failures);
+documents_public_forbid($category, 'documents-category__custom-footer', 'Category custom footer is still coupled to the old section-block wrapper.', $failures);
 documents_public_forbid($category, 'ADMIN_list(', 'Modern category view must not depend on ADMIN_list().', $failures);
 
 documents_public_require($controller, 'DOCUMENTS_renderPublicDocument(', 'Document controller does not use the unified public renderer.', $failures);
