@@ -110,7 +110,7 @@ documents_defaults_require(
 );
 documents_defaults_require(
     $mutations,
-    "var_name='{$safeVariable}' LIMIT 1",
+    'var_name=\'{$safeVariable}\' LIMIT 1',
     'Default field creation does not guard against duplicate variables.',
     $failures
 );
