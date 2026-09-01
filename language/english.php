@@ -97,6 +97,7 @@ $LANG_DOCUMENTS_1 = array(
     'select_order'        => 'Selection order',
     'doc_submission'      => 'Document submission',
     'submission'          => 'Submission',
+    'pending_moderation'  => 'Pending moderation',
     'not_active'          => 'Inactive',
     'draft'               => 'Draft',
     'active_label'        => 'Document status',
