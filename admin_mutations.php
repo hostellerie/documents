@@ -2,7 +2,7 @@
 
 /* Secure administration mutations for Documents 1.2.0. PHP 5.6+. */
 
-if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'admin_mutations.php') !== false) {
+if (isset($_SERVER['PHP_SELF']) && strpos(strtolower((string) $_SERVER['PHP_SELF']), 'admin_mutations.php') !== false) {
     die('This file can not be used on its own.');
 }
 
@@ -190,11 +190,11 @@ function DOCUMENTS_adminCreateDefaultCategoryFields(
 
     foreach ($fields as $field) {
         $safeVariable = DB_escapeString($field['variable']);
-        if ((int) DB_count(
-            $_TABLES['documents_fields'],
-            'fid',
-            "cat_id={$categoryId} AND var_name='{$safeVariable}'"
-        ) > 0) {
+        $duplicateResult = DB_query(
+            "SELECT fid FROM {$_TABLES['documents_fields']} "
+            . "WHERE cat_id={$categoryId} AND var_name='{$safeVariable}' LIMIT 1"
+        );
+        if (DB_numRows($duplicateResult) > 0) {
             continue;
         }
 
