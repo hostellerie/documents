@@ -146,6 +146,78 @@ function DOCUMENTS_adminCategoryHasDocuments($categoryId)
     return DB_numRows(DB_query($sql)) > 0;
 }
 
+function DOCUMENTS_adminCreateDefaultCategoryFields(
+    $categoryId,
+    $ownerId,
+    $groupId,
+    $permOwner,
+    $permGroup,
+    $permMembers,
+    $permAnon
+) {
+    global $_CONF, $_TABLES;
+
+    $categoryId = (int) $categoryId;
+    if ($categoryId <= 0) {
+        return false;
+    }
+
+    $isFrench = isset($_CONF['language'])
+        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+
+    $fields = array(
+        array(
+            'name' => $isFrench ? 'Nom' : 'Name',
+            'order' => 10,
+            'type' => 'text',
+            'variable' => 'name',
+            'help' => $isFrench ? 'Nom principal du document.' : 'Primary document name.',
+            'required' => 1,
+            'on_list' => 1
+        ),
+        array(
+            'name' => $isFrench ? 'Méta description' : 'Meta description',
+            'order' => 20,
+            'type' => 'textarea',
+            'variable' => 'metadescription',
+            'help' => $isFrench
+                ? 'Description SEO du document. Elle n’est pas affichée dans le contenu public.'
+                : 'SEO description for the document. It is not displayed in public content.',
+            'required' => 0,
+            'on_list' => 0
+        )
+    );
+
+    foreach ($fields as $field) {
+        $safeVariable = DB_escapeString($field['variable']);
+        if ((int) DB_count(
+            $_TABLES['documents_fields'],
+            'fid',
+            "cat_id={$categoryId} AND var_name='{$safeVariable}'"
+        ) > 0) {
+            continue;
+        }
+
+        $safeName = DB_escapeString($field['name']);
+        $safeType = DB_escapeString($field['type']);
+        $safeHelp = DB_escapeString($field['help']);
+        DB_query(
+            "INSERT INTO {$_TABLES['documents_fields']} SET "
+            . "cat_id={$categoryId}, f_name='{$safeName}', f_order=" . (int) $field['order'] . ", "
+            . "f_type='{$safeType}', sel_id=0, var_name='{$safeVariable}', f_help='{$safeHelp}', "
+            . "f_required=" . (int) $field['required'] . ", f_on_list=" . (int) $field['on_list'] . ", "
+            . "display_empty=1, owner_id=" . (int) $ownerId . ", group_id=" . (int) $groupId . ", "
+            . "perm_owner=" . (int) $permOwner . ", perm_group=" . (int) $permGroup . ", "
+            . "perm_members=" . (int) $permMembers . ", perm_anon=" . (int) $permAnon
+        );
+        if (DB_error()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 function DOCUMENTS_adminSaveCategory($request)
 {
     global $_CONF, $_TABLES;
@@ -259,14 +331,30 @@ function DOCUMENTS_adminSaveCategory($request)
         . "owner_id={$ownerId}, group_id={$groupId}, perm_owner={$permOwner}, "
         . "perm_group={$permGroup}, perm_members={$permMembers}, perm_anon={$permAnon}";
 
+    $newCategory = ($cid <= 0);
     if ($cid > 0) {
         DB_query("UPDATE {$_TABLES['documents_cat']} SET {$set} WHERE cid={$cid}");
     } else {
         DB_query("INSERT INTO {$_TABLES['documents_cat']} SET {$set}");
+        $cid = (int) DB_insertId();
     }
 
-    if (DB_error()) {
+    if (DB_error() || ($newCategory && $cid <= 0)) {
         return array(false, 'Unable to save category.');
+    }
+
+    if ($newCategory && !DOCUMENTS_adminCreateDefaultCategoryFields(
+        $cid,
+        $ownerId,
+        $groupId,
+        $permOwner,
+        $permGroup,
+        $permMembers,
+        $permAnon
+    )) {
+        DB_query("DELETE FROM {$_TABLES['documents_fields']} WHERE cat_id={$cid}");
+        DB_query("DELETE FROM {$_TABLES['documents_cat']} WHERE cid={$cid}");
+        return array(false, 'Unable to create the default category fields.');
     }
 
     DOCUMENTS_adminReorderCategories();
