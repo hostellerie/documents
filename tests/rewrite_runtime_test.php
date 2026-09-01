@@ -60,8 +60,14 @@ if (strpos($index, '$adminModes') === false
 if (strpos($autoinstall, 'DOCUMENTS_writeHtaccess(true)') === false) {
     $failures[] = 'Install/update must generate the Documents .htaccess file.';
 }
-if (strpos($package, 'zipinfo') === false) {
-    $failures[] = 'Packaging must continue to inspect the archive for forbidden hidden paths.';
+if (strpos($package, "--exclude '.github/'") === false
+    || strpos($package, "--exclude 'tests/'") === false
+    || strpos($package, 'unzip -t dist/documents_1.2.0-2.1.1.zip') === false) {
+    $failures[] = 'Packaging does not exclude development surfaces and verify ZIP integrity.';
+}
+if (strpos($package, 'PHP 5.6 regression tests') === false
+    || strpos($package, 'PHP 8.1 regression tests') === false) {
+    $failures[] = 'Packaging is not gated by both supported regression suites.';
 }
 
 if (!empty($failures)) {
