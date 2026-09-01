@@ -2,7 +2,7 @@
 
 /* Documents 1.2.0 CSV import/export administration. PHP 5.6+. */
 
-if (!defined('GVERSION')) {
+if (!defined('DOCUMENTS_ADMIN_ROUTER')) {
     die('This file can not be used on its own.');
 }
 
