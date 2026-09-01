@@ -95,7 +95,7 @@ documents_category_editor_require($css, '.documents-field-help', 'Admin styleshe
 /* Shared Geeklog 2.1.1/2.2.x stylesheet loader contract. */
 documents_category_editor_require($adminStyles, 'function DOCUMENTS_loadAdminStyles()', 'Shared admin stylesheet compatibility helper is missing.', $failures);
 documents_category_editor_require($adminStyles, "method_exists(\$_SCRIPTS, 'setCSSFile')", 'Admin stylesheet helper does not use capability detection.', $failures);
-documents_category_editor_require($adminStyles, '/admin/plugins/documents/documents.css?v=1.2.0', 'Admin stylesheet helper no longer registers the versioned Documents stylesheet.', $failures);
+documents_category_editor_require($adminStyles, '/admin/plugins/documents/documents.css', 'Admin stylesheet helper no longer registers the Documents stylesheet.', $failures);
 documents_category_editor_require($adminStyles, "\$_SCRIPTS->setCSSFile(", 'Admin stylesheet helper does not register CSS through Geeklog resources.', $failures);
 documents_category_editor_require($dispatcher, "require_once \$pluginPath . 'admin_styles.php';", 'Compatibility category editor dispatcher does not load the shared admin stylesheet helper.', $failures);
 documents_category_editor_require($dispatcher, 'DOCUMENTS_loadAdminStyles();', 'Compatibility category editor dispatcher does not call the shared admin stylesheet helper.', $failures);
