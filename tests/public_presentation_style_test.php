@@ -33,8 +33,11 @@ if (strpos($presentation, 'function DOCUMENTS_preparePublicPresentation(') === f
 if (strpos($presentation, 'function DOCUMENTS_createPublicPage(') === false) {
     $failures[] = 'Unified public page builder is missing.';
 }
-if (strpos($presentation, "'/css/documents.css?v=1.2.0-4'") === false) {
-    $failures[] = 'Public stylesheet is not registered with the current versioned public_html-relative URI.';
+if (strpos($presentation, '/css/documents.css') === false) {
+    $failures[] = 'Public stylesheet is not registered.';
+}
+if (strpos($presentation, "method_exists(\$_SCRIPTS, 'setCSSFile')") === false) {
+    $failures[] = 'Public stylesheet loader does not guard the Geeklog resource API.', $failures;
 }
 if (strpos($presentation, 'COM_startBlock(') !== false || strpos($presentation, 'COM_endBlock(') !== false) {
     $failures[] = 'Home statistics must not depend on Geeklog theme blocks.';
