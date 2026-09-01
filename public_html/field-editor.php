@@ -135,6 +135,9 @@ while ($category = DB_fetchArray($categoryResult)) {
     $maxOrder = (int) DB_getItem($_TABLES['documents_fields'], 'MAX(f_order)', 'cat_id=' . $cid);
     $nextOrders[$cid] = $maxOrder + 10;
 }
+if ($fid === 0 && (int) $field['cat_id'] <= 0 && !empty($categories)) {
+    $field['cat_id'] = (int) $categories[0]['cid'];
+}
 if ($fid === 0 && (int) $field['cat_id'] > 0 && isset($nextOrders[(int) $field['cat_id']])) {
     $field['f_order'] = $nextOrders[(int) $field['cat_id']];
 }
