@@ -1,5 +1,102 @@
 # Changelog
 
+## 1.2.0 — SEO, security, workflow and interoperability modernization
+
+Compatibility target:
+
+- Geeklog 2.1.1 through 2.2.2
+- PHP 5.6 through 8.1
+- MySQL/MariaDB only
+- single-site and multisite installations
+- Maps and MediaGallery remain optional integrations
+
+### Public pages and SEO
+
+- Added clean canonical URLs for Documents home, category and document pages.
+- Added dedicated category meta descriptions through `documents_cat.metadescription`, independent from `cat_help`.
+- Individual documents may define an optional field named `metadescription`; when absent or empty, Documents derives a safe description from useful text content and falls back conservatively.
+- Added OpenGraph and Twitter Card metadata.
+- Added JSON-LD for collection and document pages, including breadcrumb structured data.
+- Document Schema.org output defaults to `CreativeWork`; an optional `schema_type` field may select an allowed richer type.
+- Added workflow-aware robots directives so inactive, draft and pending content is not accidentally indexed.
+- Reused the first usable document image consistently for social and structured metadata.
+- Added semantic breadcrumbs to document pages.
+- Removed obsolete Google+ output and duplicate legacy metadata.
+
+### Modern public presentation
+
+- Added a responsive Documents home page with category cards.
+- Added responsive category listings and pagination.
+- Rebuilt the default document presentation around an editorial structure: main image, main textarea content, structured properties and rich fields.
+- Removed the generic `Document details` wrapper from the default document page.
+- Kept custom templates supported and documented the Template/CSS mechanism through a new administration help page.
+- Added administrator-only workflow-status badges to public category listings.
+
+### Document workflow and permissions
+
+- Separated editorial status from read visibility: Geeklog document/category permissions determine who may view a document.
+- Active, inactive, draft and pending documents can therefore remain visible to authorized users.
+- Pending submissions are frozen for non-admin owners until moderation.
+- Sitemap, feeds, generic indexing lifecycle events and public statistics continue to use active/public content only.
+- Centralized document edit checks and applied them consistently to form display, save operations and edit links.
+
+### Secure mutations and images
+
+- Added dedicated mutation layers for categories, fields, selection groups, selection values and documents.
+- Mutating administration routes require `documents.admin` and Geeklog CSRF validation.
+- Added server-side validation for field types, required values, selection values, document/category binding and workflow transitions.
+- Non-admin users cannot forge owner, group, permissions or publication state.
+- New document URLs are deterministic, unique and constrained to the historical 40-character storage limit.
+- Image uploads use Geeklog's upload class with MIME, extension, size and dimension restrictions.
+- Failed mutations remove newly uploaded files and successful replacements clean obsolete images/previews.
+- Secure deletion cleans Documents-owned data and images while preserving integration ownership boundaries.
+
+### Maps ownership boundary
+
+- Maps remains completely optional for installation and normal Documents operation.
+- Documents no longer writes directly to Maps database tables and does not allocate marker IDs.
+- Marker create/update/deactivation requests are delegated through `PLG_invokeService('maps', 'marker_save', ...)`.
+- Marker display is delegated through `PLG_invokeService('maps', 'marker_render', ...)`.
+- Documents stores only the marker ID returned by Maps in its own `documents_values` table.
+- Added a regression test that rejects reintroduction of direct Maps-table SQL.
+
+### Geeklog interoperability
+
+- Added `plugin_getiteminfo_documents()` for single items and normalized collections.
+- Added `plugin_idtourl_documents()` and `plugin_urltoid_documents()` for canonical route resolution.
+- Added `plugin_collectSitemapItems_documents()`.
+- Added lifecycle notifications through `PLG_itemSaved` and `PLG_itemDeleted` based on public-indexing transitions.
+- Hello and Hub can consume Documents through generic Item Info instead of Documents-specific SQL.
+- IndexNow listeners can resolve canonical URLs through the generic Geeklog plugin contract.
+- Added document/category autotags, recent/popular PHP blocks, native feed callbacks and native statistics callbacks.
+- Geeklog's ranking is exposed as `Top Ten Documents`, while the `/documents/` page keeps a generic statistics summary.
+
+### Administration and integrity
+
+- Added modern category, field and selection administration views.
+- Added a Template/CSS presentation guide.
+- Added a read-only data-integrity audit covering duplicate routes, orphan records and image consistency.
+- The integrity report does not repair, delete or modify data.
+
+### Storage, upgrade and compatibility
+
+- Added the idempotent 1.2.0 schema upgrade and dedicated category `metadescription` column.
+- Preserved multisite-safe persistent storage based on each site's `$_CONF['path_data']`.
+- Preserved non-overwriting migration from historical `data_documents/` storage.
+- Removed MSSQL support and explicitly reject unsupported database backends.
+- Kept runtime syntax compatible with PHP 5.6.
+
+### CI and packaging
+
+- The release workflow now lints all PHP/INC files under PHP 5.6 and PHP 8.1.
+- All autonomous `tests/*_test.php` checks run under both PHP versions before packaging.
+- Any failing regression test prevents creation/commit of a new installable archive.
+- The generated `dist/documents_1.2.0-2.1.1.zip` is verified with `unzip -t` before being committed.
+
+### Final validation before tag
+
+Before tagging 1.2.0, complete the manual matrix documented in `TESTING.md`, including clean install, 1.1.x upgrade, Geeklog 2.1.1/PHP 5.6, Geeklog 2.2.2/PHP 8.1, permissions/workflow, images/comments, feeds/statistics/search/What's New, multisite isolation and optional Maps interoperability.
+
 ## 1.1.10 — Configuration upgrade and public statistics option
 
 Compatibility target:
