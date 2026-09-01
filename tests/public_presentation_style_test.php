@@ -37,7 +37,7 @@ if (strpos($presentation, '/css/documents.css') === false) {
     $failures[] = 'Public stylesheet is not registered.';
 }
 if (strpos($presentation, "method_exists(\$_SCRIPTS, 'setCSSFile')") === false) {
-    $failures[] = 'Public stylesheet loader does not guard the Geeklog resource API.', $failures;
+    $failures[] = 'Public stylesheet loader does not guard the Geeklog resource API.';
 }
 if (strpos($presentation, 'COM_startBlock(') !== false || strpos($presentation, 'COM_endBlock(') !== false) {
     $failures[] = 'Home statistics must not depend on Geeklog theme blocks.';
