@@ -1,14 +1,4 @@
 <article id="documents_display" class="documents-document">
-    <div class="documents-document__meta">
-        {active}
-        <span class="documents-document__author">{doc_by} {user_name}</span>
-        <span class="documents-document__meta-separator" aria-hidden="true">·</span>
-        <span class="documents-document__updated">{modified_label} {modified}</span>
-        <span class="documents-document__meta-separator" aria-hidden="true">·</span>
-        <span class="documents-document__views">{displayed} {hits} {times}</span>
-        {editor}
-    </div>
-
     {main_image}
 
     {main_content}
@@ -18,6 +8,16 @@
     {rich_fields}
 
     {raws}
+
+    <div class="documents-document__meta">
+        {active}
+        <span class="documents-document__author">{doc_by} {user_name}</span>
+        <span class="documents-document__meta-separator" aria-hidden="true">·</span>
+        <span class="documents-document__updated">{modified_label} {modified}</span>
+        <span class="documents-document__meta-separator" aria-hidden="true">·</span>
+        <span class="documents-document__views">{displayed} {hits} {times}</span>
+        {editor}
+    </div>
 </article>
 
 <section id="comments" class="documents-document__comments" aria-label="{comments_title}">
