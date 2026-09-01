@@ -369,7 +369,15 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
         : '';
     $template->set_var('modified_label', $isFrench ? 'Mis à jour le' : 'Updated');
     $template->set_var('modified', htmlspecialchars($modifiedDate, ENT_QUOTES, 'UTF-8'));
-    $template->set_var('comments_title', $isFrench ? 'Commentaires' : 'Comments');
+
+    $commentsTitle = $isFrench ? 'Commentaires' : 'Comments';
+    $template->set_var('comments_title', $commentsTitle);
+    $commentsHeading = '';
+    if (!defined('VERSION') || version_compare((string) VERSION, '2.2.2', '<')) {
+        $commentsHeading = '<h2 class="documents-document__comments-title">'
+            . htmlspecialchars($commentsTitle, ENT_QUOTES, 'UTF-8') . '</h2>';
+    }
+    $template->set_var('comments_heading', $commentsHeading);
 
     DB_query("UPDATE {$_TABLES['documents_docs']} SET hits=hits+1 WHERE doc_url='"
         . DB_escapeString($documentSlug) . "'");
