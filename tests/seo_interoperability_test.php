@@ -73,11 +73,11 @@ documents_test_require($files['indexability'], '$anonymousUid = 1;', 'Indexabili
 documents_test_require($files['indexability'], 'function DOCUMENTS_notifyPublicTransition(', 'Public lifecycle transition helper is missing.', $failures);
 documents_test_require($files['indexability'], 'PLG_itemSaved($documentId, \'documents\')', 'Public saved lifecycle event is missing.', $failures);
 documents_test_require($files['indexability'], 'PLG_itemDeleted($documentId, \'documents\')', 'Public deleted lifecycle event is missing.', $failures);
-documents_test_require($files['runtime'], 'DOCUMENTS_isPubliclyIndexable($id)', 'Legacy lifecycle does not test anonymous indexability.', $failures);
-documents_test_require($files['runtime'], 'DOCUMENTS_notifyPublicTransition($id, $wasPublic, $isPublic)', 'Legacy lifecycle does not use public transitions.', $failures);
-documents_test_require($files['document_save'], 'DOCUMENTS_isPubliclyIndexable($documentId)', 'Secure standard save does not snapshot previous public visibility.', $failures);
-documents_test_require($files['document_save'], 'DOCUMENTS_notifyPublicTransition($savedId, $wasPublic, $isPublic)', 'Secure standard save does not use public lifecycle transitions.', $failures);
+documents_test_require($files['document_save'], '$wasPublic = !$isCreation && DOCUMENTS_isPubliclyIndexable($documentId);', 'Secure save does not snapshot previous public visibility.', $failures);
+documents_test_require($files['document_save'], '$isPublic = DOCUMENTS_isPubliclyIndexable($savedId);', 'Secure save does not compute resulting public visibility.', $failures);
+documents_test_require($files['document_save'], 'DOCUMENTS_notifyPublicTransition($savedId, $wasPublic, $isPublic)', 'Secure save does not use public lifecycle transitions.', $failures);
 documents_test_forbid($files['runtime'], 'DOCUMENTS_runtimeSaveCategoryMetaDescription', 'Obsolete deferred category metadata persistence remains.', $failures);
+documents_test_forbid($files['public'], 'DOCUMENTS_LEGACY_SAVE_DISPATCH', 'Public save router still exposes a legacy lifecycle bypass.', $failures);
 
 documents_test_require($files['embeds'], 'function plugin_autotags_documents(', 'Documents autotags are missing.', $failures);
 documents_test_require($files['embeds'], "array('document', 'documents')", 'Expected autotag names are missing.', $failures);
@@ -95,15 +95,18 @@ documents_test_require($files['seo'], 'name="description"', 'SEO meta descriptio
 documents_test_require($files['seo'], 'property="og:title"', 'OpenGraph metadata is missing.', $failures);
 documents_test_require($files['seo'], 'name="twitter:card"', 'Twitter card metadata is missing.', $failures);
 documents_test_require($files['seo'], 'application/ld+json', 'JSON-LD output is missing.', $failures);
-documents_test_require($files['seo'], "'schema_type' => 'CreativeWork'", 'Document CreativeWork schema is missing.', $failures);
+documents_test_require($files['seo'], "'schema_type' => 'CreativeWork'", 'Document CreativeWork schema default is missing.', $failures);
 documents_test_require($files['seo'], "'schema_type' => 'CollectionPage'", 'CollectionPage schema is missing.', $failures);
-documents_test_require($files['seo'], "['metadescription']", 'Category SEO is not using the dedicated metadescription field.', $failures);
+documents_test_require($files['seo'], 'metadescription', 'Dedicated meta description support is missing.', $failures);
+documents_test_require($files['seo'], 'BreadcrumbList', 'Document breadcrumb structured data is missing.', $failures);
 
 documents_test_require($files['category_template'], 'name="metadescription"', 'Category metadescription editor is missing.', $failures);
 documents_test_require($files['category_template'], 'name="cat_help"', 'cat_help must remain a separate category field.', $failures);
 documents_test_forbid($files['category_template'], 'XMLHttpRequest', 'Category editor still contains AJAX metadata preload.', $failures);
 
-documents_test_require($files['public'], 'SEC_checkToken()', 'Mutating legacy routes do not validate CSRF.', $failures);
+documents_test_require($files['public'], "if (\$mode === 'save')", 'Public router does not identify secure document saves.', $failures);
+documents_test_require($files['public'], "require __DIR__ . '/document-save.php';", 'Public router does not delegate document writes to the secure dispatcher.', $failures);
+documents_test_require($files['document_save'], 'SEC_checkToken()', 'Mutating document routes do not validate CSRF.', $failures);
 documents_test_require($files['document'], 'DOCUMENTS_renderPublicDocument(', 'Public document controller does not use the unified renderer.', $failures);
 documents_test_require($files['document_renderer'], '$categoryAccess = SEC_hasAccess(', 'Public document category permission guard is missing.', $failures);
 documents_test_require($files['document_renderer'], 'if ($categoryAccess < 2)', 'Public document category access is not enforced.', $failures);
