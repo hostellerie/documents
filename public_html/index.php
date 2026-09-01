@@ -66,7 +66,7 @@ if ($mode === 'view') {
         require __DIR__ . '/document.php';
     } else {
         unset($_GET['doc'], $_REQUEST['doc']);
-        require __DIR__ . '/category.php';
+        require __DIR__ . '/category-list.php';
     }
     exit;
 }
