@@ -90,9 +90,14 @@ if (!empty($_GET['msg'])) {
         . htmlspecialchars((string) $_GET['msg'], ENT_QUOTES, 'UTF-8') . '</div>';
 }
 
+$newFieldUrl = $siteUrl . '/index.php?mode=edit_field';
+if ($selectedCategory > 0) {
+    $newFieldUrl .= '&cat=' . $selectedCategory;
+}
+
 $content .= '<div class="documents-admin-toolbar">'
     . '<a class="documents-admin-button documents-admin-button--primary" href="'
-    . htmlspecialchars($siteUrl . '/index.php?mode=edit_field', ENT_QUOTES, 'UTF-8') . '">'
+    . htmlspecialchars($newFieldUrl, ENT_QUOTES, 'UTF-8') . '">'
     . htmlspecialchars($text['new'], ENT_QUOTES, 'UTF-8') . '</a>'
     . '<a class="documents-admin-button" href="'
     . htmlspecialchars($siteUrl . '/index.php?mode=list_groups', ENT_QUOTES, 'UTF-8') . '">'
