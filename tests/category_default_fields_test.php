@@ -42,7 +42,7 @@ documents_defaults_require(
 );
 documents_defaults_require(
     $fieldEditor,
-    "$field['cat_id'] = (int) $categories[0]['cid'];",
+    '$field[\'cat_id\'] = (int) $categories[0][\'cid\'];',
     'New-field editor does not initialize the visibly selected first category.',
     $failures
 );
@@ -97,7 +97,7 @@ documents_defaults_require(
 );
 documents_defaults_require(
     $mutations,
-    "var_name='{$safeVariable}'",
+    'var_name=\'{$safeVariable}\'',
     'Default field creation does not guard against duplicate variables.',
     $failures
 );
