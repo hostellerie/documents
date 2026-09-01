@@ -58,6 +58,9 @@ if ($mode === 'editsubmission') {
 }
 
 if ($mode === 'import_export') {
+    if (!defined('DOCUMENTS_ADMIN_ROUTER')) {
+        define('DOCUMENTS_ADMIN_ROUTER', true);
+    }
     require __DIR__ . '/import-export.php';
     exit;
 }
