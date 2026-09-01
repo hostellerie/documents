@@ -21,6 +21,6 @@
 </article>
 
 <section id="comments" class="documents-document__comments" aria-label="{comments_title}">
-    <h2 class="documents-document__comments-title">{comments_title}</h2>
+    {comments_heading}
     <div id="commentbar">{commentbar}</div>
 </section>
