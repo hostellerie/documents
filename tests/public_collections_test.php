@@ -82,6 +82,10 @@ documents_public_forbid($renderer, 'maps_markers', 'Public document renderer mus
 documents_public_forbid($renderer, 'maps_maps', 'Public document renderer must not access Maps map storage.', $failures);
 documents_public_forbid($renderer, 'mg_albums', 'Public document renderer must not access MediaGallery album storage.', $failures);
 documents_public_forbid($renderer, 'mg_media', 'Public document renderer must not access MediaGallery media storage.', $failures);
+documents_public_forbid($renderer, "['custom_header']", 'Document pages must not render the category custom header.', $failures);
+documents_public_forbid($renderer, "['custom_footer']", 'Document pages must not render the category custom footer.', $failures);
+documents_public_forbid($renderer, 'documents-category-header', 'Document pages must not contain category header presentation markup.', $failures);
+documents_public_forbid($renderer, 'documents-category-footer', 'Document pages must not contain category footer presentation markup.', $failures);
 documents_public_forbid($controller, 'include_html.php', 'Public document reading must not fall back to the historical renderer.', $failures);
 documents_public_require($renderer, '<dl class="documents-properties">', 'Default structured-property definition list is missing.', $failures);
 documents_public_require($renderer, 'documents-document__prose', 'Default document main-content area is missing.', $failures);
