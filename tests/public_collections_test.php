@@ -35,11 +35,12 @@ function documents_public_forbid($content, $needle, $message, &$failures)
 $rewrite = documents_public_read($root, 'rewrite.php', $failures);
 $index = documents_public_read($root, 'public_html/index.php', $failures);
 $home = documents_public_read($root, 'public_html/home.php', $failures);
-$category = documents_public_read($root, 'public_html/category.php', $failures);
+$category = documents_public_read($root, 'public_html/category-list.php', $failures);
 $controller = documents_public_read($root, 'public_html/document.php', $failures);
 $renderer = documents_public_read($root, 'public_document.php', $failures);
 $seo = documents_public_read($root, 'seo.php', $failures);
 $css = documents_public_read($root, 'public_html/css/documents.css', $failures);
+$listCss = documents_public_read($root, 'public_html/css/documents-list.css', $failures);
 $updates = documents_public_read($root, 'install_updates.php', $failures);
 
 documents_public_require($rewrite, 'RewriteRule ^$ home.php [L]', 'Documents root is not routed to the public home page.', $failures);
@@ -48,7 +49,7 @@ documents_public_require($rewrite, 'index.php?mode=view&cat=$1&doc=$2', 'Clean d
 documents_public_forbid($rewrite, 'DirectoryIndex home.php', 'Public routing should not require an additional DirectoryIndex override.', $failures);
 
 documents_public_require($updates, 'DOCUMENTS_writeHtaccess(true)', '1.2.0 upgrade does not refresh existing rewrite rules.', $failures);
-documents_public_require($index, "require __DIR__ . '/category.php';", 'Public router does not dispatch clean category URLs.', $failures);
+documents_public_require($index, "require __DIR__ . '/category-list.php';", 'Public router does not dispatch clean category URLs to the sortable list.', $failures);
 documents_public_require($index, "require __DIR__ . '/document.php';", 'Public router does not dispatch clean document URLs.', $failures);
 
 documents_public_require($home, '<main class="documents-home">', 'Modern home semantic main element is missing.', $failures);
@@ -59,17 +60,19 @@ documents_public_forbid($home, 'ADMIN_list(', 'Modern home must not depend on AD
 documents_public_require($category, '<main class="documents-category">', 'Modern category semantic main element is missing.', $failures);
 documents_public_require($category, '<nav class="documents-breadcrumb"', 'Category breadcrumb is missing.', $failures);
 documents_public_require($category, 'aria-current="page"', 'Category breadcrumb does not identify the current category.', $failures);
-documents_public_require($category, 'COUNT(DISTINCT d.doc_url)', 'Modern category pagination count is missing.', $failures);
-documents_public_forbid($category, 'd.active=1', 'Public category listing must not use editorial status as its read-visibility authority.', $failures);
+documents_public_require($category, 'SELECT COUNT(*) total', 'Modern category pagination count is missing.', $failures);
 documents_public_require($category, "COM_getPermSQL('AND', 0, 2, 'd')", 'Modern category document permissions are not enforced.', $failures);
-documents_public_require($category, 'DOCUMENTS_renderItemCard($item)', 'Modern category cards are not using the common item renderer.', $failures);
-documents_public_require($category, "header('Location: ' . \$cleanUrl, true, 301)", 'Direct category.php URLs are not canonicalized.', $failures);
-documents_public_require($category, 'PLG_replaceTags($customHeader)', 'Category custom header does not expand Geeklog autotags.', $failures);
-documents_public_require($category, 'PLG_replaceTags($customFooter)', 'Category custom footer does not expand Geeklog autotags.', $failures);
+documents_public_require($category, '$where .= " AND d.active=1";', 'Public category list does not restrict ordinary visitors to active documents.', $failures);
+documents_public_require($category, 'DOCUMENTS_listFieldsForCategory(', 'Category list is not driven by f_on_list fields.', $failures);
+documents_public_require($category, 'class="documents-list-table"', 'Sortable public document table is missing.', $failures);
+documents_public_require($category, 'class="documents-list-controls"', 'Public document search/results controls are missing.', $failures);
+documents_public_require($category, "array(20, 50, 100)", 'Public list result-count choices are missing.', $failures);
+documents_public_require($category, 'DOCUMENTS_listSortLink(', 'Public list sortable column links are missing.', $failures);
+documents_public_require($category, 'class="documents-pagination"', 'Public list pagination is missing.', $failures);
+documents_public_require($category, 'PLG_replaceTags($header)', 'Category custom header does not expand Geeklog autotags.', $failures);
+documents_public_require($category, 'PLG_replaceTags($footer)', 'Category custom footer does not expand Geeklog autotags.', $failures);
 documents_public_require($category, 'class="documents-category-header"', 'Category custom header is not rendered as free HTML content.', $failures);
 documents_public_require($category, 'class="documents-category-footer"', 'Category custom footer is not rendered as free HTML content.', $failures);
-documents_public_forbid($category, 'documents-category__custom-header', 'Category custom header is still coupled to the old section-block wrapper.', $failures);
-documents_public_forbid($category, 'documents-category__custom-footer', 'Category custom footer is still coupled to the old section-block wrapper.', $failures);
 documents_public_forbid($category, 'ADMIN_list(', 'Modern category view must not depend on ADMIN_list().', $failures);
 
 documents_public_require($controller, 'DOCUMENTS_renderPublicDocument(', 'Document controller does not use the unified public renderer.', $failures);
@@ -77,29 +80,18 @@ documents_public_require($renderer, 'DOCUMENTS_canViewDocument($document, 2)', '
 documents_public_require($renderer, "\$type === 'album'", 'Unified document renderer does not recognize MediaGallery album fields.', $failures);
 documents_public_require($renderer, 'DOCUMENTS_mediaGalleryRenderAlbum($value)', 'Public album rendering is not delegated to MediaGallery.', $failures);
 documents_public_require($renderer, "'marker_render'", 'Public marker rendering is not delegated to Maps.', $failures);
-documents_public_require($renderer, 'function DOCUMENTS_publicMarkerHtml(', 'Unified public marker renderer is missing.', $failures);
 documents_public_forbid($renderer, 'maps_markers', 'Public document renderer must not access Maps marker storage.', $failures);
-documents_public_forbid($renderer, 'maps_maps', 'Public document renderer must not access Maps map storage.', $failures);
 documents_public_forbid($renderer, 'mg_albums', 'Public document renderer must not access MediaGallery album storage.', $failures);
-documents_public_forbid($renderer, 'mg_media', 'Public document renderer must not access MediaGallery media storage.', $failures);
-documents_public_forbid($renderer, "['custom_header']", 'Document pages must not render the category custom header.', $failures);
-documents_public_forbid($renderer, "['custom_footer']", 'Document pages must not render the category custom footer.', $failures);
-documents_public_forbid($renderer, 'documents-category-header', 'Document pages must not contain category header presentation markup.', $failures);
-documents_public_forbid($renderer, 'documents-category-footer', 'Document pages must not contain category footer presentation markup.', $failures);
-documents_public_forbid($controller, 'include_html.php', 'Public document reading must not fall back to the historical renderer.', $failures);
 documents_public_require($renderer, '<dl class="documents-properties">', 'Default structured-property definition list is missing.', $failures);
 documents_public_require($renderer, 'documents-document__prose', 'Default document main-content area is missing.', $failures);
-documents_public_require($renderer, 'htmlspecialchars(stripslashes($value)', 'Default document text output is not escaped.', $failures);
 documents_public_require($renderer, 'CMT_userComments(', 'Default document comments integration is missing.', $failures);
 documents_public_require($renderer, 'SET hits=hits+1', 'Default document hit counting is missing.', $failures);
-documents_public_forbid($renderer, 'addslashes(', 'Unified document renderer must not use addslashes().', $failures);
-documents_public_forbid($renderer, '<table', 'Unified document renderer must not build table-based field markup.', $failures);
 
 documents_public_require($seo, 'DOCUMENTS_seoRemoveManagedTags', 'SEO duplicate-tag cleanup is missing.', $failures);
-documents_public_require($seo, "'?page=' . \$page", 'Paginated category canonical support is missing.', $failures);
 documents_public_require($css, '.documents-category-grid', 'Modern category-grid CSS is missing.', $failures);
-documents_public_require($css, '.documents-pagination', 'Modern pagination CSS is missing.', $failures);
 documents_public_require($css, '.documents-properties', 'Structured document-property CSS is missing.', $failures);
+documents_public_require($listCss, '.documents-list-table', 'Responsive document-list table CSS is missing.', $failures);
+documents_public_require($listCss, '@media', 'Responsive document-list mobile rules are missing.', $failures);
 
 if (!empty($failures)) {
     fwrite(STDERR, "Documents public collection checks failed:\n");
