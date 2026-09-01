@@ -95,7 +95,8 @@ documents_test_require($files['seo'], 'name="description"', 'SEO meta descriptio
 documents_test_require($files['seo'], 'property="og:title"', 'OpenGraph metadata is missing.', $failures);
 documents_test_require($files['seo'], 'name="twitter:card"', 'Twitter card metadata is missing.', $failures);
 documents_test_require($files['seo'], 'application/ld+json', 'JSON-LD output is missing.', $failures);
-documents_test_require($files['seo'], "'schema_type' => 'CreativeWork'", 'Document CreativeWork schema default is missing.', $failures);
+documents_test_require($files['seo'], "$schemaType = 'CreativeWork';", 'Document CreativeWork schema default is missing.', $failures);
+documents_test_require($files['seo'], "return 'CreativeWork';", 'Schema type allowlist does not fall back to CreativeWork.', $failures);
 documents_test_require($files['seo'], "'schema_type' => 'CollectionPage'", 'CollectionPage schema is missing.', $failures);
 documents_test_require($files['seo'], 'metadescription', 'Dedicated meta description support is missing.', $failures);
 documents_test_require($files['seo'], 'BreadcrumbList', 'Document breadcrumb structured data is missing.', $failures);
