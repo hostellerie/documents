@@ -94,8 +94,7 @@ $documentsLabel = isset($LANG_DOCUMENTS_1['plugin_name'])
     ? (string) $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
 $documentsUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/';
 
-$content = DOCUMENTS_renderNavigation();
-$content .= '<main class="documents-category">';
+$content = '<main class="documents-category">';
 $content .= '<nav class="documents-breadcrumb" aria-label="Breadcrumb">'
     . '<a href="' . htmlspecialchars($documentsUrl, ENT_QUOTES, 'UTF-8') . '">'
     . htmlspecialchars($documentsLabel, ENT_QUOTES, 'UTF-8') . '</a>'
