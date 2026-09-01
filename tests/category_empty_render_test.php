@@ -11,8 +11,11 @@ if ($content === false) {
     if (strpos($content, 'submitable, css, custom_header') === false) {
         $failures[] = 'Category renderer does not select the category CSS column.';
     }
-    if (strpos($content, 'SELECT DISTINCT d.doc_url, d.did, COALESCE') === false) {
-        $failures[] = 'Category document query does not select d.did used by ORDER BY.';
+    if (strpos($content, 'SELECT DISTINCT d.doc_url, d.did, d.active, COALESCE') === false) {
+        $failures[] = 'Category document query does not select d.did and workflow status used by rendering/order.';
+    }
+    if (strpos($content, 'ORDER BY changed_at DESC, d.did DESC') === false) {
+        $failures[] = 'Category document ordering is not deterministic.';
     }
     if (strpos($content, 'DOCUMENTS_renderNavigation()') === false) {
         $failures[] = 'Category renderer does not include shared Documents navigation explicitly.';
