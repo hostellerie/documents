@@ -33,7 +33,7 @@ function documents_mg_forbid($content, $needle, $message, &$failures)
 }
 
 $adapter = documents_mg_read($root, 'mediagallery_adapter.php', $failures);
-$editor = documents_mg_read($root, 'include_edit.php', $failures);
+$editor = documents_mg_read($root, 'public_form.php', $failures);
 $controller = documents_mg_read($root, 'public_html/document.php', $failures);
 $renderer = documents_mg_read($root, 'public_document.php', $failures);
 $runtime = documents_mg_read($root, 'runtime.php', $failures);
