@@ -58,7 +58,7 @@ documents_public_forbid($home, 'ADMIN_list(', 'Modern home must not depend on AD
 
 documents_public_require($category, '<main class="documents-category">', 'Modern category semantic main element is missing.', $failures);
 documents_public_require($category, 'COUNT(DISTINCT d.doc_url)', 'Modern category pagination count is missing.', $failures);
-documents_public_require($category, 'd.active=1', 'Modern category view is not restricted to active documents.', $failures);
+documents_public_forbid($category, 'd.active=1', 'Public category listing must not use editorial status as its read-visibility authority.', $failures);
 documents_public_require($category, "COM_getPermSQL('AND', 0, 2, 'd')", 'Modern category document permissions are not enforced.', $failures);
 documents_public_require($category, 'DOCUMENTS_renderItemCard($item)', 'Modern category cards are not using the common item renderer.', $failures);
 documents_public_require($category, "header('Location: ' . \$cleanUrl, true, 301)", 'Direct category.php URLs are not canonicalized.', $failures);
@@ -75,7 +75,8 @@ documents_public_forbid($renderer, 'maps_maps', 'Public document renderer must n
 documents_public_forbid($renderer, 'mg_albums', 'Public document renderer must not access MediaGallery album storage.', $failures);
 documents_public_forbid($renderer, 'mg_media', 'Public document renderer must not access MediaGallery media storage.', $failures);
 documents_public_forbid($controller, 'include_html.php', 'Public document reading must not fall back to the historical renderer.', $failures);
-documents_public_require($renderer, '<dl class="documents-fields">', 'Default document field definition list is missing.', $failures);
+documents_public_require($renderer, '<dl class="documents-properties">', 'Default structured-property definition list is missing.', $failures);
+documents_public_require($renderer, 'documents-document__prose', 'Default document main-content area is missing.', $failures);
 documents_public_require($renderer, 'htmlspecialchars(stripslashes($value)', 'Default document text output is not escaped.', $failures);
 documents_public_require($renderer, 'CMT_userComments(', 'Default document comments integration is missing.', $failures);
 documents_public_require($renderer, 'SET hits=hits+1', 'Default document hit counting is missing.', $failures);
@@ -86,7 +87,7 @@ documents_public_require($seo, 'DOCUMENTS_seoRemoveManagedTags', 'SEO duplicate-
 documents_public_require($seo, "'?page=' . \$page", 'Paginated category canonical support is missing.', $failures);
 documents_public_require($css, '.documents-category-grid', 'Modern category-grid CSS is missing.', $failures);
 documents_public_require($css, '.documents-pagination', 'Modern pagination CSS is missing.', $failures);
-documents_public_require($css, '.documents-fields', 'Semantic document-field CSS is missing.', $failures);
+documents_public_require($css, '.documents-properties', 'Structured document-property CSS is missing.', $failures);
 
 if (!empty($failures)) {
     fwrite(STDERR, "Documents public collection checks failed:\n");
