@@ -25,6 +25,7 @@ function DOCUMENTS_metaRead($root, $path, &$failures)
 $autoinstall = DOCUMENTS_metaRead($root, 'autoinstall.php', $failures);
 $readme = DOCUMENTS_metaRead($root, 'README.md', $failures);
 $testing = DOCUMENTS_metaRead($root, 'TESTING.md', $failures);
+$changelog = DOCUMENTS_metaRead($root, 'CHANGELOG.md', $failures);
 
 $requiredMetadata = array(
     "'pi_version' => '1.2.0'" => 'Plugin version metadata is not 1.2.0.',
@@ -63,14 +64,19 @@ if (strpos($readme, 'MySQL/MariaDB') === false) {
 if (strpos($testing, '# Documents 1.2.0 release-candidate test matrix') === false) {
     $failures[] = 'TESTING.md is not aligned with the 1.2.0 release candidate.';
 }
+if (strpos($changelog, '## 1.2.0 —') === false) {
+    $failures[] = 'CHANGELOG does not contain the 1.2.0 release section.';
+}
 
-$allowedLegacyHeaders = array(
-    'include_edit.php',
-    'include_html.php'
-);
-sort($allowedLegacyHeaders);
+/* Removed historical controllers must stay removed. New source files should
+ * not silently reintroduce obsolete 1.1.0/1.1.1/1.1.2 identity headers. */
+if (is_file($root . '/include_edit.php')) {
+    $failures[] = 'Removed include_edit.php legacy controller has reappeared.';
+}
+if (is_file($root . '/include_html.php')) {
+    $failures[] = 'Removed include_html.php legacy controller has reappeared.';
+}
 
-$legacyHeadersFound = array();
 $iterator = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
 );
@@ -98,20 +104,9 @@ foreach ($iterator as $fileInfo) {
         continue;
     }
 
-    if (preg_match('/Documents Plugin 1\.1\.2(?![0-9])/', $content)) {
-        $legacyHeadersFound[] = $path;
+    if (preg_match('/Documents Plugin 1\.1\.(?:0|1|2)(?![0-9])/', $content)) {
+        $failures[] = 'Obsolete pre-modernization plugin header remains in ' . $path . '.';
     }
-
-    if (preg_match('/Documents Plugin 1\.1\.(?:0|1)(?![0-9])/', $content)) {
-        $failures[] = 'Unexpected older plugin header remains in ' . $path . '.';
-    }
-}
-
-sort($legacyHeadersFound);
-if ($legacyHeadersFound !== $allowedLegacyHeaders) {
-    $failures[] = 'Stale 1.1.2 header inventory changed. Expected: '
-        . implode(', ', $allowedLegacyHeaders) . '; found: '
-        . implode(', ', $legacyHeadersFound) . '.';
 }
 
 if (!empty($failures)) {
@@ -123,4 +118,3 @@ if (!empty($failures)) {
 }
 
 echo "Documents metadata consistency checks: PASS\n";
-echo "Known legacy 1.1.2 headers: " . implode(', ', $legacyHeadersFound) . "\n";
