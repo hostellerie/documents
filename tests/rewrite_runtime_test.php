@@ -46,7 +46,7 @@ if (strpos($runtime, 'DOCUMENTS_runtimeDispatchRewrittenView') !== false) {
     $failures[] = 'runtime.php must not dispatch public views while it is loading.';
 }
 if (strpos($index, "if (\$mode === 'view')") === false
-    || strpos($index, "require __DIR__ . '/category.php';") === false
+    || strpos($index, "require __DIR__ . '/category-list.php';") === false
     || strpos($index, "require __DIR__ . '/document.php';") === false) {
     $failures[] = 'index.php must dispatch rewritten view requests after runtime/helpers load.';
 }
