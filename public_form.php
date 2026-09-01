@@ -7,6 +7,40 @@ if (isset($_SERVER['PHP_SELF'])
     die('This file can not be used on its own.');
 }
 
+function DOCUMENTS_publicMarkerEditData($markerId)
+{
+    $marker = array('lat' => '37.4217913', 'lng' => '-122.0837139', 'address' => '');
+    $markerId = trim((string) $markerId);
+    if ($markerId === '' || !DOCUMENTS_hasMaps() || !function_exists('PLG_invokeService')) {
+        return $marker;
+    }
+
+    $output = array();
+    $message = array();
+    $result = PLG_invokeService(
+        'maps',
+        'marker_get',
+        array('marker_id' => $markerId),
+        $output,
+        $message
+    );
+    if ($result !== PLG_RET_OK || !is_array($output)) {
+        return $marker;
+    }
+
+    if (isset($output['address'])) {
+        $marker['address'] = (string) $output['address'];
+    }
+    if (isset($output['lat']) && is_numeric($output['lat'])) {
+        $marker['lat'] = (string) $output['lat'];
+    }
+    if (isset($output['lng']) && is_numeric($output['lng'])) {
+        $marker['lng'] = (string) $output['lng'];
+    }
+
+    return $marker;
+}
+
 function DOCUMENTS_renderPublicDocumentForm($doc = array())
 {
     global $_CONF, $_DOCUMENTS_CONF, $_TABLES, $LANG_DOCUMENTS_1;
@@ -124,14 +158,10 @@ function DOCUMENTS_renderPublicDocumentForm($doc = array())
             . htmlspecialchars($LANG_DOCUMENTS_1['draft'], ENT_QUOTES, 'UTF-8') . '</option>';
     }
     if (SEC_hasRights('documents.admin')) {
-        $isFrench = isset($_CONF['language'])
-            && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+        $pendingLabel = isset($LANG_DOCUMENTS_1['pending_moderation'])
+            ? $LANG_DOCUMENTS_1['pending_moderation'] : 'Pending moderation';
         $active .= '<option value="' . DOCUMENTS_STATUS_SUBMISSION . '"' . $selected3 . '>'
-            . htmlspecialchars(
-                $isFrench ? 'En attente de modération' : 'Pending moderation',
-                ENT_QUOTES,
-                'UTF-8'
-            ) . '</option>';
+            . htmlspecialchars($pendingLabel, ENT_QUOTES, 'UTF-8') . '</option>';
     }
     $active .= '</select></p>';
     $template->set_var('active', $active);
@@ -202,7 +232,7 @@ function DOCUMENTS_renderPublicDocumentForm($doc = array())
 
 function DOCUMENTS_renderPublicFormField($field, $doc, $fid)
 {
-    global $_CONF, $_DOCUMENTS_CONF, $_SCRIPTS, $_TABLES, $LANG_MAPS_1;
+    global $_CONF, $_DOCUMENTS_CONF, $_SCRIPTS, $LANG_MAPS_1;
 
     $value = isset($doc['v_value'][$fid]) ? $doc['v_value'][$fid] : '';
     $required = !empty($field['f_required']) ? '<span class="documents_required"> *</span>' : '';
@@ -302,17 +332,7 @@ function DOCUMENTS_renderPublicFormField($field, $doc, $fid)
         case 'marker':
             if (DOCUMENTS_hasMaps()) {
                 $markerId = trim((string) $value);
-                $marker = array('lat' => '37.4217913', 'lng' => '-122.0837139', 'address' => '');
-                if ($markerId !== '' && isset($_TABLES['maps_markers'])) {
-                    $markerSql = DB_escapeString($markerId);
-                    $res = DB_query(
-                        "SELECT * FROM {$_TABLES['maps_markers']} WHERE mkid='{$markerSql}' LIMIT 1"
-                    );
-                    $row = DB_fetchArray($res);
-                    if (is_array($row)) {
-                        $marker = array_merge($marker, $row);
-                    }
-                }
+                $marker = DOCUMENTS_publicMarkerEditData($markerId);
                 $markerTemplate = COM_newTemplate($_CONF['path'] . 'plugins/documents/templates');
                 $markerTemplate->set_file(array('marker' => 'marker_form.thtml'));
                 $markerTemplate->set_var('go', isset($LANG_MAPS_1['go']) ? $LANG_MAPS_1['go'] : 'Go');
