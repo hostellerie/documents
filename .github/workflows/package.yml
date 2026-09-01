@@ -32,6 +32,14 @@ jobs:
       - name: PHP 5.6 syntax
         run: find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l
 
+      - name: PHP 5.6 regression tests
+        run: |
+          set -e
+          for test in tests/*_test.php; do
+            echo "Running ${test}"
+            php "${test}"
+          done
+
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
@@ -39,6 +47,14 @@ jobs:
 
       - name: PHP 8.1 syntax
         run: find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l
+
+      - name: PHP 8.1 regression tests
+        run: |
+          set -e
+          for test in tests/*_test.php; do
+            echo "Running ${test}"
+            php "${test}"
+          done
 
       - name: Build ZIP
         run: |
