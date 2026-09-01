@@ -1,6 +1,6 @@
 <?php
 
-/* Documents 1.1.9 document visibility tests. */
+/* Documents 1.2.0 document visibility tests. */
 
 $_SERVER['PHP_SELF'] = 'tests/document_visibility_test.php';
 $_USER = array('uid' => 42);
@@ -46,32 +46,37 @@ function documentsAssert($condition, $message)
     }
 }
 
-$active = documentsVisibilityRow(DOCUMENTS_STATUS_ACTIVE, 99);
-documentsAssert(DOCUMENTS_canViewDocument($active, 2), 'Readable active document was rejected.');
+/* Editorial status does not decide read visibility in 1.2.0. Geeklog row
+ * permissions are the authority for every recognized workflow state. */
+$rows = array(
+    documentsVisibilityRow(DOCUMENTS_STATUS_INACTIVE, 42),
+    documentsVisibilityRow(DOCUMENTS_STATUS_ACTIVE, 99),
+    documentsVisibilityRow(DOCUMENTS_STATUS_DRAFT, 42),
+    documentsVisibilityRow(DOCUMENTS_STATUS_DRAFT, 99),
+    documentsVisibilityRow(DOCUMENTS_STATUS_SUBMISSION, 42),
+    documentsVisibilityRow(DOCUMENTS_STATUS_SUBMISSION, 99)
+);
 
-$GLOBALS['documents_test_access'] = 1;
-documentsAssert(!DOCUMENTS_canViewDocument($active, 2), 'Active document ignored Geeklog row permissions.');
+foreach ($rows as $row) {
+    $GLOBALS['documents_test_access'] = 2;
+    documentsAssert(
+        DOCUMENTS_canViewDocument($row, 2),
+        'Readable document was rejected because of its editorial status.'
+    );
+
+    $GLOBALS['documents_test_access'] = 1;
+    documentsAssert(
+        !DOCUMENTS_canViewDocument($row, 2),
+        'Document ignored Geeklog row permissions.'
+    );
+}
+
 $GLOBALS['documents_test_access'] = 2;
-
-$inactive = documentsVisibilityRow(DOCUMENTS_STATUS_INACTIVE, 42);
-documentsAssert(!DOCUMENTS_canViewDocument($inactive, 2), 'Non-admin user can view an inactive document.');
-
-$draftOwn = documentsVisibilityRow(DOCUMENTS_STATUS_DRAFT, 42);
-documentsAssert(DOCUMENTS_canViewDocument($draftOwn, 2), 'Draft owner cannot reach own draft.');
-
-$draftOther = documentsVisibilityRow(DOCUMENTS_STATUS_DRAFT, 99);
-documentsAssert(!DOCUMENTS_canViewDocument($draftOther, 2), 'User can view another user\'s draft.');
-
-$submissionOwn = documentsVisibilityRow(DOCUMENTS_STATUS_SUBMISSION, 42);
-documentsAssert(DOCUMENTS_canViewDocument($submissionOwn, 2), 'Submission owner cannot reach own submission route.');
-
-$submissionOther = documentsVisibilityRow(DOCUMENTS_STATUS_SUBMISSION, 99);
-documentsAssert(!DOCUMENTS_canViewDocument($submissionOther, 2), 'User can reach another user\'s submission.');
-
 $GLOBALS['documents_test_admin'] = true;
-documentsAssert(DOCUMENTS_canViewDocument($inactive, 2), 'Administrator cannot view inactive document.');
-documentsAssert(DOCUMENTS_canViewDocument($draftOther, 2), 'Administrator cannot review another user\'s draft.');
-documentsAssert(DOCUMENTS_canViewDocument($submissionOther, 2), 'Administrator cannot review another user\'s submission.');
+documentsAssert(
+    DOCUMENTS_canViewDocument(documentsVisibilityRow(DOCUMENTS_STATUS_SUBMISSION, 99), 2),
+    'Administrator cannot review a permission-readable pending document.'
+);
 
 $invalid = documentsVisibilityRow(9, 42);
 documentsAssert(!DOCUMENTS_canViewDocument($invalid, 2), 'Unknown document status was accepted.');
