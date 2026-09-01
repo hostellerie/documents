@@ -92,7 +92,9 @@ function DOCUMENTS_listFieldHtml($field, $value, $title)
     if ($value === '') {
         return !empty($field['display_empty']) ? '<span class="documents-list-empty">&#8212;</span>' : '';
     }
-    if ($type === 'select' || $type === 'radio') {
+    if ($type === 'date') {
+        $value = DOCUMENTS_publicDateValue($value, 'shortdate');
+    } elseif ($type === 'select' || $type === 'radio') {
         $value = DOCUMENTS_publicChoiceValue(isset($field['sel_id']) ? (int) $field['sel_id'] : 0, $value);
     } elseif ($type === 'text') {
         $value = DOCUMENTS_formatTextDisplay($value, isset($field['sel_id']) ? (int) $field['sel_id'] : 0);
