@@ -24,8 +24,7 @@ if (is_string($requestPath) && basename($requestPath) === 'home.php') {
 DOCUMENTS_preparePublicPresentation(false);
 
 $title = isset($LANG_DOCUMENTS_1['plugin_name']) ? $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
-$content = DOCUMENTS_renderNavigation();
-$content .= '<main class="documents-home">';
+$content = '<main class="documents-home">';
 $content .= '<header class="documents-page-header documents-home__header"><h1>'
     . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
 if (!empty($_DOCUMENTS_CONF['documents_main_header'])) {
