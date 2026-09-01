@@ -14,6 +14,127 @@ require_once $pluginPath . 'runtime.php';
 require_once $pluginPath . 'include_compat.php';
 require_once $pluginPath . 'integrity.php';
 require_once $pluginPath . 'presentation.php';
+require_once $pluginPath . 'public_document.php';
+
+function DOCUMENTS_categoryListFields($categoryId)
+{
+    global $_TABLES;
+
+    $fields = array();
+    $result = DB_query(
+        "SELECT fid, f_name, f_order, f_type, sel_id, var_name "
+        . "FROM {$_TABLES['documents_fields']} "
+        . "WHERE cat_id=" . (int) $categoryId . " AND f_on_list=1 "
+        . "ORDER BY f_order ASC, fid ASC"
+    );
+
+    while ($field = DB_fetchArray($result)) {
+        if (is_array($field)) {
+            $fields[] = $field;
+        }
+    }
+
+    return $fields;
+}
+
+function DOCUMENTS_categoryListFieldHtml($field, $value, $title)
+{
+    global $_DOCUMENTS_CONF;
+
+    $type = isset($field['f_type']) ? strtolower((string) $field['f_type']) : '';
+    $value = (string) $value;
+
+    if ($type === 'checkbox') {
+        return ((int) $value === 1)
+            ? '<span class="documents-boolean documents-boolean--true" aria-label="true">&#10003;</span>'
+            : '<span class="documents-boolean documents-boolean--false" aria-label="false">&#8212;</span>';
+    }
+
+    if ($value === '') {
+        return '';
+    }
+
+    if ($type === 'select' || $type === 'radio') {
+        $value = DOCUMENTS_publicChoiceValue(
+            isset($field['sel_id']) ? (int) $field['sel_id'] : 0,
+            $value
+        );
+    } elseif ($type === 'text') {
+        $value = DOCUMENTS_formatTextDisplay(
+            $value,
+            isset($field['sel_id']) ? (int) $field['sel_id'] : 0
+        );
+    }
+
+    if ($type === 'image') {
+        $filename = basename($value);
+        if ($filename === '') {
+            return '';
+        }
+        $src = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
+            . '/image.php?src=' . rawurlencode($filename) . '&amp;w=180';
+        return '<img class="documents-card-field__image" src="'
+            . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="'
+            . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '" loading="lazy">';
+    }
+
+    if ($type === 'marker' || $type === 'album' || $type === 'file' || $type === 'category') {
+        return htmlspecialchars(stripslashes($value), ENT_QUOTES, 'UTF-8');
+    }
+
+    $safe = htmlspecialchars(stripslashes($value), ENT_QUOTES, 'UTF-8');
+    return $type === 'textarea' ? nl2br($safe) : $safe;
+}
+
+function DOCUMENTS_categoryListFieldsHtml($documentId, $fields, $title)
+{
+    global $_TABLES;
+
+    if (!is_array($fields) || empty($fields)) {
+        return '';
+    }
+
+    $safeDocument = DB_escapeString((string) $documentId);
+    $rows = '';
+    $titleConsumed = false;
+
+    foreach ($fields as $field) {
+        $fieldId = isset($field['fid']) ? (int) $field['fid'] : 0;
+        if ($fieldId <= 0) {
+            continue;
+        }
+
+        $value = (string) DB_getItem(
+            $_TABLES['documents_values'],
+            'v_value',
+            "doc_url='{$safeDocument}' AND field_id={$fieldId}"
+        );
+
+        $plain = trim(stripslashes($value));
+        $type = isset($field['f_type']) ? strtolower((string) $field['f_type']) : '';
+        if (!$titleConsumed
+            && $plain !== ''
+            && $plain === trim((string) $title)
+            && ($type === 'text' || $type === 'textarea')) {
+            $titleConsumed = true;
+            continue;
+        }
+
+        $rendered = DOCUMENTS_categoryListFieldHtml($field, $value, $title);
+        if ($rendered === '' && $type !== 'checkbox') {
+            continue;
+        }
+
+        $label = isset($field['f_name']) ? stripslashes((string) $field['f_name']) : '';
+        $rows .= '<div class="documents-card-field">'
+            . '<dt class="documents-card-field__label">'
+            . htmlspecialchars($label, ENT_QUOTES, 'UTF-8')
+            . '</dt><dd class="documents-card-field__value">'
+            . $rendered . '</dd></div>';
+    }
+
+    return $rows === '' ? '' : '<dl class="documents-card-fields">' . $rows . '</dl>';
+}
 
 $categorySlug = isset($_GET['cat']) ? DOCUMENTS_normalizeRouteSlug((string) $_GET['cat']) : '';
 if ($categorySlug === '') {
@@ -69,6 +190,7 @@ if (function_exists('DOCUMENTS_loadCategoryStyle') && !empty($category['css'])) 
 $perPage = 20;
 $offset = ($pageNumber - 1) * $perPage;
 $categoryId = (int) $category['cid'];
+$listFields = DOCUMENTS_categoryListFields($categoryId);
 $countSql = "SELECT COUNT(DISTINCT d.doc_url) AS total FROM {$_TABLES['documents_docs']} AS d "
     . "INNER JOIN {$_TABLES['documents_values']} AS v ON v.doc_url=d.doc_url "
     . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
@@ -144,6 +266,18 @@ while ($row = DB_fetchArray($result)) {
     $item = DOCUMENTS_interopItem($row['doc_url'], 0);
     if (!empty($item)) {
         $card = DOCUMENTS_renderItemCard($item);
+        $listFieldsHtml = DOCUMENTS_categoryListFieldsHtml(
+            $row['doc_url'],
+            $listFields,
+            isset($item['title']) ? $item['title'] : $row['doc_url']
+        );
+        if ($listFieldsHtml !== '') {
+            $card = str_replace(
+                '</div></article>',
+                $listFieldsHtml . '</div></article>',
+                $card
+            );
+        }
         if ($isDocumentsAdmin) {
             $status = isset($row['active']) ? (int) $row['active'] : DOCUMENTS_STATUS_INACTIVE;
             $statusLabel = isset($statusLabels[$status]) ? $statusLabels[$status] : (string) $status;
