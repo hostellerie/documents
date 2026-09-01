@@ -75,14 +75,20 @@
     border-radius: 8px;
     background: #fff;
     color: inherit;
+    font: inherit;
     font-weight: 600;
     line-height: 1.2;
     text-decoration: none !important;
+    appearance: none;
+    -webkit-appearance: none;
+    box-shadow: none;
+    cursor: pointer;
 }
 .documents-admin-button:hover,
 .documents-admin-button:focus {
     border-color: #9ba8b7;
     background: #f7f8fa;
+    box-shadow: none;
 }
 .documents-admin-button--primary {
     border-color: #4479ba;
