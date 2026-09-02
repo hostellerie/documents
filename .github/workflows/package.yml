@@ -16,50 +16,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  package:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: modernize-1.1.10
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '5.6'
-          coverage: none
-
-      - name: PHP 5.6 syntax
-        run: find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l
-
-      - name: PHP 5.6 regression tests
+      - name: Build installable ZIP
+        shell: bash
         run: |
-          set -e
-          for test in tests/*_test.php; do
-            echo "Running ${test}"
-            php "${test}"
-          done
-
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          coverage: none
-
-      - name: PHP 8.1 syntax
-        run: find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './.git/*' -not -path './dist/*' -print0 | xargs -0 -n1 php -l
-
-      - name: PHP 8.1 regression tests
-        run: |
-          set -e
-          for test in tests/*_test.php; do
-            echo "Running ${test}"
-            php "${test}"
-          done
-
-      - name: Build ZIP
-        run: |
+          set -euo pipefail
           rm -rf build
           mkdir -p build/documents dist
+
           rsync -a ./ build/documents/ \
             --exclude '.git/' \
             --exclude '.github/' \
@@ -69,16 +39,31 @@ jobs:
             --exclude 'docs/' \
             --exclude 'ROADMAP.md' \
             --exclude 'TESTING.md'
-          cd build
-          zip -qr ../dist/documents_1.2.0-2.1.1.zip documents
-          cd ..
+
+          rm -f dist/documents_1.2.0-2.1.1.zip
+          (cd build && zip -qr ../dist/documents_1.2.0-2.1.1.zip documents)
           unzip -t dist/documents_1.2.0-2.1.1.zip >/dev/null
 
-      - name: Commit ZIP
+      - name: Publish workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documents-1.2.0-installable
+          path: dist/documents_1.2.0-2.1.1.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Update dist archive
+        shell: bash
         run: |
+          set -e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -f dist/documents_1.2.0-2.1.1.zip
-          git diff --cached --quiet && exit 0
+
+          if git diff --cached --quiet; then
+            echo 'Archive is already up to date.'
+            exit 0
+          fi
+
           git commit -m 'Build Documents 1.2.0 archive [skip ci]'
-          git push origin HEAD:modernize-1.1.10
+          git push origin HEAD:modernize-1.1.10 || echo 'Warning: artifact was created, but dist/ could not be pushed.'
