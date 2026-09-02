@@ -14,7 +14,7 @@ function DOCUMENTS_publicChoiceValue($groupId, $storedValue)
     $groupId = (int) $groupId;
     $storedValue = (string) $storedValue;
     if ($groupId <= 0 || $storedValue === '') {
-        return $storedValue;
+        return html_entity_decode($storedValue, ENT_QUOTES, 'UTF-8');
     }
 
     $safe = DB_escapeString($storedValue);
@@ -24,7 +24,8 @@ function DOCUMENTS_publicChoiceValue($groupId, $storedValue)
         "s_group={$groupId} AND s_name='{$safe}'"
     );
 
-    return $label === '' ? $storedValue : (string) $label;
+    $display = $label === '' ? $storedValue : (string) $label;
+    return html_entity_decode($display, ENT_QUOTES, 'UTF-8');
 }
 
 function DOCUMENTS_publicDateValue($value, $formatKey)
@@ -130,7 +131,7 @@ function DOCUMENTS_publicFieldHtml($field, $value, $title)
         }
 
         $src = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
-            . '/image.php?src=' . rawurlencode($filename) . '&amp;w=900';
+            . '/image.php?src=' . rawurlencode($filename) . '&w=900';
 
         return '<img class="documents-document-image" src="'
             . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="'
@@ -392,54 +393,27 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     if ($modifiedTimestamp === false || $modifiedTimestamp <= 0) {
         $modifiedTimestamp = isset($document['created']) ? strtotime((string) $document['created']) : false;
     }
-    $modifiedDate = ($modifiedTimestamp !== false && $modifiedTimestamp > 0)
-        ? DOCUMENTS_publicDateValue(date('Y-m-d H:i:s', $modifiedTimestamp), 'date')
+    $modifiedText = ($modifiedTimestamp !== false && $modifiedTimestamp > 0)
+        ? (function_exists('COM_strftime')
+            ? COM_strftime(isset($_CONF['shortdate']) ? $_CONF['shortdate'] : '%Y-%m-%d', $modifiedTimestamp)
+            : date('Y-m-d', $modifiedTimestamp))
         : '';
-    $template->set_var('modified_label', $isFrench ? 'Mis à jour le' : 'Updated');
-    $template->set_var('modified', htmlspecialchars($modifiedDate, ENT_QUOTES, 'UTF-8'));
+    $template->set_var('modified', $modifiedText);
+    $template->set_var('modified_label', $isFrench ? 'Mis à jour' : 'Updated');
 
-    $commentsTitle = $isFrench ? 'Commentaires' : 'Comments';
-    $template->set_var('comments_title', $commentsTitle);
-    $commentsHeading = '';
-    if (!defined('VERSION') || version_compare((string) VERSION, '2.2.2', '<')) {
-        $commentsHeading = '<h2 class="documents-document__comments-title">'
-            . htmlspecialchars($commentsTitle, ENT_QUOTES, 'UTF-8') . '</h2>';
-    }
-    $template->set_var('comments_heading', $commentsHeading);
+    $template->set_var('hits', isset($document['hits']) ? (int) $document['hits'] : 0);
+    $template->set_var('category_name', htmlspecialchars(stripslashes((string) $category['cat_name']), ENT_QUOTES, 'UTF-8'));
+    $template->set_var('category_url', htmlspecialchars(DOCUMENTS_interopCanonicalUrl($category['cat_url']), ENT_QUOTES, 'UTF-8'));
 
-    DB_query("UPDATE {$_TABLES['documents_docs']} SET hits=hits+1 WHERE doc_url='"
-        . DB_escapeString($documentSlug) . "'");
-    $hits = isset($document['hits']) ? ((int) $document['hits'] + 1) : 1;
-    $template->set_var('hits', COM_numberFormat($hits));
-    $template->set_var('document_url', DOCUMENTS_interopCanonicalUrl($categorySlug, $documentSlug));
-
-    require_once $_CONF['path_system'] . 'lib-comment.php';
-    $commentbar = CMT_userComments(
-        $documentSlug,
-        $title,
-        'documents',
-        'ASC',
-        'nested',
-        0,
-        1,
-        false,
-        false,
-        0
-    );
-    $template->set_var('commentbar', $commentbar);
-    $template->set_var('has_comments', trim((string) $commentbar) === '' ? '' : '1');
-
-    $body = '';
-    if (function_exists('DOCUMENTS_renderNavigation')) {
-        $body .= DOCUMENTS_renderNavigation();
-    }
-    $body .= $template->finish($template->parse('output', 'doc'));
+    $template->parse('output', 'doc');
+    $body = $template->finish($template->get_var('output'));
 
     return array(
-        'title' => $title,
         'body' => $body,
-        'category_name' => isset($category['cat_name']) ? stripslashes((string) $category['cat_name']) : '',
-        'category_slug' => isset($category['cat_url']) ? (string) $category['cat_url'] : $categorySlug,
+        'title' => $title,
+        'category' => $category,
+        'document' => $document,
+        'fields' => $fields,
         'custom_template' => $customTemplate ? 1 : 0
     );
 }
