@@ -17,10 +17,8 @@ if (!function_exists('DOCUMENTS_writeHtaccess')) {
     /**
      * Create or refresh the Documents .htaccess file.
      *
-     * Public rewrites are deliberately limited to public reading and document
-     * contribution. Structural administration is routed by index.php to the
-     * Geeklog /admin/plugins/documents/ application and must never be captured
-     * by a public rewrite rule.
+     * Public clean URLs are routed directly to dedicated read controllers.
+     * Mutations and structural administration continue to use index.php.
      *
      * @param bool $force Rewrite an existing generated file when true
      * @return bool
@@ -47,15 +45,15 @@ if (!function_exists('DOCUMENTS_writeHtaccess')) {
         }
 
         $target = $publicDir . '.htaccess';
-        $signature = '# Documents generated rewrite v1.2.0-r3';
+        $signature = '# Documents generated rewrite v1.2.0-r4';
 
         /* Preserve the historical clean URL contract:
          * /documents/category/document -> public document
          * /documents/category          -> public category
          * /documents/                  -> public home
          *
-         * mode=save stays a dedicated public mutation endpoint. All structural
-         * admin modes pass through index.php and are redirected to Geeklog admin. */
+         * Read routes deliberately bypass index.php so legacy identifiers such
+         * as cv_cordiste and 126_darraidou reach their controllers unchanged. */
         $rules = $signature . "\n"
             . "RewriteEngine On\n\n"
             . "RewriteCond %{QUERY_STRING} (^|&)mode=save(&|$)\n"
@@ -63,10 +61,10 @@ if (!function_exists('DOCUMENTS_writeHtaccess')) {
             . "RewriteRule ^$ home.php [L]\n\n"
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
-            . "RewriteRule ^([^/]+)/([^/]+)/?$ index.php?mode=view&cat=$1&doc=$2 [L,QSA]\n\n"
+            . "RewriteRule ^([^/]+)/([^/]+)/?$ document.php?cat=$1&doc=$2 [L,QSA]\n\n"
             . "RewriteCond %{REQUEST_FILENAME} !-f\n"
             . "RewriteCond %{REQUEST_FILENAME} !-d\n"
-            . "RewriteRule ^([^/]+)/?$ index.php?mode=view&cat=$1 [L,QSA]\n";
+            . "RewriteRule ^([^/]+)/?$ category-route.php?cat=$1 [L,QSA]\n";
 
         if (!$force && is_file($target)) {
             $existing = @file_get_contents($target);
@@ -75,16 +73,15 @@ if (!function_exists('DOCUMENTS_writeHtaccess')) {
                     return true;
                 }
 
-                /* Upgrade only Documents-owned rule sets. r1 development builds
-                 * targeted category.php/document.php directly; r2 also routed
-                 * edit_cat in public space. Administrator-owned files remain
-                 * untouched. */
-                $knownDirectRules = strpos($existing, 'document.php?cat=$1&doc=$2') !== false
-                    && strpos($existing, 'category.php?cat=$1') !== false;
-                $knownR2Rules = strpos($existing, '# Documents generated rewrite v1.2.0-r2') !== false;
-                $knownR1Rules = strpos($existing, '# Documents generated rewrite v1.2.0-r1') !== false;
+                /* Upgrade only Documents-owned rule sets. Administrator-owned
+                 * .htaccess files remain untouched. */
+                $knownDocumentsRules = strpos($existing, '# Documents generated rewrite v1.2.0-r3') !== false
+                    || strpos($existing, '# Documents generated rewrite v1.2.0-r2') !== false
+                    || strpos($existing, '# Documents generated rewrite v1.2.0-r1') !== false
+                    || (strpos($existing, 'document.php?cat=$1&doc=$2') !== false
+                        && strpos($existing, 'category.php?cat=$1') !== false);
 
-                if (!$knownDirectRules && !$knownR2Rules && !$knownR1Rules) {
+                if (!$knownDocumentsRules) {
                     return true;
                 }
             } else {
