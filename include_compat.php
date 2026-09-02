@@ -288,3 +288,17 @@ function DOCUMENTS_customTemplateReadDir($template)
     }
     return '';
 }
+
+/* Versions of Documents 1.2.0 briefly generated image URLs with &amp; already
+ * embedded before the complete URL was escaped for HTML. Browsers therefore
+ * requested parameters named "amp;w" and "amp;h". image.php includes this
+ * compatibility layer before reading $_GET, so normalize those legacy names. */
+if (isset($_SERVER['PHP_SELF'])
+    && basename((string) $_SERVER['PHP_SELF']) === 'image.php') {
+    if (!isset($_GET['w']) && isset($_GET['amp;w'])) {
+        $_GET['w'] = $_GET['amp;w'];
+    }
+    if (!isset($_GET['h']) && isset($_GET['amp;h'])) {
+        $_GET['h'] = $_GET['amp;h'];
+    }
+}
