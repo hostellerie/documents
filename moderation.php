@@ -7,6 +7,24 @@ if (isset($_SERVER['PHP_SELF'])
     die('This file can not be used on its own.');
 }
 
+/* Geeklog 2.2.2 replaces the complete public plugin directory when an archive
+ * is uploaded. A same-version upload does not call plugin_upgrade_documents(),
+ * so a generated .htaccess can disappear even though it must not be shipped in
+ * the installable archive. Recreate it once, on the next normal plugin load. */
+if (isset($_CONF['path'], $_CONF['path_html'], $_DOCUMENTS_CONF['documents_folder'])) {
+    $documentsFolder = trim((string) $_DOCUMENTS_CONF['documents_folder'], "/\\");
+    if ($documentsFolder === '') {
+        $documentsFolder = 'documents';
+    }
+    $documentsHtaccess = rtrim((string) $_CONF['path_html'], "/\\")
+        . DIRECTORY_SEPARATOR . $documentsFolder . DIRECTORY_SEPARATOR . '.htaccess';
+
+    if (!is_file($documentsHtaccess)) {
+        require_once $_CONF['path'] . 'plugins/documents/rewrite.php';
+        DOCUMENTS_writeHtaccess(false);
+    }
+}
+
 function DOCUMENTS_canModerateSubmissions()
 {
     return SEC_hasRights('documents.admin');
