@@ -52,11 +52,41 @@ function DOCUMENTS_imageError($status)
     exit;
 }
 
+function DOCUMENTS_imageCacheHeaders($path)
+{
+    $mtime = @filemtime($path);
+    $size = @filesize($path);
+    $etag = '"' . sha1($path . '|' . (string) $mtime . '|' . (string) $size) . '"';
+
+    /* Keep access-controlled images private. no-cache allows the browser to
+     * retain the bytes, but it must revalidate with this endpoint before reuse. */
+    header('Cache-Control: private, no-cache, max-age=0, must-revalidate');
+    header('ETag: ' . $etag);
+    if ($mtime !== false && $mtime > 0) {
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
+    }
+
+    $ifNoneMatch = isset($_SERVER['HTTP_IF_NONE_MATCH'])
+        ? trim((string) $_SERVER['HTTP_IF_NONE_MATCH']) : '';
+    if ($ifNoneMatch !== '' && $ifNoneMatch === $etag) {
+        header('HTTP/1.1 304 Not Modified');
+        exit;
+    }
+
+    $ifModifiedSince = isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])
+        ? strtotime((string) $_SERVER['HTTP_IF_MODIFIED_SINCE']) : false;
+    if ($ifNoneMatch === '' && $mtime !== false && $ifModifiedSince !== false
+        && $ifModifiedSince >= $mtime) {
+        header('HTTP/1.1 304 Not Modified');
+        exit;
+    }
+}
+
 function DOCUMENTS_sendOriginalImage($path, $mime)
 {
+    DOCUMENTS_imageCacheHeaders($path);
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . filesize($path));
-    header('Cache-Control: private, no-store, max-age=0');
     readfile($path);
     exit;
 }
@@ -81,13 +111,13 @@ function DOCUMENTS_writePreviewImage($image, $path, $mime)
 {
     switch ($mime) {
         case 'image/jpeg':
-            return imagejpeg($image, $path, 90);
+            return imagejpeg($image, $path, 82);
         case 'image/png':
-            return imagepng($image, $path, 6);
+            return imagepng($image, $path, 7);
         case 'image/gif':
             return imagegif($image, $path);
         case 'image/webp':
-            return function_exists('imagewebp') ? imagewebp($image, $path, 90) : false;
+            return function_exists('imagewebp') ? imagewebp($image, $path, 82) : false;
     }
 
     return false;
@@ -100,16 +130,16 @@ function DOCUMENTS_outputPreviewImage($image, $mime)
 
     switch ($mime) {
         case 'image/jpeg':
-            imagejpeg($image, null, 90);
+            imagejpeg($image, null, 82);
             break;
         case 'image/png':
-            imagepng($image, null, 6);
+            imagepng($image, null, 7);
             break;
         case 'image/gif':
             imagegif($image);
             break;
         case 'image/webp':
-            imagewebp($image, null, 90);
+            imagewebp($image, null, 82);
             break;
     }
 }
