@@ -225,7 +225,9 @@ if ($query !== '') {
         . "AND sv.v_value LIKE '%{$safeQuery}%')";
 }
 
-$count = DB_fetchArray(DB_query("SELECT COUNT(*) total FROM {$_TABLES['documents_docs']} d" . $where));
+$count = DB_fetchArray(DB_query(
+    "SELECT COUNT(DISTINCT d.doc_url) total FROM {$_TABLES['documents_docs']} d" . $where
+));
 $total = is_array($count) && isset($count['total']) ? (int) $count['total'] : 0;
 $totalPages = max(1, (int) ceil($total / $perPage));
 if ($page > $totalPages) {
@@ -233,17 +235,18 @@ if ($page > $totalPages) {
 }
 $offset = ($page - 1) * $perPage;
 
-$join = '';
-$order = "COALESCE(d.modified,d.created) " . strtoupper($direction) . ",d.did DESC";
+$order = "COALESCE(MAX(d.modified),MAX(d.created)) " . strtoupper($direction) . ",MAX(d.did) DESC";
 if ($sort !== 'modified' && isset($sortable[$sort])) {
     $fid = (int) $sortable[$sort]['fid'];
-    $join = " LEFT JOIN {$_TABLES['documents_values']} sort_value "
-        . "ON sort_value.doc_url=d.doc_url AND sort_value.field_id={$fid}";
-    $order = "sort_value.v_value " . strtoupper($direction) . ",d.did DESC";
+    $sortValue = "(SELECT MAX(sort_value.v_value) FROM {$_TABLES['documents_values']} sort_value "
+        . "WHERE sort_value.doc_url=d.doc_url AND sort_value.field_id={$fid})";
+    $order = $sortValue . " " . strtoupper($direction) . ",MAX(d.did) DESC";
 }
 $result = DB_query(
-    "SELECT d.doc_url,d.did,d.active,d.created,d.modified FROM {$_TABLES['documents_docs']} d"
-    . $join . $where . " ORDER BY {$order} LIMIT {$offset},{$perPage}"
+    "SELECT d.doc_url,MAX(d.did) AS did,MAX(d.active) AS active,"
+    . "MIN(d.created) AS created,MAX(d.modified) AS modified "
+    . "FROM {$_TABLES['documents_docs']} d"
+    . $where . " GROUP BY d.doc_url ORDER BY {$order} LIMIT {$offset},{$perPage}"
 );
 
 $titleOnList = false;
