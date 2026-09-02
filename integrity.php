@@ -18,6 +18,13 @@ function DOCUMENTS_normalizeRouteSlug($value)
         return '';
     }
 
+    /* Documents 1.1.x stored clean URL identifiers with underscores. Preserve
+     * route-safe legacy identifiers so upgrades keep historical URLs working.
+     * Human-readable titles still pass through the SEO normalization below. */
+    if (preg_match('/^[A-Za-z0-9_-]+$/', $value)) {
+        return strtolower($value);
+    }
+
     if (function_exists('iconv')) {
         $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
         if ($ascii !== false && $ascii !== '') {
