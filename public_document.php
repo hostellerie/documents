@@ -439,6 +439,7 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
         'title' => $title,
         'body' => $body,
         'category_name' => isset($category['cat_name']) ? stripslashes((string) $category['cat_name']) : '',
-        'category_slug' => isset($category['cat_url']) ? (string) $category['cat_url'] : $categorySlug
+        'category_slug' => isset($category['cat_url']) ? (string) $category['cat_url'] : $categorySlug,
+        'custom_template' => $customTemplate ? 1 : 0
     );
 }
