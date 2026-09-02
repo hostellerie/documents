@@ -33,6 +33,7 @@ jobs:
           rsync -a ./ build/documents/ \
             --exclude '.git/' \
             --exclude '.github/' \
+            --exclude '.htaccess' \
             --exclude 'build/' \
             --exclude 'dist/' \
             --exclude 'tests/' \
@@ -43,6 +44,11 @@ jobs:
           rm -f dist/documents_1.2.0-2.1.1.zip
           (cd build && zip -qr ../dist/documents_1.2.0-2.1.1.zip documents)
           unzip -t dist/documents_1.2.0-2.1.1.zip >/dev/null
+
+          if unzip -Z1 dist/documents_1.2.0-2.1.1.zip | grep -E '(^|/)\.htaccess$'; then
+            echo 'Error: .htaccess must not be shipped in a Geeklog installable archive.' >&2
+            exit 1
+          fi
 
       - name: Publish workflow artifact
         uses: actions/upload-artifact@v4
