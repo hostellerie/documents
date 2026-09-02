@@ -52,6 +52,11 @@ if ($legacyNavigation !== '' && strpos($body, $legacyNavigation) === 0) {
     $body = substr($body, strlen($legacyNavigation));
 }
 
+$isCustomTemplate = !empty($page['custom_template']);
+$templateHasH1 = $isCustomTemplate && preg_match('/<h1\b/i', $body) === 1;
+$templateHasBreadcrumb = $isCustomTemplate
+    && preg_match('/class=("|\')[^"\']*\bdocuments-breadcrumb\b[^"\']*("|\')/i', $body) === 1;
+
 $documentsLabel = isset($LANG_DOCUMENTS_1['plugin_name'])
     ? $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
 $categoryName = isset($page['category_name'])
@@ -60,24 +65,32 @@ $categoryUrl = DOCUMENTS_interopCanonicalUrl(
     isset($page['category_slug']) ? (string) $page['category_slug'] : $categorySlug
 );
 
-$breadcrumb = '<nav class="documents-breadcrumb" aria-label="Breadcrumb">'
-    . '<a href="' . htmlspecialchars(rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/', ENT_QUOTES, 'UTF-8') . '">'
-    . htmlspecialchars($documentsLabel, ENT_QUOTES, 'UTF-8') . '</a>';
-if ($categoryName !== '') {
+$breadcrumb = '';
+if (!$templateHasBreadcrumb) {
+    $breadcrumb = '<nav class="documents-breadcrumb" aria-label="Breadcrumb">'
+        . '<a href="' . htmlspecialchars(rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/', ENT_QUOTES, 'UTF-8') . '">'
+        . htmlspecialchars($documentsLabel, ENT_QUOTES, 'UTF-8') . '</a>';
+    if ($categoryName !== '') {
+        $breadcrumb .= ' <span aria-hidden="true">›</span> '
+            . '<a href="' . htmlspecialchars($categoryUrl, ENT_QUOTES, 'UTF-8') . '">'
+            . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</a>';
+    }
     $breadcrumb .= ' <span aria-hidden="true">›</span> '
-        . '<a href="' . htmlspecialchars($categoryUrl, ENT_QUOTES, 'UTF-8') . '">'
-        . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</a>';
+        . '<span aria-current="page">'
+        . htmlspecialchars((string) $page['title'], ENT_QUOTES, 'UTF-8')
+        . '</span></nav>';
 }
-$breadcrumb .= ' <span aria-hidden="true">›</span> '
-    . '<span aria-current="page">'
-    . htmlspecialchars((string) $page['title'], ENT_QUOTES, 'UTF-8')
-    . '</span></nav>';
+
+$pageHeader = '';
+if (!$templateHasH1) {
+    $pageHeader = '<header class="documents-page-header"><h1>'
+        . htmlspecialchars((string) $page['title'], ENT_QUOTES, 'UTF-8')
+        . '</h1></header>';
+}
 
 $content = '<main class="documents-document-page">'
     . $breadcrumb
-    . '<header class="documents-page-header"><h1>'
-    . htmlspecialchars((string) $page['title'], ENT_QUOTES, 'UTF-8')
-    . '</h1></header>'
+    . $pageHeader
     . $body
     . '</main>';
 
