@@ -28,7 +28,8 @@ $content = '<main class="documents-home">';
 $content .= '<header class="documents-page-header documents-home__header"><h1>'
     . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
 if (!empty($_DOCUMENTS_CONF['documents_main_header'])) {
-    $content .= '<div class="documents-page-intro">' . (string) $_DOCUMENTS_CONF['documents_main_header'] . '</div>';
+    $mainHeader = PLG_replaceTags((string) $_DOCUMENTS_CONF['documents_main_header']);
+    $content .= '<div class="documents-page-intro">' . $mainHeader . '</div>';
 }
 $content .= '</header>';
 
@@ -82,10 +83,11 @@ if ($stats !== '') {
 
 if (!empty($_DOCUMENTS_CONF['documents_main_footer'])) {
     $moreTitle = isset($LANG_DOCUMENTS_1['more_information']) ? $LANG_DOCUMENTS_1['more_information'] : 'More information';
+    $mainFooter = PLG_replaceTags((string) $_DOCUMENTS_CONF['documents_main_footer']);
     $content .= '<section class="documents-secondary-section documents-page-footer">'
         . '<h2 class="documents-secondary-section__title">'
         . htmlspecialchars($moreTitle, ENT_QUOTES, 'UTF-8') . '</h2>'
-        . (string) $_DOCUMENTS_CONF['documents_main_footer'] . '</section>';
+        . $mainFooter . '</section>';
 }
 $content .= '</main>';
 
