@@ -2,7 +2,7 @@
 
 /* Documents -> Maps interoperability adapter. PHP 5.6+. */
 
-if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'maps_adapter.php') !== false) {
+if (isset($_SERVER['PHP_SELF']) && strpos(strtolower((string) $_SERVER['PHP_SELF']), 'maps_adapter.php') !== false) {
     die('This file can not be used on its own.');
 }
 
@@ -26,13 +26,12 @@ function DOCUMENTS_mapsCategorySupported($categoryId)
         $type = isset($field['f_type']) ? strtolower((string) $field['f_type']) : '';
         if ($type === 'marker') {
             $hasMarker = true;
-            continue;
-        }
-        if (in_array($type, array('album', 'file', 'radio'), true)) {
-            return false;
         }
     }
 
+    /* Legacy Documents categories often mix marker fields with radio, album,
+     * file or category fields. Those field types must not make the whole
+     * category unsavable. Their values are handled/preserved below. */
     return $hasMarker && DOCUMENTS_hasMaps();
 }
 
@@ -165,7 +164,8 @@ function DOCUMENTS_saveMapsDocument($request)
         if ($type === 'marker') {
             $markerFields[] = $field;
             $values[$fieldId] = isset($request[$name])
-                ? DOCUMENTS_normalizeFieldInput('marker', $request[$name]) : '';
+                ? DOCUMENTS_normalizeFieldInput('marker', $request[$name])
+                : DOCUMENTS_documentMutationExistingFieldValue($documentId, $fieldId);
             continue;
         }
         if ($type === 'image') {
@@ -178,8 +178,17 @@ function DOCUMENTS_saveMapsDocument($request)
             continue;
         }
 
+        /* Historical file/category fields have no complete modern input control.
+         * Album fields can also be absent when MediaGallery is unavailable.
+         * Preserve the stored value whenever the form did not submit one. */
+        if (in_array($type, array('file', 'category', 'album'), true)
+            && !array_key_exists($name, $request)) {
+            $values[$fieldId] = DOCUMENTS_documentMutationExistingFieldValue($documentId, $fieldId);
+            continue;
+        }
+
         $value = DOCUMENTS_normalizeFieldInput($type, isset($request[$name]) ? $request[$name] : '');
-        if ($type === 'select' && $value !== '') {
+        if (in_array($type, array('select', 'radio'), true) && $value !== '') {
             $safeValue = DB_escapeString($value);
             $group = (int) $field['sel_id'];
             if (DB_getItem($_TABLES['documents_selects'], 'sid', "s_group={$group} AND s_name='{$safeValue}'") === '') {
