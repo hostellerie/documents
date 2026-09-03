@@ -12,7 +12,7 @@ $checks = array(
     array($home, 'd.active=1', 'public active status filter'),
     array($home, "COM_getPermSQL('AND', 0, 2, 'd')", 'document permission filter'),
     array($home, 'DOCUMENTS_homeRecentDocuments($category, 3)', 'three document category limit'),
-    array($home, "f_type === 'image'", 'image field preview'),
+    array($home, "$type === 'image'", 'image field preview'),
     array($home, "'/image.php?src='", 'thumbnail endpoint'),
     array($home, 'documents-category-card__recent-item', 'recent document link markup'),
     array($home, 'documents-category-card__footer', 'category footer link'),
