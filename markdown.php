@@ -13,7 +13,7 @@ function DOCUMENTS_textareaHasMarkdown($value)
         return false;
     }
 
-    return preg_match('/(^|\n)\s*(?:#{2,4}\s+|[-+*]\s+|\d+[.)]\s+|>\s+)|\*\*[^\n*]+\*\*|__[^\n_]+__|`[^\n`]+`|\[[^\]\n]+\]\([^\s)]+\)/m', $value) === 1;
+    return preg_match('/(^|\n)\s*(?:#{2,4}\s+|[-+*]\s+|\d+[.)]\s+|>\s+)|\*\*[^\n*]+\*\*|__[^\n_]+__|`[^\n`]+`|\[[^\]\n]+\]\([^\s)]+\)|(^|\n)\s*\|?.+\|.+\n\s*\|?\s*:?-{3,}/m', $value) === 1;
 }
 
 function DOCUMENTS_markdownSafeUrl($url)
@@ -70,6 +70,80 @@ function DOCUMENTS_markdownInline($text)
     return $safe;
 }
 
+function DOCUMENTS_markdownTableCells($line)
+{
+    $line = trim((string) $line);
+    if ($line === '') {
+        return array();
+    }
+
+    if (substr($line, 0, 1) === '|') {
+        $line = substr($line, 1);
+    }
+    if ($line !== '' && substr($line, -1) === '|') {
+        $line = substr($line, 0, -1);
+    }
+
+    $cells = array();
+    $current = '';
+    $escaped = false;
+    $length = strlen($line);
+    for ($i = 0; $i < $length; $i++) {
+        $char = $line[$i];
+        if ($escaped) {
+            $current .= $char;
+            $escaped = false;
+            continue;
+        }
+        if ($char === '\\') {
+            $escaped = true;
+            continue;
+        }
+        if ($char === '|') {
+            $cells[] = trim($current);
+            $current = '';
+            continue;
+        }
+        $current .= $char;
+    }
+    if ($escaped) {
+        $current .= '\\';
+    }
+    $cells[] = trim($current);
+
+    return $cells;
+}
+
+function DOCUMENTS_markdownTableSeparator($line)
+{
+    $cells = DOCUMENTS_markdownTableCells($line);
+    if (empty($cells)) {
+        return false;
+    }
+
+    foreach ($cells as $cell) {
+        if (!preg_match('/^:?-{3,}:?$/', trim($cell))) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function DOCUMENTS_markdownTableAlignment($cell)
+{
+    $cell = trim((string) $cell);
+    $left = substr($cell, 0, 1) === ':';
+    $right = substr($cell, -1) === ':';
+    if ($left && $right) {
+        return 'center';
+    }
+    if ($right) {
+        return 'right';
+    }
+    return $left ? 'left' : '';
+}
+
 function DOCUMENTS_renderMarkdownTextarea($value)
 {
     $value = str_replace(array("\r\n", "\r"), "\n", stripslashes((string) $value));
@@ -105,11 +179,58 @@ function DOCUMENTS_renderMarkdownTextarea($value)
         }
     };
 
-    foreach ($lines as $line) {
+    $lineCount = count($lines);
+    for ($i = 0; $i < $lineCount; $i++) {
+        $line = $lines[$i];
+
         if (trim($line) === '') {
             $flushParagraph();
             $closeList();
             continue;
+        }
+
+        if ($i + 1 < $lineCount
+            && strpos($line, '|') !== false
+            && DOCUMENTS_markdownTableSeparator($lines[$i + 1])) {
+            $flushParagraph();
+            $closeList();
+
+            $headers = DOCUMENTS_markdownTableCells($line);
+            $separators = DOCUMENTS_markdownTableCells($lines[$i + 1]);
+            if (count($headers) === count($separators) && count($headers) > 0) {
+                $alignments = array();
+                foreach ($separators as $separator) {
+                    $alignments[] = DOCUMENTS_markdownTableAlignment($separator);
+                }
+
+                $html .= '<div class="documents-markdown-table-wrap"><table class="documents-markdown-table"><thead><tr>';
+                foreach ($headers as $index => $header) {
+                    $align = isset($alignments[$index]) ? $alignments[$index] : '';
+                    $attr = $align !== '' ? ' style="text-align:' . $align . '"' : '';
+                    $html .= '<th scope="col"' . $attr . '>' . DOCUMENTS_markdownInline($header) . '</th>';
+                }
+                $html .= '</tr></thead><tbody>';
+
+                $i += 2;
+                while ($i < $lineCount && trim($lines[$i]) !== '' && strpos($lines[$i], '|') !== false) {
+                    $row = DOCUMENTS_markdownTableCells($lines[$i]);
+                    if (count($row) !== count($headers)) {
+                        break;
+                    }
+                    $html .= '<tr>';
+                    foreach ($row as $index => $cell) {
+                        $align = isset($alignments[$index]) ? $alignments[$index] : '';
+                        $attr = $align !== '' ? ' style="text-align:' . $align . '"' : '';
+                        $html .= '<td' . $attr . '>' . DOCUMENTS_markdownInline($cell) . '</td>';
+                    }
+                    $html .= '</tr>';
+                    $i++;
+                }
+
+                $html .= '</tbody></table></div>';
+                $i--;
+                continue;
+            }
         }
 
         if (preg_match('/^\s*(#{2,4})\s+(.+)$/', $line, $match)) {
