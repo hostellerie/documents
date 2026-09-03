@@ -113,15 +113,45 @@ function DOCUMENTS_mediaGalleryAlbumTree($rootId, $depth = 0, &$seen = array())
     return $items;
 }
 
-function DOCUMENTS_mediaGalleryAlbumSelect($name, $selected = '', $uid = 0)
+function DOCUMENTS_mediaGallerySelectedAlbum($albumId)
 {
-    $rootId = DOCUMENTS_mediaGalleryMemberRootId($uid);
-    if ($rootId <= 0) {
-        return '';
+    $albumId = (int) trim((string) $albumId);
+    if ($albumId <= 0 || !DOCUMENTS_mediaGalleryLoadAlbumClass()) {
+        return array();
     }
 
+    $album = new mgAlbum($albumId);
+    if (empty($album->valid) || (isset($album->access) && (int) $album->access < 1)) {
+        return array();
+    }
+
+    return array(
+        'id' => (int) $album->id,
+        'title' => (string) $album->title,
+        'depth' => 0
+    );
+}
+
+function DOCUMENTS_mediaGalleryAlbumSelect($name, $selected = '', $uid = 0)
+{
+    $selectedId = (int) trim((string) $selected);
+    $rootId = DOCUMENTS_mediaGalleryMemberRootId($uid);
     $seen = array();
-    $albums = DOCUMENTS_mediaGalleryAlbumTree($rootId, 0, $seen);
+    $albums = $rootId > 0
+        ? DOCUMENTS_mediaGalleryAlbumTree($rootId, 0, $seen)
+        : array();
+
+    /* An administrator may edit a document owned by another user, and legacy
+     * documents may reference an album outside the current member-album tree.
+     * Keep an existing accessible album selectable so a simple edit never
+     * silently loses the stored relation. */
+    if ($selectedId > 0 && !isset($seen[$selectedId])) {
+        $selectedAlbum = DOCUMENTS_mediaGallerySelectedAlbum($selectedId);
+        if (!empty($selectedAlbum)) {
+            $albums[] = $selectedAlbum;
+        }
+    }
+
     if (empty($albums)) {
         return '';
     }
@@ -130,7 +160,7 @@ function DOCUMENTS_mediaGalleryAlbumSelect($name, $selected = '', $uid = 0)
     $html .= '<option value="">----</option>';
     foreach ($albums as $album) {
         $id = (int) $album['id'];
-        $isSelected = ((string) $selected === (string) $id) ? ' selected="selected"' : '';
+        $isSelected = ($selectedId === $id) ? ' selected="selected"' : '';
         $indent = str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', max(0, (int) $album['depth']));
         $title = htmlspecialchars(strip_tags((string) $album['title']), ENT_QUOTES, 'UTF-8');
         $html .= '<option value="' . $id . '"' . $isSelected . '>' . $indent . $title . '</option>';
