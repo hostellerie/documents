@@ -177,5 +177,17 @@ function DOCUMENTS_mediaGalleryRenderAlbum($albumId)
         return '';
     }
 
-    return (string) PLG_replaceTags('[gallery:' . $albumId . ']');
+    $album = DOCUMENTS_mediaGallerySelectedAlbum($albumId);
+    if (empty($album)) {
+        return '';
+    }
+
+    $title = trim(strip_tags((string) $album['title']));
+    $tag = '[album:' . $albumId . ' align:none';
+    if ($title !== '') {
+        $tag .= ' ' . str_replace(array('[', ']'), '', $title);
+    }
+    $tag .= ']';
+
+    return (string) PLG_replaceTags($tag);
 }
