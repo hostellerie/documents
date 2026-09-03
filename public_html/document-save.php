@@ -25,6 +25,17 @@ require_once $pluginPath . 'document_mutations.php';
 require_once $pluginPath . 'maps_adapter.php';
 require_once $pluginPath . 'document_delete.php';
 
+/* Geeklog's PLG_invokeService() only calls a service function that is already
+ * loaded. On some request paths Maps' functions.inc has not been loaded yet,
+ * even though the plugin is active. Load it explicitly before a marker save so
+ * service_marker_save_maps() and plugin_wsEnabled_maps() are available. */
+if (DOCUMENTS_hasMaps() && !function_exists('service_marker_save_maps')) {
+    $mapsFunctions = $_CONF['path'] . 'plugins/maps/functions.inc';
+    if (is_file($mapsFunctions)) {
+        require_once $mapsFunctions;
+    }
+}
+
 $categoryId = isset($_REQUEST['cid']) ? (int) $_REQUEST['cid'] : 0;
 $operation = isset($_REQUEST['op']) ? (string) $_REQUEST['op'] : 'save';
 $documentId = isset($_REQUEST['doc_url']) ? trim((string) $_REQUEST['doc_url']) : '';
