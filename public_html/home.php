@@ -258,7 +258,9 @@ $categoryContent = empty($cards)
     ? '<p class="documents-empty">' . htmlspecialchars(isset($LANG_DOCUMENTS_1['none']) ? $LANG_DOCUMENTS_1['none'] : 'No documents.', ENT_QUOTES, 'UTF-8') . '</p>'
     : '<div class="documents-category-grid">' . implode('', $cards) . '</div>';
 $content .= DOCUMENTS_sectionBlock(
-    isset($LANG_DOCUMENTS_1['categories']) ? $LANG_DOCUMENTS_1['categories'] : 'Categories',
+    isset($LANG_DOCUMENTS_1['browse_categories'])
+        ? $LANG_DOCUMENTS_1['browse_categories']
+        : (isset($LANG_DOCUMENTS_1['categories']) ? $LANG_DOCUMENTS_1['categories'] : 'Categories'),
     $categoryContent
 );
 
