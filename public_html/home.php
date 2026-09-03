@@ -77,10 +77,10 @@ $content .= DOCUMENTS_sectionBlock(
     $categoryContent
 );
 
+$isFrench = isset($_CONF['language'])
+    && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
 $stats = DOCUMENTS_homeStatsBlock();
 if ($stats !== '') {
-    $isFrench = isset($_CONF['language'])
-        && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
     $statsTitle = $isFrench ? 'Statistiques' : 'Statistics';
     $content .= '<section class="documents-secondary-section documents-home-statistics">'
         . '<h2 class="documents-secondary-section__title">'
@@ -89,12 +89,16 @@ if ($stats !== '') {
 }
 
 if (!empty($_DOCUMENTS_CONF['documents_main_footer'])) {
-    $moreTitle = isset($LANG_DOCUMENTS_1['more_information']) ? $LANG_DOCUMENTS_1['more_information'] : 'More information';
+    $moreTitle = isset($LANG_DOCUMENTS_1['more_information'])
+        ? $LANG_DOCUMENTS_1['more_information'] : ($isFrench ? 'En savoir plus' : 'More information');
     $mainFooter = PLG_replaceTags((string) $_DOCUMENTS_CONF['documents_main_footer']);
-    $content .= '<section class="documents-secondary-section documents-page-footer">'
-        . '<h2 class="documents-secondary-section__title">'
-        . htmlspecialchars($moreTitle, ENT_QUOTES, 'UTF-8') . '</h2>'
-        . $mainFooter . '</section>';
+    $mainFooterHasH2 = $mainFooter !== '' && preg_match('/<h2\b/i', $mainFooter) === 1;
+    $content .= '<section class="documents-secondary-section documents-page-footer">';
+    if (!$mainFooterHasH2) {
+        $content .= '<h2 class="documents-secondary-section__title">'
+            . htmlspecialchars($moreTitle, ENT_QUOTES, 'UTF-8') . '</h2>';
+    }
+    $content .= $mainFooter . '</section>';
 }
 $content .= '</main>';
 

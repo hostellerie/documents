@@ -60,10 +60,14 @@ $templateHasBreadcrumb = $isCustomTemplate
 $documentsLabel = isset($LANG_DOCUMENTS_1['plugin_name'])
     ? $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
 $categoryName = isset($page['category_name'])
-    ? trim((string) $page['category_name']) : '';
-$categoryUrl = DOCUMENTS_interopCanonicalUrl(
-    isset($page['category_slug']) ? (string) $page['category_slug'] : $categorySlug
-);
+    ? trim((string) $page['category_name'])
+    : (isset($page['category']['cat_name'])
+        ? trim(stripslashes((string) $page['category']['cat_name'])) : '');
+$categoryRouteSlug = isset($page['category_slug'])
+    ? (string) $page['category_slug']
+    : (isset($page['category']['cat_url'])
+        ? (string) $page['category']['cat_url'] : $categorySlug);
+$categoryUrl = DOCUMENTS_interopCanonicalUrl($categoryRouteSlug);
 
 $breadcrumb = '';
 if (!$templateHasBreadcrumb) {

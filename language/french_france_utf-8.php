@@ -129,6 +129,7 @@ $LANG_DOCUMENTS_1 = array(
     'stats_views'         => 'Vues',
     'whatsnew_title'      => 'Documents récents',
     'whatsnew_none'       => 'Aucun document récent.',
+    'more_information'    => 'En savoir plus',
     'integrity_audit_title'              => 'Audit d\'intégrité des données',
     'integrity_audit_notice'             => 'Ce rapport est en lecture seule. Aucune donnée ni aucun fichier n\'est modifié.',
     'integrity_check'                    => 'Contrôle',

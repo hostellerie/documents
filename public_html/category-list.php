@@ -261,23 +261,30 @@ if (!empty($titleField['fid'])) {
 
 $categoryName = stripslashes((string) $category['cat_name']);
 $documentsLabel = isset($LANG_DOCUMENTS_1['plugin_name']) ? $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
+$customHeader = '';
+if (!empty($category['custom_header'])) {
+    $header = (string) $category['custom_header'];
+    $customHeader = function_exists('PLG_replaceTags') ? PLG_replaceTags($header) : $header;
+}
+$customHeaderHasH1 = $customHeader !== '' && preg_match('/<h1\b/i', $customHeader) === 1;
+
 $content = '<main class="documents-category"><nav class="documents-breadcrumb" aria-label="Breadcrumb">'
     . '<a href="' . htmlspecialchars(rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/', ENT_QUOTES, 'UTF-8') . '">'
     . htmlspecialchars($documentsLabel, ENT_QUOTES, 'UTF-8') . '</a>'
     . '<span class="documents-breadcrumb__separator" aria-hidden="true"> &gt; </span>'
     . '<span aria-current="page">' . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</span></nav>'
-    . '<header class="documents-page-header"><h1>' . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</h1>';
+    . '<header class="documents-page-header">';
+if (!$customHeaderHasH1) {
+    $content .= '<h1>' . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</h1>';
+}
+if ($customHeader !== '') {
+    $content .= '<div class="documents-category-header">' . $customHeader . '</div>';
+}
 if (!empty($category['cat_help'])) {
     $content .= '<p class="documents-page-description">'
         . htmlspecialchars(stripslashes((string) $category['cat_help']), ENT_QUOTES, 'UTF-8') . '</p>';
 }
 $content .= '</header>';
-
-if (!empty($category['custom_header'])) {
-    $header = (string) $category['custom_header'];
-    $content .= '<div class="documents-category-header">'
-        . (function_exists('PLG_replaceTags') ? PLG_replaceTags($header) : $header) . '</div>';
-}
 
 $block = '';
 if ((int) $category['submitable'] === 1 && !COM_isAnonUser()) {
