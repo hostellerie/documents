@@ -37,6 +37,7 @@ $LANG_DOCUMENTS_1 = array(
     'plugin_name'         => 'Documents',
     'categories'          => 'Catégories',
     'browse_categories'   => 'Explorer les documents pratiques par catégorie',
+    'browse_documents'    => 'Explorer les documents',
     'documents'           => 'Documents',
     'category'            => 'Catégorie',
     'new_cat'             => 'Créer une nouvelle catégorie',
