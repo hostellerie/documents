@@ -40,8 +40,6 @@ function DOCUMENTS_loadPublicStyles()
         $folder = 'documents';
     }
 
-    /* Geeklog 2.1.1 scripts::setCSSFile() checks a local file below
-     * public_html. Geeklog 2.2.x Resource accepts the absolute site URL. */
     if (strtolower(get_class($_SCRIPTS)) === 'scripts') {
         return (bool) $_SCRIPTS->setCSSFile(
             'documents_public',
@@ -65,9 +63,88 @@ function DOCUMENTS_preparePublicPresentation($loadCategoryStyle = true)
     }
 }
 
-function DOCUMENTS_createPublicPage($content, $title)
+function DOCUMENTS_applyPageMetaOverride($html, $meta)
 {
     global $_CONF;
+
+    if (!is_string($html) || $html === '' || !is_array($meta) || empty($meta['title'])) {
+        return $html;
+    }
+
+    $title = (string) $meta['title'];
+    $description = isset($meta['description']) ? (string) $meta['description'] : '';
+    $canonical = isset($meta['canonical']) ? (string) $meta['canonical'] : '';
+    $schemaType = isset($meta['schema_type']) ? (string) $meta['schema_type'] : 'CollectionPage';
+    $escape = function ($value) {
+        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    };
+
+    $html = preg_replace('/<title>.*?<\/title>/is', '<title>' . $escape($title) . '</title>', $html, 1);
+
+    $replacements = array(
+        'description' => $description,
+        'og:title' => $title,
+        'og:description' => $description,
+        'og:url' => $canonical,
+        'twitter:title' => $title,
+        'twitter:description' => $description
+    );
+    foreach ($replacements as $name => $value) {
+        if ($value === '') {
+            continue;
+        }
+        $quoted = preg_quote($name, '/');
+        $pattern = '/<meta\s+(?:name|property)=["\']' . $quoted . '["\'][^>]*>/i';
+        $attribute = strpos($name, 'og:') === 0 ? 'property' : 'name';
+        $tag = '<meta ' . $attribute . '="' . $escape($name) . '" content="' . $escape($value) . '" />';
+        if (preg_match($pattern, $html)) {
+            $html = preg_replace($pattern, $tag, $html, 1);
+        } elseif (stripos($html, '</head>') !== false) {
+            $html = preg_replace('/<\/head>/i', $tag . "\n</head>", $html, 1);
+        }
+    }
+
+    if ($canonical !== '') {
+        $canonicalTag = '<link rel="canonical" href="' . $escape($canonical) . '" />';
+        if (preg_match('/<link\s+rel=["\']canonical["\'][^>]*>/i', $html)) {
+            $html = preg_replace('/<link\s+rel=["\']canonical["\'][^>]*>/i', $canonicalTag, $html, 1);
+        } elseif (stripos($html, '</head>') !== false) {
+            $html = preg_replace('/<\/head>/i', $canonicalTag . "\n</head>", $html, 1);
+        }
+    }
+
+    $schema = array(
+        '@context' => 'https://schema.org',
+        '@graph' => array(
+            array(
+                '@type' => $schemaType,
+                'name' => $title,
+                'description' => $description,
+                'url' => $canonical,
+                'isPartOf' => array(
+                    '@type' => 'WebSite',
+                    'name' => isset($_CONF['site_name']) ? (string) $_CONF['site_name'] : '',
+                    'url' => isset($_CONF['site_url']) ? (string) $_CONF['site_url'] : ''
+                )
+            )
+        )
+    );
+    $json = json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    if ($json !== false) {
+        $script = '<script type="application/ld+json">' . $json . '</script>';
+        if (preg_match('/<script\s+type=["\']application\/ld\+json["\']>.*?<\/script>/is', $html)) {
+            $html = preg_replace('/<script\s+type=["\']application\/ld\+json["\']>.*?<\/script>/is', $script, $html, 1);
+        } elseif (stripos($html, '</head>') !== false) {
+            $html = preg_replace('/<\/head>/i', $script . "\n</head>", $html, 1);
+        }
+    }
+
+    return $html;
+}
+
+function DOCUMENTS_createPublicPage($content, $title)
+{
+    global $_CONF, $DOCUMENTS_PAGE_META_OVERRIDE;
 
     if (function_exists('DOCUMENTS_wrapBlock')) {
         $content = DOCUMENTS_wrapBlock($content, 'public');
@@ -90,6 +167,10 @@ function DOCUMENTS_createPublicPage($content, $title)
         if (is_string($filtered) && $filtered !== '') {
             $page = $filtered;
         }
+    }
+
+    if (isset($DOCUMENTS_PAGE_META_OVERRIDE) && is_array($DOCUMENTS_PAGE_META_OVERRIDE)) {
+        $page = DOCUMENTS_applyPageMetaOverride($page, $DOCUMENTS_PAGE_META_OVERRIDE);
     }
 
     return $page;
