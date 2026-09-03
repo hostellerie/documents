@@ -172,6 +172,8 @@ function DOCUMENTS_mediaGalleryAlbumSelect($name, $selected = '', $uid = 0)
 
 function DOCUMENTS_mediaGalleryRenderAlbum($albumId)
 {
+    global $_CONF;
+
     $albumId = (int) $albumId;
     if ($albumId <= 0 || !DOCUMENTS_hasMediaGallery() || !function_exists('PLG_replaceTags')) {
         return '';
@@ -189,5 +191,11 @@ function DOCUMENTS_mediaGalleryRenderAlbum($albumId)
     }
     $tag .= ']';
 
-    return (string) PLG_replaceTags($tag);
+    $rendered = (string) PLG_replaceTags($tag);
+    $albumUrl = rtrim((string) $_CONF['site_url'], '/')
+        . '/mediagallery/album.php?aid=' . $albumId;
+
+    return $rendered
+        . '<div class="documents-mediagallery-link"><a href="'
+        . htmlspecialchars($albumUrl, ENT_QUOTES, 'UTF-8') . '">Voir l&#8217;album</a></div>';
 }
