@@ -12,4 +12,4 @@
 
 <input type="hidden" id="lat" name="lat" value="{lat_value}" size="25" maxlength="20">
 <input type="hidden" id="lng" name="lng" value="{lng_value}" size="25" maxlength="20">
-<input type="hidden" name="mkid" value="{mkid}">
+<input type="hidden" name="{var_name}" value="{mkid}">
