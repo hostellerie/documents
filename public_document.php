@@ -7,6 +7,11 @@ if (isset($_SERVER['PHP_SELF'])
     die('This file can not be used on its own.');
 }
 
+$documentsMarkdownFile = __DIR__ . '/markdown.php';
+if (is_file($documentsMarkdownFile)) {
+    require_once $documentsMarkdownFile;
+}
+
 function DOCUMENTS_publicChoiceValue($groupId, $storedValue)
 {
     global $_TABLES;
@@ -136,6 +141,10 @@ function DOCUMENTS_publicFieldHtml($field, $value, $title)
         return '<img class="documents-document-image" src="'
             . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="'
             . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '" loading="lazy">';
+    }
+
+    if ($type === 'textarea' && function_exists('DOCUMENTS_renderMarkdownTextarea')) {
+        return DOCUMENTS_renderMarkdownTextarea($value);
     }
 
     $safe = htmlspecialchars(stripslashes($value), ENT_QUOTES, 'UTF-8');
