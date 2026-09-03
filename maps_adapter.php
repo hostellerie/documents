@@ -53,6 +53,9 @@ function DOCUMENTS_mapsSaveMarker($documentId, $categorySlug, $field, $request, 
     }
 
     $markerId = isset($request[$varName]) ? DOCUMENTS_normalizeFieldInput('marker', $request[$varName]) : '';
+    if ($markerId === '' && isset($request['mkid'])) {
+        $markerId = DOCUMENTS_normalizeFieldInput('marker', $request['mkid']);
+    }
     if ($mapId <= 0 && $markerId === '') {
         return array(false, '', 'A Maps map must be configured before creating a new marker.');
     }
@@ -169,9 +172,15 @@ function DOCUMENTS_saveMapsDocument($request)
 
         if ($type === 'marker') {
             $markerFields[] = $field;
-            $values[$fieldId] = isset($request[$name])
-                ? DOCUMENTS_normalizeFieldInput('marker', $request[$name])
-                : DOCUMENTS_documentMutationExistingFieldValue($documentId, $fieldId);
+            $submittedMarker = isset($request[$name])
+                ? DOCUMENTS_normalizeFieldInput('marker', $request[$name]) : '';
+            if ($submittedMarker === '' && isset($request['mkid'])) {
+                $submittedMarker = DOCUMENTS_normalizeFieldInput('marker', $request['mkid']);
+            }
+            if ($submittedMarker === '') {
+                $submittedMarker = DOCUMENTS_documentMutationExistingFieldValue($documentId, $fieldId);
+            }
+            $values[$fieldId] = DOCUMENTS_normalizeFieldInput('marker', $submittedMarker);
             continue;
         }
         if ($type === 'image') {
@@ -242,11 +251,17 @@ function DOCUMENTS_saveMapsDocument($request)
     }
 
     foreach ($markerFields as $field) {
+        $fieldId = (int) $field['fid'];
+        $markerRequest = $request;
+        $markerName = isset($field['var_name']) ? (string) $field['var_name'] : '';
+        if ($markerName !== '' && isset($values[$fieldId])) {
+            $markerRequest[$markerName] = $values[$fieldId];
+        }
         list($ok, $markerId, $error) = DOCUMENTS_mapsSaveMarker(
             $documentId,
             (string) $category['cat_url'],
             $field,
-            $request,
+            $markerRequest,
             $ownerId,
             $groupId,
             $permissions,
