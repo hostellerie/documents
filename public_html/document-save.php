@@ -49,19 +49,6 @@ if ($operation !== 'delete') {
 
     $hasMarkerCategory = DOCUMENTS_mapsCategoryHasMarker($categoryId);
     $mapsCategory = DOCUMENTS_mapsCategorySupported($categoryId);
-    if ($hasMarkerCategory) {
-        $mapsService = function_exists('service_marker_save_maps') ? '1' : '0';
-        $mapsWsFunction = function_exists('plugin_wsEnabled_maps') ? '1' : '0';
-        $mapsWsEnabled = function_exists('PLG_wsEnabled') && PLG_wsEnabled('maps') ? '1' : '0';
-        COM_errorLog(
-            'DOCUMENTS MAPS TRACE: category=' . $categoryId
-            . ' document=' . $documentId
-            . ' service=' . $mapsService
-            . ' ws_function=' . $mapsWsFunction
-            . ' ws_enabled=' . $mapsWsEnabled
-            . ' maps_category=' . ($mapsCategory ? '1' : '0')
-        );
-    }
     if ($hasMarkerCategory && !$mapsCategory) {
         COM_errorLog('DOCUMENTS: marker category requires the Maps service contract.');
         echo COM_refresh($_CONF['site_url'] . '/404.php');
