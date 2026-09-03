@@ -48,11 +48,15 @@ function DOCUMENTS_mapsSaveMarker($documentId, $categorySlug, $field, $request, 
     $fieldId = isset($field['fid']) ? (int) $field['fid'] : 0;
     $mapId = isset($field['sel_id']) ? (int) $field['sel_id'] : 0;
     $varName = isset($field['var_name']) ? (string) $field['var_name'] : '';
-    if ($fieldId <= 0 || $mapId <= 0 || $varName === '') {
+    if ($fieldId <= 0 || $varName === '') {
         return array(false, '', 'Maps marker field is not configured correctly.');
     }
 
     $markerId = isset($request[$varName]) ? DOCUMENTS_normalizeFieldInput('marker', $request[$varName]) : '';
+    if ($mapId <= 0 && $markerId === '') {
+        return array(false, '', 'A Maps map must be configured before creating a new marker.');
+    }
+
     $address = isset($request['address']) ? DOCUMENTS_plainTextInput($request['address']) : '';
     $lat = isset($request['lat']) ? trim((string) $request['lat']) : '';
     $lng = isset($request['lng']) ? trim((string) $request['lng']) : '';
@@ -62,7 +66,6 @@ function DOCUMENTS_mapsSaveMarker($documentId, $categorySlug, $field, $request, 
         'source_id' => (string) $documentId,
         'source_url' => DOCUMENTS_interopCanonicalUrl($categorySlug, $documentId),
         'marker_id' => $markerId,
-        'map_id' => $mapId,
         'name' => DOCUMENTS_plainTextInput($name),
         'address' => $address,
         'lat' => $lat,
@@ -76,6 +79,9 @@ function DOCUMENTS_mapsSaveMarker($documentId, $categorySlug, $field, $request, 
         'perm_members' => (int) $permissions[2],
         'perm_anon' => (int) $permissions[3]
     );
+    if ($mapId > 0) {
+        $args['map_id'] = $mapId;
+    }
 
     $output = array();
     $svcMsg = array();
