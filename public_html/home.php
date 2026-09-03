@@ -50,7 +50,7 @@ function DOCUMENTS_homeCategoryPreviewFields($categoryId)
 
 function DOCUMENTS_homeRecentDocuments($category, $limit)
 {
-    global $_TABLES, $_DOCUMENTS_CONF;
+    global $_TABLES;
 
     $categoryId = isset($category['cid']) ? (int) $category['cid'] : 0;
     $categorySlug = isset($category['cat_url']) ? (string) $category['cat_url'] : '';
@@ -114,6 +114,35 @@ function DOCUMENTS_homeRecentDocuments($category, $limit)
     return $documents;
 }
 
+function DOCUMENTS_homeSeoMetadata($headerHtml, $fallbackTitle)
+{
+    global $_CONF;
+
+    $title = trim((string) $fallbackTitle);
+    if ($headerHtml !== '' && preg_match('/<h1\b[^>]*>(.*?)<\/h1>/is', $headerHtml, $match)) {
+        $candidate = trim(html_entity_decode(strip_tags($match[1]), ENT_QUOTES, 'UTF-8'));
+        if ($candidate !== '') {
+            $title = $candidate;
+        }
+    }
+
+    $descriptionHtml = preg_replace('/<h1\b[^>]*>.*?<\/h1>/is', ' ', (string) $headerHtml);
+    $description = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($descriptionHtml), ENT_QUOTES, 'UTF-8')));
+    if ($description === '') {
+        $description = $title;
+        if (!empty($_CONF['site_name']) && $_CONF['site_name'] !== $title) {
+            $description .= ' - ' . $_CONF['site_name'];
+        }
+    }
+    if (function_exists('DOCUMENTS_interopExcerpt')) {
+        $description = DOCUMENTS_interopExcerpt($description, 160);
+    } elseif (strlen($description) > 160) {
+        $description = substr($description, 0, 157) . '...';
+    }
+
+    return array('title' => $title, 'description' => $description);
+}
+
 $requestPath = isset($_SERVER['REQUEST_URI']) ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH) : '';
 if (is_string($requestPath) && basename($requestPath) === 'home.php') {
     header('Location: ' . rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/', true, 301);
@@ -141,6 +170,13 @@ if (!empty($_DOCUMENTS_CONF['documents_main_header'])) {
     $mainHeader = PLG_replaceTags((string) $_DOCUMENTS_CONF['documents_main_header']);
 }
 $mainHeaderHasH1 = $mainHeader !== '' && preg_match('/<h1\b/i', $mainHeader) === 1;
+$homeSeo = DOCUMENTS_homeSeoMetadata($mainHeader, $title);
+$DOCUMENTS_PAGE_META_OVERRIDE = array(
+    'title' => $homeSeo['title'],
+    'description' => $homeSeo['description'],
+    'canonical' => rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/',
+    'schema_type' => 'CollectionPage'
+);
 $isFrench = isset($_CONF['language'])
     && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
 $recentLabel = isset($LANG_DOCUMENTS_1['whatsnew_title'])
@@ -202,7 +238,7 @@ while ($category = DB_fetchArray($result)) {
                 . htmlspecialchars($recent['url'], ENT_QUOTES, 'UTF-8') . '">';
             if ($recent['image'] !== '') {
                 $imageUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
-                    . '/image.php?src=' . rawurlencode($recent['image']) . '&amp;w=120&amp;h=90';
+                    . '/image.php?src=' . rawurlencode($recent['image']) . '&w=120&h=90';
                 $card .= '<span class="documents-category-card__thumb"><img src="'
                     . htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8') . '" alt="" width="80" height="60" loading="lazy"></span>';
             }
@@ -249,4 +285,4 @@ if (!empty($_DOCUMENTS_CONF['documents_main_footer'])) {
 }
 $content .= '</main>';
 
-COM_output(DOCUMENTS_createPublicPage($content, $title));
+COM_output(DOCUMENTS_createPublicPage($content, $homeSeo['title']));
