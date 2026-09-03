@@ -23,6 +23,24 @@ function DOCUMENTS_plainTextInput($value)
     return trim(html_entity_decode(strip_tags($value), ENT_QUOTES, 'UTF-8'));
 }
 
+function DOCUMENTS_plainTextareaInput($value)
+{
+    $value = str_replace("\0", '', (string) $value);
+    $value = str_replace(array("\r\n", "\r"), "\n", $value);
+
+    /* Textarea content may contain Markdown, but never trusted HTML. Strip tags
+     * without flattening the line structure required by Markdown blocks. */
+    $value = strip_tags($value);
+    $value = html_entity_decode($value, ENT_QUOTES, 'UTF-8');
+
+    $lines = explode("\n", $value);
+    foreach ($lines as $index => $line) {
+        $lines[$index] = rtrim($line, " \t");
+    }
+
+    return trim(implode("\n", $lines));
+}
+
 /**
  * Normalize a scalar field value before the legacy save controller sees it.
  *
@@ -55,7 +73,11 @@ function DOCUMENTS_normalizeFieldInput($type, $value)
         return ctype_digit(trim($value)) ? (string) (int) $value : '';
     }
 
-    if ($type === 'date' || $type === 'text' || $type === 'textarea') {
+    if ($type === 'textarea') {
+        return DOCUMENTS_plainTextareaInput($value);
+    }
+
+    if ($type === 'date' || $type === 'text') {
         return DOCUMENTS_plainTextInput($value);
     }
 
