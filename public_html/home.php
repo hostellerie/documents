@@ -15,6 +15,105 @@ require_once $pluginPath . 'runtime.php';
 require_once $pluginPath . 'presentation.php';
 DOCUMENTS_writeHtaccess(false);
 
+function DOCUMENTS_homeCategoryPreviewFields($categoryId)
+{
+    global $_TABLES;
+
+    $fields = array('title' => 0, 'image' => 0);
+    $result = DB_query(
+        "SELECT fid,f_type,var_name FROM {$_TABLES['documents_fields']} "
+        . "WHERE cat_id=" . (int) $categoryId . " ORDER BY f_order ASC,fid ASC"
+    );
+    while ($field = DB_fetchArray($result)) {
+        if (!is_array($field)) {
+            continue;
+        }
+        $type = strtolower((string) $field['f_type']);
+        $variable = strtolower(trim((string) $field['var_name']));
+        if ($fields['title'] === 0
+            && ($type === 'text' || $type === 'textarea')
+            && $variable !== 'metadescription'
+            && $variable !== 'schema_type'
+        ) {
+            $fields['title'] = (int) $field['fid'];
+        }
+        if ($fields['image'] === 0 && $type === 'image') {
+            $fields['image'] = (int) $field['fid'];
+        }
+        if ($fields['title'] > 0 && $fields['image'] > 0) {
+            break;
+        }
+    }
+
+    return $fields;
+}
+
+function DOCUMENTS_homeRecentDocuments($category, $limit)
+{
+    global $_TABLES, $_DOCUMENTS_CONF;
+
+    $categoryId = isset($category['cid']) ? (int) $category['cid'] : 0;
+    $categorySlug = isset($category['cat_url']) ? (string) $category['cat_url'] : '';
+    $limit = max(1, min(6, (int) $limit));
+    if ($categoryId <= 0 || $categorySlug === '') {
+        return array();
+    }
+
+    $previewFields = DOCUMENTS_homeCategoryPreviewFields($categoryId);
+    $sql = "SELECT d.doc_url,MAX(d.modified) AS modified,MAX(d.created) AS created,MAX(d.did) AS did "
+        . "FROM {$_TABLES['documents_docs']} AS d WHERE d.active=1 "
+        . "AND EXISTS (SELECT 1 FROM {$_TABLES['documents_values']} AS cv "
+        . "INNER JOIN {$_TABLES['documents_fields']} AS cf ON cf.fid=cv.field_id "
+        . "WHERE cv.doc_url=d.doc_url AND cf.cat_id={$categoryId})"
+        . COM_getPermSQL('AND', 0, 2, 'd')
+        . " GROUP BY d.doc_url "
+        . "ORDER BY COALESCE(MAX(d.modified),MAX(d.created)) DESC,MAX(d.did) DESC "
+        . "LIMIT {$limit}";
+
+    $result = DB_query($sql);
+    $documents = array();
+    while ($row = DB_fetchArray($result)) {
+        if (!is_array($row) || empty($row['doc_url'])) {
+            continue;
+        }
+
+        $documentSlug = (string) $row['doc_url'];
+        $safeDocument = DB_escapeString($documentSlug);
+        $title = '';
+        if ($previewFields['title'] > 0) {
+            $title = DB_getItem(
+                $_TABLES['documents_values'],
+                'v_value',
+                "doc_url='{$safeDocument}' AND field_id=" . (int) $previewFields['title']
+            );
+        }
+        $title = trim(stripslashes((string) $title));
+        if ($title === '') {
+            $title = str_replace(array('_', '-'), ' ', $documentSlug);
+            $title = function_exists('MBYTE_ucfirst') ? MBYTE_ucfirst($title) : ucfirst($title);
+        }
+
+        $image = '';
+        if ($previewFields['image'] > 0) {
+            $image = DB_getItem(
+                $_TABLES['documents_values'],
+                'v_value',
+                "doc_url='{$safeDocument}' AND field_id=" . (int) $previewFields['image']
+            );
+            $image = basename(trim((string) $image));
+        }
+
+        $documents[] = array(
+            'title' => $title,
+            'url' => DOCUMENTS_interopCanonicalUrl($categorySlug, $documentSlug),
+            'image' => $image,
+            'modified' => !empty($row['modified']) ? (string) $row['modified'] : (string) $row['created']
+        );
+    }
+
+    return $documents;
+}
+
 $requestPath = isset($_SERVER['REQUEST_URI']) ? parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH) : '';
 if (is_string($requestPath) && basename($requestPath) === 'home.php') {
     header('Location: ' . rtrim((string) $_DOCUMENTS_CONF['site_url'], '/') . '/', true, 301);
@@ -23,12 +122,31 @@ if (is_string($requestPath) && basename($requestPath) === 'home.php') {
 
 DOCUMENTS_preparePublicPresentation(false);
 
+if (isset($_SCRIPTS) && is_object($_SCRIPTS) && method_exists($_SCRIPTS, 'setCSSFile')) {
+    $folder = !empty($_DOCUMENTS_CONF['documents_folder'])
+        ? trim((string) $_DOCUMENTS_CONF['documents_folder'], '/') : 'documents';
+    if (strtolower(get_class($_SCRIPTS)) === 'scripts') {
+        $_SCRIPTS->setCSSFile('documents_home', '/' . $folder . '/css/documents-home.css', false);
+    } else {
+        $_SCRIPTS->setCSSFile(
+            'documents_home',
+            rtrim((string) $_CONF['site_url'], '/') . '/' . rawurlencode($folder) . '/css/documents-home.css'
+        );
+    }
+}
+
 $title = isset($LANG_DOCUMENTS_1['plugin_name']) ? $LANG_DOCUMENTS_1['plugin_name'] : 'Documents';
 $mainHeader = '';
 if (!empty($_DOCUMENTS_CONF['documents_main_header'])) {
     $mainHeader = PLG_replaceTags((string) $_DOCUMENTS_CONF['documents_main_header']);
 }
 $mainHeaderHasH1 = $mainHeader !== '' && preg_match('/<h1\b/i', $mainHeader) === 1;
+$isFrench = isset($_CONF['language'])
+    && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
+$recentLabel = isset($LANG_DOCUMENTS_1['whatsnew_title'])
+    ? $LANG_DOCUMENTS_1['whatsnew_title'] : ($isFrench ? 'Documents récents' : 'Recent documents');
+$allDocumentsLabel = isset($LANG_DOCUMENTS_1['see_all_docs'])
+    ? $LANG_DOCUMENTS_1['see_all_docs'] : ($isFrench ? 'Voir tous les documents' : 'View all documents');
 
 $content = '<main class="documents-home">';
 $content .= '<header class="documents-page-header documents-home__header">';
@@ -56,17 +174,48 @@ while ($category = DB_fetchArray($result)) {
     if (!is_array($category) || empty($category['cat_url'])) {
         continue;
     }
+
     $categoryUrl = DOCUMENTS_interopCanonicalUrl($category['cat_url']);
     $categoryName = stripslashes((string) $category['cat_name']);
     $categoryHelp = trim(stripslashes((string) $category['cat_help']));
-    $card = '<article class="documents-category-card"><a class="documents-category-card__link" href="'
-        . htmlspecialchars($categoryUrl, ENT_QUOTES, 'UTF-8') . '"><span class="documents-category-card__title">'
-        . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</span>';
+    $recentDocuments = DOCUMENTS_homeRecentDocuments($category, 3);
+
+    $card = '<article class="documents-category-card">'
+        . '<header class="documents-category-card__header">'
+        . '<a class="documents-category-card__heading-link" href="'
+        . htmlspecialchars($categoryUrl, ENT_QUOTES, 'UTF-8') . '">'
+        . '<span class="documents-category-card__title">'
+        . htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8') . '</span>'
+        . '<span class="documents-category-card__arrow" aria-hidden="true">›</span></a>';
     if ($categoryHelp !== '') {
-        $card .= '<span class="documents-category-card__description">'
-            . htmlspecialchars($categoryHelp, ENT_QUOTES, 'UTF-8') . '</span>';
+        $card .= '<p class="documents-category-card__description">'
+            . htmlspecialchars($categoryHelp, ENT_QUOTES, 'UTF-8') . '</p>';
     }
-    $card .= '<span class="documents-category-card__arrow" aria-hidden="true">›</span></a></article>';
+    $card .= '</header>';
+
+    if (!empty($recentDocuments)) {
+        $card .= '<div class="documents-category-card__recent">'
+            . '<span class="documents-category-card__recent-label">'
+            . htmlspecialchars($recentLabel, ENT_QUOTES, 'UTF-8') . '</span>';
+        foreach ($recentDocuments as $recent) {
+            $card .= '<a class="documents-category-card__recent-item" href="'
+                . htmlspecialchars($recent['url'], ENT_QUOTES, 'UTF-8') . '">';
+            if ($recent['image'] !== '') {
+                $imageUrl = rtrim((string) $_DOCUMENTS_CONF['site_url'], '/')
+                    . '/image.php?src=' . rawurlencode($recent['image']) . '&amp;w=120&amp;h=90';
+                $card .= '<span class="documents-category-card__thumb"><img src="'
+                    . htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8') . '" alt="" width="80" height="60" loading="lazy"></span>';
+            }
+            $card .= '<span class="documents-category-card__recent-title">'
+                . htmlspecialchars($recent['title'], ENT_QUOTES, 'UTF-8') . '</span></a>';
+        }
+        $card .= '</div>';
+    }
+
+    $card .= '<footer class="documents-category-card__footer"><a href="'
+        . htmlspecialchars($categoryUrl, ENT_QUOTES, 'UTF-8') . '">'
+        . htmlspecialchars($allDocumentsLabel, ENT_QUOTES, 'UTF-8')
+        . ' <span aria-hidden="true">→</span></a></footer></article>';
     $cards[] = $card;
 }
 $categoryContent = empty($cards)
@@ -77,8 +226,6 @@ $content .= DOCUMENTS_sectionBlock(
     $categoryContent
 );
 
-$isFrench = isset($_CONF['language'])
-    && strpos(strtolower((string) $_CONF['language']), 'french') === 0;
 $stats = DOCUMENTS_homeStatsBlock();
 if ($stats !== '') {
     $statsTitle = $isFrench ? 'Statistiques' : 'Statistics';
