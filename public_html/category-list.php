@@ -401,7 +401,9 @@ if ($totalPages > 1) {
 }
 
 $content .= DOCUMENTS_sectionBlock(
-    isset($LANG_DOCUMENTS_1['documents']) ? $LANG_DOCUMENTS_1['documents'] : 'Documents',
+    isset($LANG_DOCUMENTS_1['browse_documents'])
+        ? $LANG_DOCUMENTS_1['browse_documents']
+        : (isset($LANG_DOCUMENTS_1['documents']) ? $LANG_DOCUMENTS_1['documents'] : 'Documents'),
     $block
 );
 
