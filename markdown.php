@@ -16,6 +16,16 @@ function DOCUMENTS_textareaHasMarkdown($value)
     return preg_match('/(^|\n)\s*(?:#{2,4}\s+|[-+*]\s+|\d+[.)]\s+|>\s+)|\*\*[^\n*]+\*\*|__[^\n_]+__|`[^\n`]+`|\[[^\]\n]+\]\([^\s)]+\)|(^|\n)\s*\|?.+\|.+\n\s*\|?\s*:?-{3,}/m', $value) === 1;
 }
 
+function DOCUMENTS_markdownExpandAutotags($html)
+{
+    $html = (string) $html;
+    if ($html === '' || strpos($html, '[') === false || !function_exists('PLG_replaceTags')) {
+        return $html;
+    }
+
+    return (string) PLG_replaceTags($html);
+}
+
 function DOCUMENTS_markdownSafeUrl($url)
 {
     $url = trim(html_entity_decode((string) $url, ENT_QUOTES, 'UTF-8'));
@@ -152,7 +162,8 @@ function DOCUMENTS_renderMarkdownTextarea($value)
     }
 
     if (!DOCUMENTS_textareaHasMarkdown($value)) {
-        return nl2br(htmlspecialchars($value, ENT_QUOTES, 'UTF-8'));
+        $safe = nl2br(htmlspecialchars($value, ENT_QUOTES, 'UTF-8'));
+        return DOCUMENTS_markdownExpandAutotags($safe);
     }
 
     $lines = explode("\n", $value);
@@ -277,5 +288,5 @@ function DOCUMENTS_renderMarkdownTextarea($value)
     $flushParagraph();
     $closeList();
 
-    return $html;
+    return DOCUMENTS_markdownExpandAutotags($html);
 }
