@@ -56,17 +56,32 @@
 .documents-form-field select,
 .documents-form-field textarea {
     width: 100%;
-    padding: .55rem .65rem;
+    padding: .65rem .75rem;
     border: 1px solid #cfd6df;
     border-radius: 7px;
     background: #fff;
     color: inherit;
     font: inherit;
+    line-height: 1.45;
 }
 
 .documents-form-field textarea {
-    min-height: 180px;
+    min-height: 300px;
     resize: vertical;
+}
+
+.documents-form-field select,
+.documents-form-card select {
+    min-height: 46px;
+    height: auto;
+    line-height: 1.45;
+}
+
+.documents-form-field select option,
+.documents-form-card select option {
+    white-space: normal;
+    line-height: 1.45;
+    padding: .35rem .45rem;
 }
 
 .documents_help {
@@ -133,6 +148,10 @@
     .documents-form-field .document_field_edit {
         display: block;
         margin-bottom: .35rem;
+    }
+
+    .documents-form-field textarea {
+        min-height: 220px;
     }
 
     .documents_help {
