@@ -22,6 +22,11 @@
 
 /** @package Documents */
 
+/* Geeklog 2.2.x may require plugin functions.inc from inside a core function.
+ * Explicitly bind the core globals so this file behaves identically whether it
+ * is included from global scope (Geeklog 2.1.1) or function scope (2.2.x). */
+global $_CONF, $_TABLES, $_DB_table_prefix, $_PLUGINS, $_DOCUMENTS_CONF;
+
 if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'functions.inc') !== false) {
     die('This file can not be used on its own.');
 }
@@ -133,13 +138,7 @@ $_DOCUMENTS_CONF['date'] = 'd.m.Y';
 $_DOCUMENTS_CONF['db_date'] = '%d %m %Y';
 $_DOCUMENTS_CONF['album_date'] = 'd.m.Y';
 
-/* Geeklog 2.2.x may include plugin functions.inc files from inside a core
- * function, so database globals are not automatically imported into this
- * include scope. Resolve the table prefix explicitly from $GLOBALS while
- * keeping the legacy local variable as a fallback for Geeklog 2.1.1. */
-$documentsDbTablePrefix = isset($GLOBALS['_DB_table_prefix'])
-    ? (string) $GLOBALS['_DB_table_prefix']
-    : (isset($_DB_table_prefix) ? (string) $_DB_table_prefix : '');
+$documentsDbTablePrefix = isset($_DB_table_prefix) ? (string) $_DB_table_prefix : '';
 
 $_TABLES['documents_cat'] = $documentsDbTablePrefix . 'documents_cat';
 $_TABLES['documents_docs'] = $documentsDbTablePrefix . 'documents_docs';
