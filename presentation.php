@@ -9,7 +9,7 @@
 // | Side-effect-free public presentation helpers.                             |
 // +---------------------------------------------------------------------------+
 
-if (isset($_SERVER['PHP_SELF']) && strpos(strtolower($_SERVER['PHP_SELF']), 'presentation.php') !== false) {
+if (isset($_SERVER['PHP_SELF']) && strpos(strtolower((string) $_SERVER['PHP_SELF']), 'presentation.php') !== false) {
     die('This file can not be used on its own.');
 }
 
@@ -40,16 +40,25 @@ function DOCUMENTS_loadPublicStyles()
         $folder = 'documents';
     }
 
+    $cssPath = isset($_CONF['path_html'])
+        ? rtrim((string) $_CONF['path_html'], '/\\') . DIRECTORY_SEPARATOR
+            . $folder . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'documents.css'
+        : '';
+    $cssVersion = ($cssPath !== '' && is_file($cssPath))
+        ? (string) filemtime($cssPath)
+        : '1.2.0';
+    $cssQuery = '?v=' . rawurlencode($cssVersion);
+
     if (strtolower(get_class($_SCRIPTS)) === 'scripts') {
         return (bool) $_SCRIPTS->setCSSFile(
             'documents_public',
-            '/' . $folder . '/css/documents.css',
+            '/' . $folder . '/css/documents.css' . $cssQuery,
             false
         );
     }
 
     $url = rtrim((string) $_CONF['site_url'], '/')
-        . '/' . rawurlencode($folder) . '/css/documents.css';
+        . '/' . rawurlencode($folder) . '/css/documents.css' . $cssQuery;
 
     return (bool) $_SCRIPTS->setCSSFile('documents_public', $url);
 }
