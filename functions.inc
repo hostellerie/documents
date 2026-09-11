@@ -2,7 +2,7 @@
 
 /* Reminder: always indent with 4 spaces (no tabs). */
 // +---------------------------------------------------------------------------+
-// | Documents Plugin 1.1.9                                                    |
+// | Documents Plugin 1.2.0                                                    |
 // +---------------------------------------------------------------------------+
 // | functions.inc                                                             |
 // |                                                                           |
@@ -133,13 +133,21 @@ $_DOCUMENTS_CONF['date'] = 'd.m.Y';
 $_DOCUMENTS_CONF['db_date'] = '%d %m %Y';
 $_DOCUMENTS_CONF['album_date'] = 'd.m.Y';
 
-$_TABLES['documents_cat'] = $_DB_table_prefix . 'documents_cat';
-$_TABLES['documents_docs'] = $_DB_table_prefix . 'documents_docs';
-$_TABLES['documents_fields'] = $_DB_table_prefix . 'documents_fields';
-$_TABLES['documents_values'] = $_DB_table_prefix . 'documents_values';
-$_TABLES['documents_selects'] = $_DB_table_prefix . 'documents_selects';
-$_TABLES['documents_selects_group'] = $_DB_table_prefix . 'documents_selects_group';
-$_TABLES['documents_pics'] = $_DB_table_prefix . 'documents_pics';
+/* Geeklog 2.2.x may include plugin functions.inc files from inside a core
+ * function, so database globals are not automatically imported into this
+ * include scope. Resolve the table prefix explicitly from $GLOBALS while
+ * keeping the legacy local variable as a fallback for Geeklog 2.1.1. */
+$documentsDbTablePrefix = isset($GLOBALS['_DB_table_prefix'])
+    ? (string) $GLOBALS['_DB_table_prefix']
+    : (isset($_DB_table_prefix) ? (string) $_DB_table_prefix : '');
+
+$_TABLES['documents_cat'] = $documentsDbTablePrefix . 'documents_cat';
+$_TABLES['documents_docs'] = $documentsDbTablePrefix . 'documents_docs';
+$_TABLES['documents_fields'] = $documentsDbTablePrefix . 'documents_fields';
+$_TABLES['documents_values'] = $documentsDbTablePrefix . 'documents_values';
+$_TABLES['documents_selects'] = $documentsDbTablePrefix . 'documents_selects';
+$_TABLES['documents_selects_group'] = $documentsDbTablePrefix . 'documents_selects_group';
+$_TABLES['documents_pics'] = $documentsDbTablePrefix . 'documents_pics';
 
 function plugin_getmenuitems_documents()
 {
