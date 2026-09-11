@@ -44,10 +44,11 @@ function DOCUMENTS_loadPublicStyles()
         ? rtrim((string) $_CONF['path_html'], '/\\') . DIRECTORY_SEPARATOR
             . $folder . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'documents.css'
         : '';
-    $cssVersion = ($cssPath !== '' && is_file($cssPath))
+    $pluginVersion = '1.2.0';
+    $cssMtime = ($cssPath !== '' && is_file($cssPath))
         ? (string) filemtime($cssPath)
-        : '1.2.0';
-    $cssQuery = '?v=' . rawurlencode($cssVersion);
+        : '0';
+    $cssQuery = '?v=' . rawurlencode($pluginVersion . '-' . $cssMtime);
 
     if (strtolower(get_class($_SCRIPTS)) === 'scripts') {
         return (bool) $_SCRIPTS->setCSSFile(
