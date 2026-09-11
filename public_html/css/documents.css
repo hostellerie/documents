@@ -167,14 +167,58 @@
     border-top: 1px solid rgba(127, 127, 127, .25);
 }
 
-.documents-page-description,
-.documents-page-intro {
-    max-width: 72ch;
+.documents-page-description {
+    max-width: 90ch;
     margin-top: .65rem;
     color: #626b78;
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;
+}
+
+.documents-page-intro {
+    max-width: none;
+    margin-top: .65rem;
+    color: #626b78;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+/*
+ * Long-form text in configurable headers and footers uses a readable 90ch
+ * measure. Media and tabular embeds keep the full width of the page container.
+ */
+.documents-page-intro :is(h2, h3, h4, h5, h6, p, ul, ol, dl, blockquote),
+.documents-page-footer :is(h2, h3, h4, h5, h6, p, ul, ol, dl, blockquote),
+.documents-category-header :is(h2, h3, h4, h5, h6, p, ul, ol, dl, blockquote),
+.documents-category-footer :is(h2, h3, h4, h5, h6, p, ul, ol, dl, blockquote) {
+    max-width: 90ch;
+}
+
+.documents-page-intro :is(img, picture, video, iframe, table),
+.documents-page-footer :is(img, picture, video, iframe, table),
+.documents-category-header :is(img, picture, video, iframe, table),
+.documents-category-footer :is(img, picture, video, iframe, table) {
+    max-width: 100%;
+}
+
+.documents-page-intro table,
+.documents-page-footer table,
+.documents-category-header table,
+.documents-category-footer table {
+    width: 100%;
+}
+
+.documents-page-intro video,
+.documents-page-intro iframe,
+.documents-page-footer video,
+.documents-page-footer iframe,
+.documents-category-header video,
+.documents-category-header iframe,
+.documents-category-footer video,
+.documents-category-footer iframe {
+    width: 100%;
 }
 
 .documents-secondary-section {
