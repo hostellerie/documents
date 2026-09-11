@@ -202,22 +202,6 @@
     border-left: 4px solid currentColor;
 }
 
-/* Keep long-form home header/footer text readable without constraining embedded media. */
-.documents-home .documents-page-intro {
-    max-width: none;
-}
-
-.documents-home .documents-page-intro :is(p, ul, ol, dl, blockquote),
-.documents-home .documents-page-footer > :is(p, ul, ol, dl, blockquote),
-.documents-home .documents-page-footer > div :is(p, ul, ol, dl, blockquote) {
-    max-width: 90ch;
-}
-
-.documents-home .documents-page-intro :is(img, picture, video, iframe, table),
-.documents-home .documents-page-footer :is(img, picture, video, iframe, table) {
-    max-width: 100%;
-}
-
 @media (max-width: 700px) {
     .documents-submit-grid {
         grid-template-columns: 1fr;
