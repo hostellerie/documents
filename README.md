@@ -108,15 +108,17 @@ Consumers such as Hub and IndexNow should use these interfaces instead of rebuil
 
 ### Shared capabilities and services
 
-Documents declares provider-owned capabilities through `plugin_getcapabilities_documents()`. The current 1.2.0 contract advertises normalized content read/collection/search, popular-content ordering, canonical URL resolution, lifecycle events, syndication, structured field descriptions, source-field reads and `dashboard.summary`.
+Documents declares provider-owned capabilities through `plugin_getcapabilities_documents()`. The current 1.2.0 contract advertises normalized content read/collection/search, popular-content ordering, canonical URL resolution, lifecycle events, syndication, structured field descriptions, source-field read/collection/update capabilities and `dashboard.summary`.
 
-Read-only internal services exposed through `PLG_invokeService()` include:
+Internal services exposed through `PLG_invokeService()` include:
 
 - `dashboard_summary` — bounded administration metrics for consumers such as Eclipse;
 - `fields_describe` — category/document field definitions without exposing `documents_fields` directly;
-- `source_fields_get` — exact stored field values for one accessible document, explicitly read-only in 1.2.0.
+- `source_fields_get` — exact stored field values for one accessible document, including field-level writability and SHA-256 fingerprints;
+- `source_fields_collection` — bounded, cursor-based enumeration of accessible documents with optional field selection and literal `contains` filtering;
+- `source_fields_update` — controlled updates for writable editorial `text` and `textarea` fields only, with edit ACL checks, required-field validation, optimistic concurrency through `old_fingerprint`, optional `dry_run`, modification timestamp refresh and `PLG_itemSaved()` notification.
 
-Agent and Hub can continue to use Item Info for normal content. Eclipse can consume `dashboard.summary` instead of querying Documents tables. Specialized consumers that genuinely need the configurable Documents schema can use the field services without learning private table layouts.
+Agent and Hub can continue to use Item Info for normal content. Eclipse can consume `dashboard.summary` instead of querying Documents tables. Agent, AdSense and future audit/migration tools can inspect or update source text through provider-owned services without learning private table layouts. Non-text integration fields such as images, albums, markers, files and categories remain non-writable through this source-field contract.
 
 The repository also ships a static root-level `plugin.json` manifest for Monitor, Hub, repository catalogs and other tooling that needs identity/compatibility metadata without executing plugin PHP.
 
