@@ -431,7 +431,7 @@ function service_source_fields_update_documents($args, &$output, &$svc_msg)
         return PLG_RET_ERROR;
     }
 
-    $sql = "SELECT f.fid,f.f_name,f.f_type,f.var_name,f.f_required,v.v_value "
+    $sql = "SELECT f.fid,f.cat_id,f.f_name,f.f_order,f.f_type,f.sel_id,f.var_name,f.f_required,v.v_value "
         . "FROM {$_TABLES['documents_fields']} AS f "
         . "LEFT JOIN {$_TABLES['documents_values']} AS v "
         . "ON v.field_id=f.fid AND v.doc_url='" . DB_escapeString($documentId) . "' "
@@ -447,8 +447,9 @@ function service_source_fields_update_documents($args, &$output, &$svc_msg)
         }
     }
 
-    $applied = array();
-    $safeDocument = DB_escapeString($documentId);
+    $values = array();
+    $changedFields = array();
+    $planned = array();
 
     foreach ($changes as $name => $change) {
         $name = trim((string) $name);
@@ -465,55 +466,67 @@ function service_source_fields_update_documents($args, &$output, &$svc_msg)
 
         $currentValue = isset($field['v_value']) ? stripslashes((string) $field['v_value']) : '';
         $expected = isset($change['old_fingerprint']) ? trim((string) $change['old_fingerprint']) : '';
-        if ($expected === '' || !hash_equals(DOCUMENTS_serviceSourceFieldFingerprint($currentValue), $expected)) {
+        if ($expected === ''
+            || !hash_equals(DOCUMENTS_serviceSourceFieldFingerprint($currentValue), $expected)) {
             $svc_msg['error_desc'] = 'Source field changed since it was read: ' . $name;
             return PLG_RET_ERROR;
         }
 
         $newValue = isset($change['new_value']) ? (string) $change['new_value'] : '';
+        if (function_exists('DOCUMENTS_normalizeFieldInput')) {
+            $newValue = DOCUMENTS_normalizeFieldInput((string) $field['f_type'], $newValue);
+        }
         if ((int) $field['f_required'] === 1 && trim($newValue) === '') {
             $svc_msg['error_desc'] = 'Required source field cannot be empty: ' . $name;
             return PLG_RET_ERROR;
         }
 
-        if (function_exists('DOCUMENTS_normalizeFieldInput')) {
-            $newValue = DOCUMENTS_normalizeFieldInput((string) $field['f_type'], $newValue);
-        }
-
-        $safeValue = DB_escapeString($newValue);
         $fieldId = (int) $field['fid'];
-        $valueResult = DB_query(
-            "SELECT vid FROM {$_TABLES['documents_values']} "
-            . "WHERE doc_url='{$safeDocument}' AND field_id={$fieldId} LIMIT 1"
-        );
-        $valueRow = DB_numRows($valueResult) > 0 ? DB_fetchArray($valueResult) : array();
-        $valueId = is_array($valueRow) && !empty($valueRow['vid']) ? (int) $valueRow['vid'] : 0;
-
-        if ($valueId > 0) {
-            DB_query(
-                "UPDATE {$_TABLES['documents_values']} SET v_value='{$safeValue}' WHERE vid={$valueId}"
-            );
-        } else {
-            DB_query(
-                "INSERT INTO {$_TABLES['documents_values']} SET field_id={$fieldId}, "
-                . "v_value='{$safeValue}', doc_url='{$safeDocument}', "
-                . "owner_id=" . (int) $context['owner_id'] . ", group_id=" . (int) $context['group_id'] . ", "
-                . "perm_owner=" . (int) $context['perm_owner'] . ", perm_group=" . (int) $context['perm_group'] . ", "
-                . "perm_members=" . (int) $context['perm_members'] . ", perm_anon=" . (int) $context['perm_anon']
-            );
-        }
-
-        if (DB_error()) {
-            $svc_msg['error_desc'] = 'Unable to update source field: ' . $name;
-            return PLG_RET_ERROR;
-        }
-
-        $applied[] = array(
+        $values[$fieldId] = $newValue;
+        $changedFields[] = $field;
+        $planned[] = array(
             'name' => $name,
-            'fingerprint' => DOCUMENTS_serviceSourceFieldFingerprint($newValue)
+            'old_fingerprint' => DOCUMENTS_serviceSourceFieldFingerprint($currentValue),
+            'new_fingerprint' => DOCUMENTS_serviceSourceFieldFingerprint($newValue)
         );
     }
 
+    if (!empty($args['dry_run'])) {
+        $output = array(
+            'schema' => 1,
+            'provider' => 'documents',
+            'type' => 'documents',
+            'subtype' => 'document',
+            'id' => $documentId,
+            'dry_run' => true,
+            'planned_fields' => $planned
+        );
+        return PLG_RET_OK;
+    }
+
+    if (!function_exists('DOCUMENTS_documentMutationUpsertValues')) {
+        require_once $_CONF['path'] . 'plugins/documents/document_mutations.php';
+    }
+
+    $permissions = array(
+        (int) $context['perm_owner'],
+        (int) $context['perm_group'],
+        (int) $context['perm_members'],
+        (int) $context['perm_anon']
+    );
+    if (!DOCUMENTS_documentMutationUpsertValues(
+        $documentId,
+        $values,
+        $changedFields,
+        (int) $context['owner_id'],
+        (int) $context['group_id'],
+        $permissions
+    )) {
+        $svc_msg['error_desc'] = 'Unable to update document source fields.';
+        return PLG_RET_ERROR;
+    }
+
+    $safeDocument = DB_escapeString($documentId);
     DB_query(
         "UPDATE {$_TABLES['documents_docs']} SET modified=NOW() "
         . "WHERE doc_url='{$safeDocument}'"
@@ -533,7 +546,7 @@ function service_source_fields_update_documents($args, &$output, &$svc_msg)
         'type' => 'documents',
         'subtype' => 'document',
         'id' => $documentId,
-        'updated_fields' => $applied,
+        'updated_fields' => $planned,
         'date_modified' => time()
     );
 
