@@ -346,7 +346,10 @@ Before tagging 1.2.0, verify on a real Geeklog installation that:
 - `PLG_getItemInfo('documents', '*', ...)` supports recent and `hits-desc` collections without exposing inaccessible documents;
 - `PLG_invokeService('documents', 'dashboard_summary', ...)` returns the bounded administration summary only to an authorized Documents administrator;
 - `PLG_invokeService('documents', 'fields_describe', ...)` returns field definitions for an accessible document/category without consumer-side SQL, and rejects categories the current user cannot read;
-- `PLG_invokeService('documents', 'source_fields_get', ...)` returns exact field values only for content the current user may read and reports every returned field as read-only;
+- `PLG_invokeService('documents', 'source_fields_get', ...)` returns exact field values only for content the current user may read, includes fingerprints, and marks only editorial `text`/`textarea` fields writable;
+- `PLG_invokeService('documents', 'source_fields_collection', ...)` respects `limit`, `cursor`, requested fields, literal `contains` filters and per-document read permissions;
+- `PLG_invokeService('documents', 'source_fields_update', ...)` rejects callers without edit rights, rejects stale/missing `old_fingerprint` values, refuses non-writable field types, preserves required-field validation, and supports `dry_run` without mutation;
+- a successful source-field update changes only the requested editorial fields, refreshes `modified`, returns new fingerprints and emits `PLG_itemSaved()`;
 - Eclipse can render the summary without querying Documents private tables;
 - Agent can normalize Documents resources from Item Info and capability discovery;
 - Hub can identify Documents items, resolve canonical URLs and react to save/delete lifecycle events using the shared contracts.
