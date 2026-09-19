@@ -6,13 +6,18 @@ on:
       - documents-1.2.0
     paths-ignore:
       - 'dist/**'
+      - 'README.md'
+      - 'ROADMAP.md'
+      - 'CHANGELOG.md'
+      - 'TESTING.md'
+      - 'docs/**'
   pull_request:
     branches:
       - main
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: documents-1.2.0-${{ github.ref }}
@@ -31,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -59,12 +64,14 @@ jobs:
   package:
     name: Build installable ZIP
     needs: regression
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build installable ZIP
         shell: bash
@@ -95,7 +102,7 @@ jobs:
           unzip -t dist/documents_1.2.0_2.1.1.zip >/dev/null
 
       - name: Publish workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: documents-1.2.0-installable
           path: dist/documents_1.2.0_2.1.1.zip
