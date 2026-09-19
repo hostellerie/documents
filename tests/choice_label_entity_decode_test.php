@@ -9,7 +9,7 @@ if ($source === false) {
     exit(1);
 }
 
-if (strpos($source, "html_entity_decode($display, ENT_QUOTES, 'UTF-8')") === false) {
+if (strpos($source, "html_entity_decode(\$display, ENT_QUOTES, 'UTF-8')") === false) {
     fwrite(STDERR, "Choice labels are not normalized before final HTML escaping.\n");
     exit(1);
 }
