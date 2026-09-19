@@ -256,7 +256,7 @@ function DOCUMENTS_publicFieldBlock($field, $rendered, $className)
 
 function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
 {
-    global $_CONF, $_DOCUMENTS_CONF, $_SCRIPTS, $_TABLES, $LANG_DOCUMENTS_1;
+    global $_CONF, $_DOCUMENTS_CONF, $_SCRIPTS, $_TABLES, $LANG_DOCUMENTS_1, $LANG03;
 
     $data = DOCUMENTS_publicDocumentData($categorySlug, $documentSlug);
     if (empty($data)) {
@@ -413,6 +413,48 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     $template->set_var('hits', isset($document['hits']) ? (int) $document['hits'] : 0);
     $template->set_var('category_name', htmlspecialchars(stripslashes((string) $category['cat_name']), ENT_QUOTES, 'UTF-8'));
     $template->set_var('category_url', htmlspecialchars(DOCUMENTS_interopCanonicalUrl($category['cat_url']), ENT_QUOTES, 'UTF-8'));
+
+    $commentsTitle = isset($LANG03[1]) && trim((string) $LANG03[1]) !== ''
+        ? (string) $LANG03[1] : 'Comments';
+    $commentsHeading = '';
+    if (defined('VERSION') && version_compare((string) VERSION, '2.2.2', '<')) {
+        $commentsHeading = '<h2 class="documents-document__comments-title">'
+            . htmlspecialchars($commentsTitle, ENT_QUOTES, 'UTF-8') . '</h2>';
+    }
+
+    $commentbar = '';
+    if ($status === DOCUMENTS_STATUS_ACTIVE && function_exists('CMT_userComments')) {
+        $deleteOption = SEC_hasRights('documents.admin')
+            && SEC_hasAccess(
+                (int) $document['owner_id'],
+                (int) $document['group_id'],
+                (int) $document['perm_owner'],
+                (int) $document['perm_group'],
+                (int) $document['perm_members'],
+                (int) $document['perm_anon']
+            ) == 3;
+
+        $commentOrder = isset($_REQUEST['order']) ? (string) $_REQUEST['order'] : '';
+        $commentFormat = isset($_REQUEST['format']) ? (string) $_REQUEST['format'] : '';
+        $commentPage = isset($_REQUEST['cpage']) ? max(1, (int) $_REQUEST['cpage']) : 1;
+
+        $commentbar = CMT_userComments(
+            $documentSlug,
+            $title,
+            'documents',
+            $commentOrder,
+            $commentFormat,
+            0,
+            $commentPage,
+            false,
+            $deleteOption,
+            0
+        );
+    }
+
+    $template->set_var('comments_title', htmlspecialchars($commentsTitle, ENT_QUOTES, 'UTF-8'));
+    $template->set_var('comments_heading', $commentsHeading);
+    $template->set_var('commentbar', $commentbar);
 
     $template->parse('output', 'doc');
     $body = $template->finish($template->get_var('output'));
