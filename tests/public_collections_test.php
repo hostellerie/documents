@@ -44,8 +44,8 @@ $listCss = documents_public_read($root, 'public_html/css/documents-list.css', $f
 $updates = documents_public_read($root, 'install_updates.php', $failures);
 
 documents_public_require($rewrite, 'RewriteRule ^$ home.php [L]', 'Documents root is not routed to the public home page.', $failures);
-documents_public_require($rewrite, 'index.php?mode=view&cat=$1', 'Clean category routes are not using the public router.', $failures);
-documents_public_require($rewrite, 'index.php?mode=view&cat=$1&doc=$2', 'Clean document routes are not using the public router.', $failures);
+documents_public_require($rewrite, 'category-route.php?cat=$1', 'Clean category routes are not using the dedicated category router.', $failures);
+documents_public_require($rewrite, 'document.php?cat=$1&doc=$2', 'Clean document routes are not using the dedicated document controller.', $failures);
 documents_public_forbid($rewrite, 'DirectoryIndex home.php', 'Public routing should not require an additional DirectoryIndex override.', $failures);
 
 documents_public_require($updates, 'DOCUMENTS_writeHtaccess(true)', '1.2.0 upgrade does not refresh existing rewrite rules.', $failures);
@@ -60,7 +60,7 @@ documents_public_forbid($home, 'ADMIN_list(', 'Modern home must not depend on AD
 documents_public_require($category, '<main class="documents-category">', 'Modern category semantic main element is missing.', $failures);
 documents_public_require($category, '<nav class="documents-breadcrumb"', 'Category breadcrumb is missing.', $failures);
 documents_public_require($category, 'aria-current="page"', 'Category breadcrumb does not identify the current category.', $failures);
-documents_public_require($category, 'SELECT COUNT(*) total', 'Modern category pagination count is missing.', $failures);
+documents_public_require($category, 'SELECT COUNT(DISTINCT d.doc_url) total', 'Modern category pagination count is missing.', $failures);
 documents_public_require($category, "COM_getPermSQL('AND', 0, 2, 'd')", 'Modern category document permissions are not enforced.', $failures);
 documents_public_require($category, '$where .= " AND d.active=1";', 'Public category list does not restrict ordinary visitors to active documents.', $failures);
 documents_public_require($category, 'DOCUMENTS_listFieldsForCategory(', 'Category list is not driven by f_on_list fields.', $failures);
