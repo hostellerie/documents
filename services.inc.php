@@ -420,6 +420,9 @@ function service_source_fields_update_documents($args, &$output, &$svc_msg)
     if (!function_exists('DOCUMENTS_canEditDocument')) {
         require_once $_CONF['path'] . 'plugins/documents/include_compat.php';
     }
+    if (!function_exists('DOCUMENTS_normalizeFieldInput')) {
+        require_once $_CONF['path'] . 'plugins/documents/security.php';
+    }
     if (!DOCUMENTS_canEditDocument($context)) {
         $svc_msg['error_desc'] = 'Document edit permission is required.';
         return PLG_RET_AUTH_FAILED;
