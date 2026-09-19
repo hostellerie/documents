@@ -4,7 +4,7 @@ $root = dirname(__DIR__);
 $template = file_get_contents($root . '/templates/marker_form.thtml');
 $form = file_get_contents($root . '/public_form.php');
 
-if (strpos($form, "set_var('var_name', $name)") === false) {
+if (strpos($form, "set_var('var_name', \$name)") === false) {
     fwrite(STDERR, "public_form.php must pass the marker field variable name to the template.\n");
     exit(1);
 }
