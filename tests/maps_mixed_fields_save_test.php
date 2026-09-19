@@ -6,7 +6,7 @@ $root = dirname(__DIR__);
 $source = file_get_contents($root . '/maps_adapter.php');
 
 $checks = array(
-    "return $hasMarker && DOCUMENTS_hasMaps();" => 'Maps support depends on marker + Maps availability only',
+    'return $hasMarker && DOCUMENTS_hasMaps();' => 'Maps support depends on marker + Maps availability only',
     "array('album', 'file', 'radio')" => 'legacy mixed-field rejection removed',
     "array('file', 'category', 'album')" => 'historical fields are preserved when absent from request',
     "array('select', 'radio')" => 'radio values receive the same option validation as selects'
@@ -14,8 +14,8 @@ $checks = array(
 
 $failed = array();
 
-if (strpos($source, "return $hasMarker && DOCUMENTS_hasMaps();") === false) {
-    $failed[] = $checks["return $hasMarker && DOCUMENTS_hasMaps();"];
+if (strpos($source, 'return $hasMarker && DOCUMENTS_hasMaps();') === false) {
+    $failed[] = $checks['return $hasMarker && DOCUMENTS_hasMaps();'];
 }
 if (strpos($source, "array('album', 'file', 'radio')") !== false) {
     $failed[] = $checks["array('album', 'file', 'radio')"];
