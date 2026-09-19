@@ -42,7 +42,7 @@ documents_mg_require($runtime, 'mediagallery_adapter.php', 'Runtime does not loa
 documents_mg_require($adapter, 'plugin_getuseroption_mediagallery()', 'Member album root is not obtained through the MediaGallery user callback.', $failures);
 documents_mg_require($adapter, 'new mgAlbum($rootId)', 'MediaGallery album tree does not start from the member root album.', $failures);
 documents_mg_require($adapter, "method_exists(\$album, 'getChildrenVisible')", 'MediaGallery visible child traversal is missing.', $failures);
-documents_mg_require($adapter, "PLG_replaceTags('[gallery:' . \$albumId . ']')", 'MediaGallery gallery rendering is not delegated to the gallery autotag.', $failures);
+documents_mg_require($adapter, "'[album:' . \$albumId", 'MediaGallery album rendering is not delegated to the album autotag.', $failures);
 documents_mg_require($editor, 'DOCUMENTS_mediaGalleryAlbumSelect($field[\'var_name\'], $value)', 'Document editor does not use the member album tree selector.', $failures);
 documents_mg_require($controller, 'DOCUMENTS_renderPublicDocument(', 'Public document controller does not use the unified renderer.', $failures);
 documents_mg_require($renderer, 'DOCUMENTS_mediaGalleryRenderAlbum($value)', 'Unified public document renderer does not use the MediaGallery adapter.', $failures);
