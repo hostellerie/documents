@@ -443,6 +443,8 @@ function plugin_getcapabilities_documents()
             'content.syndication',
             'content.fields.read',
             'content.source_fields.read',
+            'content.source_fields.collection',
+            'content.source_fields.update',
             'dashboard.summary'
         )
     );
@@ -463,6 +465,8 @@ function DOCUMENTS_interopCapabilities()
         'php_blocks' => true,
         'content_fields' => true,
         'source_fields' => true,
+        'source_fields_collection' => true,
+        'source_fields_update' => true,
         'dashboard_summary' => true,
         'audience_metrics' => false,
         'search_metrics' => false,
