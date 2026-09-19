@@ -65,6 +65,19 @@ if (strpos($css, '.documents-home__stats') === false) {
 if (strpos($css, '.documents-message') === false) {
     $failures[] = 'Public feedback-message styling is missing.';
 }
+if (strpos($css, '.documents-document__prose h2') === false
+    || strpos($css, '.documents-document__prose blockquote') === false
+    || strpos($css, '.documents-document__prose table') === false) {
+    $failures[] = 'Long-form document prose styling is incomplete.';
+}
+if (strpos($css, 'var(--eclipse-primary, currentColor)') === false
+    || strpos($css, 'var(--eclipse-reading, 72ch)') === false) {
+    $failures[] = 'Document prose must use optional theme tokens with portable fallbacks.';
+}
+if (strpos($presentation, "$cssQuery = '?v='") === false
+    || strpos($presentation, 'filemtime($cssPath)') === false) {
+    $failures[] = 'Public stylesheet cache-busting versioning is missing.';
+}
 
 if (!empty($failures)) {
     fwrite(STDERR, "Documents public presentation checks failed:\n");
