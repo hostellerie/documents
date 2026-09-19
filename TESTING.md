@@ -345,7 +345,7 @@ Before tagging 1.2.0, verify on a real Geeklog installation that:
 - `plugin_getcapabilities_documents()` is discoverable and reports the documented content and dashboard capabilities;
 - `PLG_getItemInfo('documents', '*', ...)` supports recent and `hits-desc` collections without exposing inaccessible documents;
 - `PLG_invokeService('documents', 'dashboard_summary', ...)` returns the bounded administration summary only to an authorized Documents administrator;
-- `PLG_invokeService('documents', 'fields_describe', ...)` returns field definitions for an accessible document/category without consumer-side SQL;
+- `PLG_invokeService('documents', 'fields_describe', ...)` returns field definitions for an accessible document/category without consumer-side SQL, and rejects categories the current user cannot read;
 - `PLG_invokeService('documents', 'source_fields_get', ...)` returns exact field values only for content the current user may read and reports every returned field as read-only;
 - Eclipse can render the summary without querying Documents private tables;
 - Agent can normalize Documents resources from Item Info and capability discovery;
