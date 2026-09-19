@@ -44,6 +44,7 @@ $runtime = DOCUMENTS_rcRead($root, 'runtime.php', $failures);
 $navigation = DOCUMENTS_rcRead($root, 'navigation.php', $failures);
 $presentation = DOCUMENTS_rcRead($root, 'presentation.php', $failures);
 $interop = DOCUMENTS_rcRead($root, 'interoperability.php', $failures);
+$services = DOCUMENTS_rcRead($root, 'services.inc.php', $failures);
 $indexability = DOCUMENTS_rcRead($root, 'indexability.php', $failures);
 $seo = DOCUMENTS_rcRead($root, 'seo.php', $failures);
 $storage = DOCUMENTS_rcRead($root, 'storage.php', $failures);
@@ -130,6 +131,11 @@ $checks = array(
     array($interop, 'function plugin_idtourl_documents(', 'Canonical ID-to-URL callback is missing.'),
     array($interop, 'function plugin_urltoid_documents(', 'Canonical URL-to-ID callback is missing.'),
     array($interop, 'function plugin_collectSitemapItems_documents(', 'Sitemap callback is missing.'),
+    array($interop, 'function plugin_getcapabilities_documents(', 'Shared capability declaration is missing.'),
+    array($interop, "'content.popular'", 'Popular-content capability is missing.'),
+    array($services, 'function service_dashboard_summary_documents(', 'Dashboard summary service is missing.'),
+    array($services, 'function service_fields_describe_documents(', 'Structured field-description service is missing.'),
+    array($services, 'function service_source_fields_get_documents(', 'Source-field read service is missing.'),
     array($indexability, 'function DOCUMENTS_isPubliclyIndexable(', 'Indexability service is missing.'),
     array($indexability, 'function DOCUMENTS_notifyPublicTransition(', 'Public lifecycle transition service is missing.'),
     array($seo, 'application/ld+json', 'JSON-LD output is missing.'),
@@ -160,7 +166,7 @@ $checks = array(
 
     array($package, 'PHP 5.6 regression tests', 'Release package is not gated by PHP 5.6 regression tests.'),
     array($package, 'PHP 8.1 regression tests', 'Release package is not gated by PHP 8.1 regression tests.'),
-    array($package, 'unzip -t dist/documents_1.2.0-2.1.1.zip', 'Release archive integrity check is missing.')
+    array($package, 'unzip -t dist/documents_1.2.0_2.1.1.zip', 'Release archive integrity check is missing.')
 );
 
 foreach ($checks as $check) {
