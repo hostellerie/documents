@@ -32,7 +32,11 @@ function DOCUMENTS_serviceCurrentUid()
 
 function DOCUMENTS_serviceDocumentContext($id)
 {
-    global $_TABLES;
+    global $_CONF, $_TABLES;
+
+    if (!function_exists('DOCUMENTS_canViewDocument')) {
+        require_once $_CONF['path'] . 'plugins/documents/include_compat.php';
+    }
 
     $id = trim((string) $id);
     if ($id === '') {
