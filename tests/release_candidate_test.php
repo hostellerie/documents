@@ -66,6 +66,7 @@ $imageEndpoint = DOCUMENTS_rcRead($root, 'public_html/image.php', $failures);
 $categoryTemplate = DOCUMENTS_rcRead($root, 'templates/cat_form.thtml', $failures);
 $documentTemplate = DOCUMENTS_rcRead($root, 'templates/document.thtml', $failures);
 $package = DOCUMENTS_rcRead($root, '.github/workflows/package.yml', $failures);
+$manifest = DOCUMENTS_rcRead($root, 'plugin.json', $failures);
 
 $checks = array(
     array($autoinstall, "'pi_version' => '1.2.0'", 'Plugin metadata is not set to 1.2.0.'),
@@ -164,9 +165,15 @@ $checks = array(
     array($documentTemplate, '{main_content}', 'Default editorial template does not expose its main content zone.'),
     array($documentTemplate, '{properties}', 'Default editorial template does not expose structured properties.'),
 
-    array($package, 'PHP 5.6 regression tests', 'Release package is not gated by PHP 5.6 regression tests.'),
-    array($package, 'PHP 8.1 regression tests', 'Release package is not gated by PHP 8.1 regression tests.'),
-    array($package, 'unzip -t dist/documents_1.2.0_2.1.1.zip', 'Release archive integrity check is missing.')
+    array($package, "- '5.6'", 'Release package matrix is missing PHP 5.6.'),
+    array($package, "- '8.1'", 'Release package matrix is missing PHP 8.1.'),
+    array($package, 'tests/*_test.php', 'Release package is not gated by the autonomous regression suite.'),
+    array($package, 'unzip -t dist/documents_1.2.0_2.1.1.zip', 'Release archive integrity check is missing.'),
+    array($package, "find build/documents -name '.*'", 'Release archive hidden-file guard is missing.'),
+    array($manifest, '"schema": 1', 'Static plugin manifest schema is missing.'),
+    array($manifest, '"id": "documents"', 'Static plugin manifest does not identify Documents.'),
+    array($manifest, '"geeklog": "2.1.1"', 'Static plugin manifest Geeklog requirement is inconsistent.'),
+    array($manifest, '"php": "5.6.0"', 'Static plugin manifest PHP requirement is inconsistent.')
 );
 
 foreach ($checks as $check) {
