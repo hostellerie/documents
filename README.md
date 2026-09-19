@@ -6,7 +6,7 @@ Documents is a configurable structured-content plugin for Geeklog. A category de
 
 The current development target is **Documents 1.2.0**.
 
-The 1.2.0 work builds on the 1.1.x stabilization series and adds public SEO, a modern default document presentation, stronger request/input security, reusable autotags/blocks and a generic content-interoperability layer for Geeklog consumers such as Hello, Hub, IndexNow and XML Sitemap.
+The 1.2.0 work builds on the 1.1.x stabilization series and adds public SEO, a modern default document presentation, stronger request/input security, reusable autotags/blocks and a generic content-interoperability layer for Geeklog consumers such as Agent, Eclipse, Hub, Hello, IndexNow and XML Sitemap.
 
 See [ROADMAP.md](ROADMAP.md) for the wider roadmap and [TESTING.md](TESTING.md) for the release validation matrix.
 
@@ -105,6 +105,21 @@ plugin_urltoid_documents($url)
 ```
 
 Consumers such as Hub and IndexNow should use these interfaces instead of rebuilding Documents URLs or querying Documents tables.
+
+### Shared capabilities and services
+
+Documents declares provider-owned capabilities through `plugin_getcapabilities_documents()`. The current 1.2.0 contract advertises normalized content read/collection/search, popular-content ordering, canonical URL resolution, lifecycle events, syndication, structured field descriptions, source-field reads and `dashboard.summary`.
+
+Read-only internal services exposed through `PLG_invokeService()` include:
+
+- `dashboard_summary` — bounded administration metrics for consumers such as Eclipse;
+- `fields_describe` — category/document field definitions without exposing `documents_fields` directly;
+- `source_fields_get` — exact stored field values for one accessible document, explicitly read-only in 1.2.0.
+
+Agent and Hub can continue to use Item Info for normal content. Eclipse can consume `dashboard.summary` instead of querying Documents tables. Specialized consumers that genuinely need the configurable Documents schema can use the field services without learning private table layouts.
+
+The repository also ships a static root-level `plugin.json` manifest for Monitor, Hub, repository catalogs and other tooling that needs identity/compatibility metadata without executing plugin PHP.
+
 
 ### Lifecycle events
 
@@ -269,8 +284,8 @@ MediaGallery remains optional. When it is missing or inactive, Documents must no
 
 ## Validation
 
-GitHub Actions are intentionally not required for normal Documents development. Standalone regression tests remain in `tests/` and the manual compatibility/release matrix is maintained in [TESTING.md](TESTING.md).
+The release workflow is a blocking gate for Documents 1.2.0. It runs PHP syntax lint and every autonomous `tests/*_test.php` check under PHP 5.6 and PHP 8.1 before creating the installable archive. The manual compatibility/release matrix remains in [TESTING.md](TESTING.md).
 
 The 1.2.0 regression surface includes `tests/seo_interoperability_test.php`, which checks the static invariants for version metadata, supported database policy, category SEO schema, CSRF enforcement, Item Info, URL resolution, lifecycle events, sitemap contribution, autotags, blocks, syndication/statistics and the modern default template.
 
-Before a public release, execute syntax lint and the regression suite under PHP 5.6 and PHP 8.1 and complete the supported Geeklog matrix.
+Before a public release, require the GitHub Actions regression jobs to pass under PHP 5.6 and PHP 8.1, verify the generated `dist/documents_1.2.0_2.1.1.zip`, and complete the supported Geeklog manual matrix.
