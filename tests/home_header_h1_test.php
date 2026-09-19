@@ -9,10 +9,10 @@ if ($source === false) {
 }
 
 $required = array(
-    "$mainHeader = PLG_replaceTags((string) $_DOCUMENTS_CONF['documents_main_header']);",
-    "preg_match('/<h1\\b/i', $mainHeader) === 1",
-    "if (!$mainHeaderHasH1)",
-    "if ($mainHeader !== '')"
+    "\$mainHeader = PLG_replaceTags((string) \$_DOCUMENTS_CONF['documents_main_header']);",
+    "preg_match('/<h1\\\\b/i', \$mainHeader) === 1",
+    "if (!\$mainHeaderHasH1)",
+    "if (\$mainHeader !== '')"
 );
 
 foreach ($required as $needle) {
