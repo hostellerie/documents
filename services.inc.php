@@ -216,6 +216,23 @@ function service_fields_describe_documents($args, &$output, &$svc_msg)
     return PLG_RET_OK;
 }
 
+function DOCUMENTS_serviceSourceFieldWritable($type)
+{
+    $type = strtolower(trim((string) $type));
+    return $type === 'text' || $type === 'textarea';
+}
+
+function DOCUMENTS_serviceSourceFieldFingerprint($value)
+{
+    return hash('sha256', (string) $value);
+}
+
+function DOCUMENTS_serviceRequestedFieldNames($args)
+{
+    $requested = DOCUMENTS_serviceRequestedFieldNames($args);
+    return $requested;
+}
+
 function service_source_fields_get_documents($args, &$output, &$svc_msg)
 {
     global $_TABLES;
@@ -266,7 +283,10 @@ function service_source_fields_get_documents($args, &$output, &$svc_msg)
             'type' => (string) $row['f_type'],
             'format' => $format,
             'value' => isset($row['v_value']) ? stripslashes((string) $row['v_value']) : '',
-            'writable' => false
+            'writable' => DOCUMENTS_serviceSourceFieldWritable($row['f_type']),
+            'fingerprint' => DOCUMENTS_serviceSourceFieldFingerprint(
+                isset($row['v_value']) ? stripslashes((string) $row['v_value']) : ''
+            )
         );
     }
 
@@ -278,6 +298,243 @@ function service_source_fields_get_documents($args, &$output, &$svc_msg)
         'id' => $documentId,
         'category_id' => (int) $context['category_id'],
         'fields' => $fields
+    );
+
+    return PLG_RET_OK;
+}
+
+function service_source_fields_collection_documents($args, &$output, &$svc_msg)
+{
+    global $_TABLES;
+
+    $output = array();
+    $svc_msg = array();
+
+    if (DOCUMENTS_serviceRejectWeb($args, $svc_msg)) {
+        return PLG_RET_AUTH_FAILED;
+    }
+
+    $limit = isset($args['limit']) ? (int) $args['limit'] : 50;
+    if ($limit < 1) {
+        $limit = 50;
+    } elseif ($limit > 100) {
+        $limit = 100;
+    }
+
+    $cursor = isset($args['cursor']) ? max(0, (int) $args['cursor']) : 0;
+    $requested = DOCUMENTS_serviceRequestedFieldNames($args);
+    $contains = array();
+    if (isset($args['contains']) && is_array($args['contains'])) {
+        foreach ($args['contains'] as $needle) {
+            $needle = (string) $needle;
+            if ($needle !== '') {
+                $contains[] = $needle;
+            }
+        }
+    }
+
+    $scanLimit = min(500, max($limit * 5, 100));
+    $result = DB_query(
+        "SELECT did,doc_url FROM {$_TABLES['documents_docs']} "
+        . "WHERE did>" . $cursor . " ORDER BY did ASC LIMIT " . $scanLimit
+    );
+
+    $items = array();
+    $lastDid = $cursor;
+    $exhausted = true;
+
+    while ($row = DB_fetchArray($result)) {
+        if (!is_array($row) || empty($row['doc_url'])) {
+            continue;
+        }
+        $lastDid = isset($row['did']) ? (int) $row['did'] : $lastDid;
+
+        $itemArgs = array('id' => (string) $row['doc_url']);
+        if (!empty($requested)) {
+            $itemArgs['fields'] = array_keys($requested);
+        }
+        $item = array();
+        $itemMsg = array();
+        if (service_source_fields_get_documents($itemArgs, $item, $itemMsg) !== PLG_RET_OK) {
+            continue;
+        }
+
+        if (!empty($contains)) {
+            $matched = false;
+            foreach ($item['fields'] as $field) {
+                $value = isset($field['value']) ? (string) $field['value'] : '';
+                foreach ($contains as $needle) {
+                    if (strpos($value, $needle) !== false) {
+                        $matched = true;
+                        break 2;
+                    }
+                }
+            }
+            if (!$matched) {
+                continue;
+            }
+        }
+
+        $items[] = $item;
+        if (count($items) >= $limit) {
+            $exhausted = false;
+            break;
+        }
+    }
+
+    if (DB_numRows($result) >= $scanLimit && count($items) < $limit) {
+        $exhausted = false;
+    }
+
+    $output = array(
+        'schema' => 1,
+        'provider' => 'documents',
+        'type' => 'documents',
+        'subtype' => 'document',
+        'items' => $items,
+        'limit' => $limit,
+        'next_cursor' => $exhausted ? '' : (string) $lastDid
+    );
+
+    return PLG_RET_OK;
+}
+
+function service_source_fields_update_documents($args, &$output, &$svc_msg)
+{
+    global $_CONF, $_TABLES;
+
+    $output = array();
+    $svc_msg = array();
+
+    if (DOCUMENTS_serviceRejectWeb($args, $svc_msg)) {
+        return PLG_RET_AUTH_FAILED;
+    }
+
+    $documentId = isset($args['id']) ? trim((string) $args['id']) : '';
+    $context = DOCUMENTS_serviceDocumentContext($documentId);
+    if ($context === false) {
+        $svc_msg['error_desc'] = 'Document not found or not accessible.';
+        return PLG_RET_ERROR;
+    }
+
+    if (!function_exists('DOCUMENTS_canEditDocument')) {
+        require_once $_CONF['path'] . 'plugins/documents/include_compat.php';
+    }
+    if (!DOCUMENTS_canEditDocument($context)) {
+        $svc_msg['error_desc'] = 'Document edit permission is required.';
+        return PLG_RET_AUTH_FAILED;
+    }
+
+    $changes = isset($args['changes']) && is_array($args['changes']) ? $args['changes'] : array();
+    if (empty($changes)) {
+        $svc_msg['error_desc'] = 'At least one source field change is required.';
+        return PLG_RET_ERROR;
+    }
+
+    $sql = "SELECT f.fid,f.f_name,f.f_type,f.var_name,f.f_required,v.v_value "
+        . "FROM {$_TABLES['documents_fields']} AS f "
+        . "LEFT JOIN {$_TABLES['documents_values']} AS v "
+        . "ON v.field_id=f.fid AND v.doc_url='" . DB_escapeString($documentId) . "' "
+        . "WHERE f.cat_id=" . (int) $context['category_id']
+        . " ORDER BY f.f_order ASC,f.fid ASC";
+    $result = DB_query($sql);
+
+    $fieldsByName = array();
+    while ($row = DB_fetchArray($result)) {
+        $name = trim((string) $row['var_name']);
+        if ($name !== '') {
+            $fieldsByName[$name] = $row;
+        }
+    }
+
+    $applied = array();
+    $safeDocument = DB_escapeString($documentId);
+
+    foreach ($changes as $name => $change) {
+        $name = trim((string) $name);
+        if ($name === '' || !isset($fieldsByName[$name]) || !is_array($change)) {
+            $svc_msg['error_desc'] = 'Unknown or invalid source field change: ' . $name;
+            return PLG_RET_ERROR;
+        }
+
+        $field = $fieldsByName[$name];
+        if (!DOCUMENTS_serviceSourceFieldWritable($field['f_type'])) {
+            $svc_msg['error_desc'] = 'Source field is not writable through this contract: ' . $name;
+            return PLG_RET_AUTH_FAILED;
+        }
+
+        $currentValue = isset($field['v_value']) ? stripslashes((string) $field['v_value']) : '';
+        $expected = isset($change['old_fingerprint']) ? trim((string) $change['old_fingerprint']) : '';
+        if ($expected === '' || !hash_equals(DOCUMENTS_serviceSourceFieldFingerprint($currentValue), $expected)) {
+            $svc_msg['error_desc'] = 'Source field changed since it was read: ' . $name;
+            return PLG_RET_ERROR;
+        }
+
+        $newValue = isset($change['new_value']) ? (string) $change['new_value'] : '';
+        if ((int) $field['f_required'] === 1 && trim($newValue) === '') {
+            $svc_msg['error_desc'] = 'Required source field cannot be empty: ' . $name;
+            return PLG_RET_ERROR;
+        }
+
+        if (function_exists('DOCUMENTS_normalizeFieldInput')) {
+            $newValue = DOCUMENTS_normalizeFieldInput((string) $field['f_type'], $newValue);
+        }
+
+        $safeValue = DB_escapeString($newValue);
+        $fieldId = (int) $field['fid'];
+        $valueResult = DB_query(
+            "SELECT vid FROM {$_TABLES['documents_values']} "
+            . "WHERE doc_url='{$safeDocument}' AND field_id={$fieldId} LIMIT 1"
+        );
+        $valueRow = DB_numRows($valueResult) > 0 ? DB_fetchArray($valueResult) : array();
+        $valueId = is_array($valueRow) && !empty($valueRow['vid']) ? (int) $valueRow['vid'] : 0;
+
+        if ($valueId > 0) {
+            DB_query(
+                "UPDATE {$_TABLES['documents_values']} SET v_value='{$safeValue}' WHERE vid={$valueId}"
+            );
+        } else {
+            DB_query(
+                "INSERT INTO {$_TABLES['documents_values']} SET field_id={$fieldId}, "
+                . "v_value='{$safeValue}', doc_url='{$safeDocument}', "
+                . "owner_id=" . (int) $context['owner_id'] . ", group_id=" . (int) $context['group_id'] . ", "
+                . "perm_owner=" . (int) $context['perm_owner'] . ", perm_group=" . (int) $context['perm_group'] . ", "
+                . "perm_members=" . (int) $context['perm_members'] . ", perm_anon=" . (int) $context['perm_anon']
+            );
+        }
+
+        if (DB_error()) {
+            $svc_msg['error_desc'] = 'Unable to update source field: ' . $name;
+            return PLG_RET_ERROR;
+        }
+
+        $applied[] = array(
+            'name' => $name,
+            'fingerprint' => DOCUMENTS_serviceSourceFieldFingerprint($newValue)
+        );
+    }
+
+    DB_query(
+        "UPDATE {$_TABLES['documents_docs']} SET modified=NOW() "
+        . "WHERE doc_url='{$safeDocument}'"
+    );
+    if (DB_error()) {
+        $svc_msg['error_desc'] = 'Unable to update document modification time.';
+        return PLG_RET_ERROR;
+    }
+
+    if (function_exists('PLG_itemSaved')) {
+        PLG_itemSaved($documentId, 'documents');
+    }
+
+    $output = array(
+        'schema' => 1,
+        'provider' => 'documents',
+        'type' => 'documents',
+        'subtype' => 'document',
+        'id' => $documentId,
+        'updated_fields' => $applied,
+        'date_modified' => time()
     );
 
     return PLG_RET_OK;
