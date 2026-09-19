@@ -24,13 +24,13 @@ $index = documents_rewrite_test_read($root, 'public_html/index.php', $failures);
 $autoinstall = documents_rewrite_test_read($root, 'autoinstall.php', $failures);
 $package = documents_rewrite_test_read($root, '.github/workflows/package.yml', $failures);
 
-if (strpos($rewrite, 'index.php?mode=view&cat=$1') === false) {
-    $failures[] = 'Category clean URLs must be rewritten through index.php?mode=view.';
+if (strpos($rewrite, 'category-route.php?cat=$1') === false) {
+    $failures[] = 'Category clean URLs must use the dedicated category router.';
 }
-if (strpos($rewrite, 'index.php?mode=view&cat=$1&doc=$2') === false) {
-    $failures[] = 'Document clean URLs must be rewritten through index.php?mode=view.';
+if (strpos($rewrite, 'document.php?cat=$1&doc=$2') === false) {
+    $failures[] = 'Document clean URLs must use the dedicated document controller.';
 }
-if (strpos($rewrite, '# Documents generated rewrite v1.2.0-r3') === false) {
+if (strpos($rewrite, '# Documents generated rewrite v1.2.0-r4') === false) {
     $failures[] = 'Generated rewrite rules need the current version signature.';
 }
 if (strpos($rewrite, 'document.php?cat=$1&doc=$2') === false
@@ -62,11 +62,12 @@ if (strpos($autoinstall, 'DOCUMENTS_writeHtaccess(true)') === false) {
 }
 if (strpos($package, "--exclude '.github/'") === false
     || strpos($package, "--exclude 'tests/'") === false
-    || strpos($package, 'unzip -t dist/documents_1.2.0-2.1.1.zip') === false) {
+    || strpos($package, 'unzip -t dist/documents_1.2.0_2.1.1.zip') === false) {
     $failures[] = 'Packaging does not exclude development surfaces and verify ZIP integrity.';
 }
-if (strpos($package, 'PHP 5.6 regression tests') === false
-    || strpos($package, 'PHP 8.1 regression tests') === false) {
+if (strpos($package, "- '5.6'") === false
+    || strpos($package, "- '8.1'") === false
+    || strpos($package, 'tests/*_test.php') === false) {
     $failures[] = 'Packaging is not gated by both supported regression suites.';
 }
 
