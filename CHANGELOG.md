@@ -72,7 +72,10 @@ Compatibility target:
 - Added `hits-desc` Item Info collection ordering for structured popular-document consumers.
 - Added read-only `dashboard_summary` for Eclipse/administration dashboards.
 - Added `fields_describe` so consumers can inspect configurable Documents field definitions without direct SQL.
-- Added read-only `source_fields_get` for exact stored field values on accessible documents; source mutation is intentionally not part of 1.2.0.
+- Added `source_fields_get` for exact stored field values on accessible documents, including field-level writability and SHA-256 fingerprints.
+- Added `source_fields_collection` for bounded, cursor-based enumeration with optional field selection and literal `contains` filtering.
+- Added `source_fields_update` for controlled mutation of editorial `text` and `textarea` fields only, guarded by edit ACLs, required-field validation and optimistic concurrency through `old_fingerprint`.
+- Source updates support `dry_run`, refresh the document modification timestamp and emit `PLG_itemSaved()`; image, album, marker, file and category fields remain non-writable through this generic contract.
 - Added a static root-level `plugin.json` manifest for safe identity and compatibility discovery.
 - Restored public document hit counting in the unified renderer so popularity data remains meaningful for dashboards and `hits-desc` consumers.
 - Restored the default comment rendering path with Geeklog 2.1.1/2.2.2-compatible heading handling.
