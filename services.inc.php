@@ -30,6 +30,36 @@ function DOCUMENTS_serviceCurrentUid()
     return isset($_USER['uid']) ? (int) $_USER['uid'] : 1;
 }
 
+function DOCUMENTS_serviceCategoryContext($categoryId)
+{
+    global $_TABLES;
+
+    $categoryId = (int) $categoryId;
+    if ($categoryId <= 0) {
+        return false;
+    }
+
+    $sql = "SELECT cid,cat_name,cat_url,owner_id,group_id,perm_owner,perm_group,perm_members,perm_anon "
+        . "FROM {$_TABLES['documents_cat']} WHERE cid=" . $categoryId . " LIMIT 1";
+    $row = DB_fetchArray(DB_query($sql));
+    if (!is_array($row) || empty($row['cid'])) {
+        return false;
+    }
+
+    if (SEC_hasAccess(
+        (int) $row['owner_id'],
+        (int) $row['group_id'],
+        (int) $row['perm_owner'],
+        (int) $row['perm_group'],
+        (int) $row['perm_members'],
+        (int) $row['perm_anon']
+    ) < 2) {
+        return false;
+    }
+
+    return $row;
+}
+
 function DOCUMENTS_serviceDocumentContext($id)
 {
     global $_CONF, $_TABLES;
@@ -147,6 +177,11 @@ function service_fields_describe_documents($args, &$output, &$svc_msg)
 
     if ($categoryId <= 0) {
         $svc_msg['error_desc'] = 'A valid category_id or document id is required.';
+        return PLG_RET_ERROR;
+    }
+
+    if (DOCUMENTS_serviceCategoryContext($categoryId) === false) {
+        $svc_msg['error_desc'] = 'Category not found or not accessible.';
         return PLG_RET_ERROR;
     }
 
