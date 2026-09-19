@@ -3,7 +3,7 @@
 $source = file_get_contents(dirname(__DIR__) . '/maps_adapter.php');
 
 $checks = array(
-    "DOCUMENTS_documentMutationExistingFieldValue($documentId, $fieldId)",
+    "DOCUMENTS_documentMutationExistingFieldValue(\$documentId, \$fieldId)",
     '$markerRequest = $request;',
     '$markerRequest[$markerName] = $values[$fieldId];',
     "isset(\$request['mkid'])"
