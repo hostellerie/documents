@@ -74,6 +74,10 @@ Compatibility target:
 - Added `fields_describe` so consumers can inspect configurable Documents field definitions without direct SQL.
 - Added read-only `source_fields_get` for exact stored field values on accessible documents; source mutation is intentionally not part of 1.2.0.
 - Added a static root-level `plugin.json` manifest for safe identity and compatibility discovery.
+- Restored public document hit counting in the unified renderer so popularity data remains meaningful for dashboards and `hits-desc` consumers.
+- Restored the default comment rendering path with Geeklog 2.1.1/2.2.2-compatible heading handling.
+- Hardened structured field-description services so category read permissions are enforced for direct category requests.
+- Aligned the MediaGallery integration regression guard with the supported `[album:...]` autotag.
 - Added document/category autotags, recent/popular PHP blocks, native feed callbacks and native statistics callbacks.
 - Geeklog's ranking is exposed as `Top Ten Documents`, while the `/documents/` page keeps a generic statistics summary.
 
@@ -98,6 +102,7 @@ Compatibility target:
 - All autonomous `tests/*_test.php` checks run under both PHP versions before packaging.
 - Any failing regression test prevents creation/commit of a new installable archive.
 - The generated `dist/documents_1.2.0_2.1.1.zip` is verified with `unzip -t`, rejects hidden files, and is committed only after the regression matrix passes.
+- The complete autonomous regression suite now passes under PHP 5.6 and PHP 8.1 before packaging.
 
 ### Final validation before tag
 
