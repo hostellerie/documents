@@ -102,11 +102,14 @@ MSSQL support has been removed. PHP 5.6 compatibility remains a hard requirement
 - Lifecycle events describe public-indexing transitions with `PLG_itemSaved` and `PLG_itemDeleted`.
 - Hello and Hub can consume Documents through Item Info rather than Documents-specific SQL.
 - Added `plugin_getcapabilities_documents()` following the shared capability contract used by Agent, Eclipse and Hub.
-- Added read-only `dashboard_summary`, `fields_describe` and `source_fields_get` services through `PLG_invokeService()`.
+- Added `dashboard_summary`, `fields_describe`, `source_fields_get`, `source_fields_collection` and `source_fields_update` services through `PLG_invokeService()`.
 - Eclipse can retrieve Documents operational metrics without querying Documents tables.
 - Agent and Hub can discover the provider's content/search/popular/URL/lifecycle/syndication capabilities explicitly.
 - Structured configurable field metadata can be consumed without depending on `documents_fields`.
-- Exact source fields are exposed read-only for one accessible document; source-field mutation remains deferred and separately permissioned.
+- Exact source fields are exposed for accessible documents with field-level writability and fingerprints.
+- Added bounded cursor-based source-field collection with optional field selection and literal `contains` filtering.
+- Added controlled source-field mutation for editorial `text` and `textarea` fields only; updates require document edit permission, matching `old_fingerprint`, preserve required-field rules, support `dry_run`, refresh `modified`, and emit `PLG_itemSaved()`.
+- Integration-owned or structurally sensitive field types such as image, album, marker, file and category remain non-writable through the generic source-field update contract.
 - Added root-level `plugin.json` metadata for static plugin discovery.
 
 #### Autotags, blocks, feeds and statistics
