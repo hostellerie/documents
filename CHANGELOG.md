@@ -68,6 +68,12 @@ Compatibility target:
 - Added lifecycle notifications through `PLG_itemSaved` and `PLG_itemDeleted` based on public-indexing transitions.
 - Hello and Hub can consume Documents through generic Item Info instead of Documents-specific SQL.
 - IndexNow listeners can resolve canonical URLs through the generic Geeklog plugin contract.
+- Added `plugin_getcapabilities_documents()` so Agent, Hub, Eclipse and other consumers can discover provider-owned capabilities without a parallel registry.
+- Added `hits-desc` Item Info collection ordering for structured popular-document consumers.
+- Added read-only `dashboard_summary` for Eclipse/administration dashboards.
+- Added `fields_describe` so consumers can inspect configurable Documents field definitions without direct SQL.
+- Added read-only `source_fields_get` for exact stored field values on accessible documents; source mutation is intentionally not part of 1.2.0.
+- Added a static root-level `plugin.json` manifest for safe identity and compatibility discovery.
 - Added document/category autotags, recent/popular PHP blocks, native feed callbacks and native statistics callbacks.
 - Geeklog's ranking is exposed as `Top Ten Documents`, while the `/documents/` page keeps a generic statistics summary.
 
@@ -88,10 +94,10 @@ Compatibility target:
 
 ### CI and packaging
 
-- The release workflow now lints all PHP/INC files under PHP 5.6 and PHP 8.1.
+- The release workflow now targets `documents-1.2.0` and lints all PHP/INC files under PHP 5.6 and PHP 8.1.
 - All autonomous `tests/*_test.php` checks run under both PHP versions before packaging.
 - Any failing regression test prevents creation/commit of a new installable archive.
-- The generated `dist/documents_1.2.0-2.1.1.zip` is verified with `unzip -t` before being committed.
+- The generated `dist/documents_1.2.0_2.1.1.zip` is verified with `unzip -t`, rejects hidden files, and is committed only after the regression matrix passes.
 
 ### Final validation before tag
 
