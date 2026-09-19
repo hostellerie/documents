@@ -6,7 +6,7 @@ $checks = array(
     "DOCUMENTS_documentMutationExistingFieldValue($documentId, $fieldId)",
     '$markerRequest = $request;',
     '$markerRequest[$markerName] = $values[$fieldId];',
-    "isset($request['mkid'])"
+    "isset(\$request['mkid'])"
 );
 
 foreach ($checks as $check) {
