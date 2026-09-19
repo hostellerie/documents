@@ -105,9 +105,122 @@
 }
 
 .documents-document__prose {
+    max-width: var(--eclipse-reading, 72ch);
     font-family: inherit;
     font-size: inherit;
-    line-height: inherit;
+    line-height: 1.72;
+    color: inherit;
+}
+
+.documents-document__prose > *:first-child {
+    margin-top: 0;
+}
+
+.documents-document__prose > *:last-child {
+    margin-bottom: 0;
+}
+
+.documents-document__prose p {
+    margin: 0 0 1.15rem;
+}
+
+.documents-document__prose h2,
+.documents-document__prose h3,
+.documents-document__prose h4,
+.documents-document__prose h5,
+.documents-document__prose h6 {
+    color: inherit;
+    font-family: inherit;
+    font-weight: 700;
+}
+
+.documents-document__prose h2 {
+    margin: 2.25rem 0 .9rem;
+    font-size: clamp(1.35rem, 2vw, 1.65rem);
+    line-height: 1.25;
+    letter-spacing: -.015em;
+}
+
+.documents-document__prose h3 {
+    margin: 1.75rem 0 .75rem;
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.documents-document__prose h4,
+.documents-document__prose h5,
+.documents-document__prose h6 {
+    margin: 1.45rem 0 .65rem;
+    line-height: 1.35;
+}
+
+.documents-document__prose strong,
+.documents-document__prose b {
+    font-weight: 700;
+}
+
+.documents-document__prose ul,
+.documents-document__prose ol {
+    margin: .75rem 0 1.35rem;
+    padding-left: 1.5rem;
+}
+
+.documents-document__prose li {
+    margin: .35rem 0;
+}
+
+.documents-document__prose li::marker {
+    color: var(--eclipse-primary, currentColor);
+}
+
+.documents-document__prose a {
+    color: var(--eclipse-link, inherit);
+    text-decoration-thickness: .08em;
+    text-underline-offset: .15em;
+}
+
+.documents-document__prose blockquote {
+    margin: 1.5rem 0;
+    padding: .85rem 1.1rem;
+    border-left: 3px solid var(--eclipse-primary, currentColor);
+    background: rgba(127, 127, 127, .06);
+}
+
+.documents-document__prose img,
+.documents-document__prose picture,
+.documents-document__prose video,
+.documents-document__prose iframe {
+    max-width: 100%;
+}
+
+.documents-document__prose img {
+    height: auto;
+    border-radius: .5rem;
+}
+
+.documents-document__prose table {
+    width: 100%;
+    margin: 1.25rem 0;
+    border-collapse: collapse;
+}
+
+.documents-document__prose th,
+.documents-document__prose td {
+    padding: .65rem .75rem;
+    border: 1px solid rgba(127, 127, 127, .25);
+    vertical-align: top;
+    text-align: left;
+}
+
+.documents-document__prose th {
+    font-weight: 700;
+    background: rgba(127, 127, 127, .06);
+}
+
+.documents-document__prose hr {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid rgba(127, 127, 127, .25);
 }
 
 .documents-properties {
