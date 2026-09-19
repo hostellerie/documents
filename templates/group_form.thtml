@@ -1,0 +1,24 @@
+<form action="{doc_url}/admin-save.php" method="POST">
+{gid}
+    <fieldset class="documents-form-fieldset">
+        <legend><b>{group_informations}</b></legend>
+
+        <div>
+            <p><label>{group_label}<span class="documents-required-mark"> *</span></label>
+                <input type="text" name="group_name" value="{group_name}" size="80" maxlength="255" {xhtml}></p>
+        </div>
+
+        <div>
+            <p><label>{help_label}</label>
+                <input type="text" name="group_help" value="{help}" size="80" maxlength="255" {xhtml}></p>
+        </div>
+
+    </fieldset>
+
+    <p class="documents-required-note"><span class="documents-required-mark">*</span><em> {required_field}</em></p>
+    {admin_options}
+    <input type="submit" name="submit" value="{validate_button}" {xhtml}>
+    <input type="hidden" name="mode" value="save_group"{xhtml}>
+    <input type="hidden" name="{gltoken_name}" value="{gltoken}"{xhtml}>
+
+</form>

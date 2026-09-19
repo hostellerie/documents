@@ -1,0 +1,9 @@
+            <div id="lang_accessrights">
+				<div><p>{lang_owner}: {owner_select}</p></div>
+				<div><p>{lang_group}: {group_dropdown}</p></div>
+			</div>
+			<div id="lang_permissions">
+				<p>{lang_perm_key}</p>
+				<p>{permissions_editor}</p>
+				<p>{lang_permissions_msg}</p>
+			</div>

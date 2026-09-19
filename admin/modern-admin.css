@@ -1,0 +1,434 @@
+.documents-admin-page {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto 48px;
+}
+.documents-admin-page *,
+.documents-admin-page *::before,
+.documents-admin-page *::after {
+    box-sizing: border-box;
+}
+
+/* Keep the plugin navigation deliberately close to Geeklog/Maps user_menu:
+ * simple inline links, but with enough vertical rhythm before the page title. */
+.documents-admin-navigation {
+    margin: 0 0 18px;
+    line-height: 1.7;
+}
+.documents-admin-navigation a {
+    white-space: nowrap;
+}
+
+.documents-admin-page__header {
+    margin: 0 0 28px;
+}
+.documents-admin-page__header h1 {
+    margin: 0 0 10px;
+    font-size: 1.75em;
+    line-height: 1.2;
+}
+.documents-admin-page__lead {
+    max-width: 78ch;
+    margin: 0;
+    color: #596273;
+    line-height: 1.6;
+}
+
+/* One Geeklog block is the primary H2 section of an administration page. */
+.documents-shell--admin .block-center {
+    margin-top: 0;
+    margin-bottom: 24px;
+}
+.documents-shell--admin .block-center-content {
+    line-height: 1.55;
+}
+.documents-admin-primary-content {
+    min-width: 0;
+}
+.documents-admin-primary-content > :first-child {
+    margin-top: 0;
+}
+.documents-admin-primary-content > :last-child {
+    margin-bottom: 0;
+}
+
+.documents-admin-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin: 0 0 20px;
+}
+.documents-admin-toolbar > form {
+    margin: 0;
+}
+.documents-admin-toolbar--section {
+    margin-bottom: 18px;
+}
+.documents-admin-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 1px solid #cfd5dc;
+    border-radius: 8px;
+    background: #fff;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none !important;
+    appearance: none;
+    -webkit-appearance: none;
+    box-shadow: none;
+    cursor: pointer;
+}
+.documents-admin-button:hover,
+.documents-admin-button:focus {
+    border-color: #9ba8b7;
+    background: #f7f8fa;
+    box-shadow: none;
+}
+.documents-admin-button--primary {
+    border-color: #4479ba;
+    background: #4479ba;
+    color: #fff !important;
+}
+.documents-admin-button--primary:hover,
+.documents-admin-button--primary:focus {
+    background: #3569a6;
+}
+.documents-admin-guide {
+    margin: 0 0 22px;
+    border: 1px solid #dde2e8;
+    border-radius: 10px;
+    background: #f8f9fb;
+    overflow: hidden;
+}
+.documents-admin-guide summary {
+    cursor: pointer;
+    padding: 13px 16px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+.documents-admin-guide__content {
+    padding: 0 16px 15px;
+    color: #596273;
+    line-height: 1.55;
+}
+.documents-admin-guide__content p,
+.documents-admin-guide__content ul {
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+/* Cards remain available for meaningful subgroups in complex forms, but the
+ * primary dashboard/list content is no longer wrapped in extra cards. */
+.documents-admin-card {
+    margin: 0 0 18px;
+    border: 1px solid #dde2e8;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+}
+.documents-admin-card:last-child {
+    margin-bottom: 0;
+}
+.documents-admin-card__header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e7eaee;
+    background: #fafbfc;
+}
+.documents-admin-card__header h2,
+.documents-admin-card__header h3 {
+    margin: 0;
+    font-size: 1.05em;
+}
+.documents-admin-card__body {
+    padding: 20px 18px;
+}
+.documents-admin-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+.documents-admin-primary-content > .documents-admin-table-wrap {
+    border: 1px solid #e1e5ea;
+    border-radius: 8px;
+    background: #fff;
+}
+.documents-admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+.documents-admin-table th,
+.documents-admin-table td {
+    padding: 13px 14px;
+    border-bottom: 1px solid #e8ebef;
+    text-align: left;
+    vertical-align: top;
+}
+.documents-admin-table th {
+    background: #f8f9fb;
+    color: #4f5866;
+    font-size: .86em;
+    font-weight: 700;
+}
+.documents-admin-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+.documents-admin-table tbody tr:hover {
+    background: #fbfcfd;
+}
+.documents-admin-table__actions {
+    white-space: nowrap;
+    text-align: right !important;
+}
+.documents-admin-table a {
+    text-decoration: none;
+}
+.documents-admin-muted {
+    color: #747d89;
+    font-size: .9em;
+}
+.documents-admin-badge {
+    display: inline-block;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #eef2f6;
+    color: #4f5967;
+    font-family: monospace;
+    font-size: .86em;
+}
+.documents-admin-order {
+    display: inline-block;
+    min-width: 2.4em;
+    color: #7b8490;
+    font-size: .86em;
+}
+.documents-admin-empty {
+    margin: 0;
+    padding: 22px 18px;
+    border: 1px dashed #ccd3db;
+    border-radius: 9px;
+    background: #fafbfc;
+    color: #616a77;
+    line-height: 1.55;
+}
+.documents-admin-check-list {
+    margin: 0;
+    padding-left: 1.35rem;
+}
+.documents-admin-check-list li + li {
+    margin-top: .4rem;
+}
+.documents-admin-message {
+    margin: 0 0 18px;
+    padding: 11px 14px;
+    border: 1px solid #d7dde4;
+    border-radius: 8px;
+    background: #f8f9fb;
+    line-height: 1.5;
+}
+.documents-admin-form {
+    max-width: 920px;
+}
+.documents-admin-form__section {
+    margin: 0 0 20px;
+    padding: 22px;
+    border: 1px solid #dde2e8;
+    border-radius: 10px;
+    background: #fff;
+}
+.documents-admin-form__section h2 {
+    margin: 0 0 20px;
+    font-size: 1.08em;
+}
+.documents-admin-form__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 22px;
+}
+.documents-admin-form__row {
+    margin: 0 0 24px;
+}
+.documents-admin-form__grid > .documents-admin-form__row {
+    margin-bottom: 22px;
+}
+.documents-admin-form__row:last-child {
+    margin-bottom: 0;
+}
+.documents-admin-form__row--important {
+    padding: 16px;
+    border: 1px solid #dfe5eb;
+    border-radius: 9px;
+    background: #fafbfc;
+}
+.documents-admin-form__label {
+    display: block;
+    margin: 0 0 7px;
+    font-weight: 700;
+}
+.documents-admin-form__control {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 11px;
+    border: 1px solid #cbd2da;
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+}
+.documents-admin-form__control--short {
+    max-width: 150px;
+}
+.documents-admin-code-input {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+textarea.documents-admin-form__control {
+    min-height: 105px;
+    resize: vertical;
+    line-height: 1.5;
+}
+.documents-admin-form__control:focus {
+    outline: 2px solid rgba(68, 121, 186, .18);
+    border-color: #7d9cc2;
+}
+.documents-admin-form__help {
+    display: block;
+    margin-top: 8px;
+    color: #66707d;
+    font-size: .9em;
+    line-height: 1.5;
+}
+.documents-admin-variable-preview {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: #eef2f6;
+    color: #4f5967;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .9em;
+}
+.documents-admin-check-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px 20px;
+    margin-top: 4px;
+}
+.documents-admin-check-grid label {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 11px 12px;
+    border-radius: 8px;
+    background: #f8f9fb;
+    line-height: 1.4;
+}
+.documents-admin-check-grid input {
+    margin-top: 3px;
+}
+.documents-admin-advanced {
+    padding: 0;
+    overflow: hidden;
+}
+.documents-admin-advanced > summary {
+    cursor: pointer;
+    padding: 16px 20px;
+    background: #fafbfc;
+}
+.documents-admin-advanced[open] > summary {
+    border-bottom: 1px solid #e6e9ed;
+}
+.documents-admin-advanced__body {
+    padding: 20px;
+}
+.documents-admin-permissions {
+    overflow-x: auto;
+}
+.documents-admin-form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 16px;
+    border: 1px solid #dde2e8;
+    border-radius: 10px;
+    background: #f8f9fb;
+}
+.documents-admin-form__actions select {
+    min-height: 40px;
+    padding: 7px 9px;
+    border: 1px solid #cbd2da;
+    border-radius: 7px;
+    background: #fff;
+}
+.documents-admin-submit {
+    min-height: 40px;
+    padding: 8px 16px;
+    border: 1px solid #4479ba;
+    border-radius: 7px;
+    background: #4479ba;
+    color: #fff;
+    font-weight: 700;
+}
+.documents-admin-danger-note {
+    margin: 14px 0 0;
+    padding: 10px 12px;
+    border-left: 3px solid #b3261e;
+    background: #fff7f6;
+    color: #6c3b36;
+    font-size: .9em;
+    line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+    .documents-admin-page {
+        margin-bottom: 32px;
+    }
+    .documents-admin-navigation {
+        margin-bottom: 16px;
+        line-height: 1.9;
+    }
+    .documents-admin-page__header {
+        margin-bottom: 22px;
+    }
+    .documents-admin-page__header h1 {
+        font-size: 1.55em;
+    }
+    .documents-admin-card__body,
+    .documents-admin-form__section {
+        padding: 16px;
+    }
+    .documents-admin-form__grid,
+    .documents-admin-check-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    .documents-admin-table th,
+    .documents-admin-table td {
+        padding: 10px;
+    }
+    .documents-admin-toolbar,
+    .documents-admin-form__actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .documents-admin-toolbar > form {
+        width: 100%;
+    }
+    .documents-admin-button,
+    .documents-admin-submit,
+    .documents-admin-form__actions select {
+        width: 100%;
+        justify-content: center;
+    }
+    .documents-admin-form__control--short {
+        max-width: none;
+    }
+}

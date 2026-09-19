@@ -1,0 +1,126 @@
+name: Test and build Documents archive
+
+on:
+  push:
+    branches:
+      - documents-1.2.0
+    paths-ignore:
+      - 'dist/**'
+      - 'README.md'
+      - 'ROADMAP.md'
+      - 'CHANGELOG.md'
+      - 'TESTING.md'
+      - 'docs/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documents-1.2.0-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    name: PHP ${{ matrix.php }} regression tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - '5.6'
+          - '8.1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: PHP syntax lint
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            php -l "$file" >/dev/null
+          done < <(find . -type f \( -name '*.php' -o -name '*.inc' \) -not -path './dist/*' -not -path './build/*' -print0)
+
+      - name: Run autonomous regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test in tests/*_test.php; do
+            echo "==> $test"
+            php "$test"
+          done
+
+  package:
+    name: Build installable ZIP
+    needs: regression
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build installable ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf build
+          mkdir -p build/documents dist
+
+          rsync -a ./ build/documents/ \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.htaccess' \
+            --exclude 'build/' \
+            --exclude 'dist/' \
+            --exclude 'tests/' \
+            --exclude 'docs/' \
+            --exclude 'ROADMAP.md' \
+            --exclude 'TESTING.md'
+
+          find build/documents -name '.*' -print -quit | grep -q . && {
+            echo 'Error: hidden files must not be shipped in a Geeklog installable archive.' >&2
+            find build/documents -name '.*' -print
+            exit 1
+          } || true
+
+          rm -f dist/documents_1.2.0_2.1.1.zip
+          (cd build && zip -qr ../dist/documents_1.2.0_2.1.1.zip documents)
+          unzip -t dist/documents_1.2.0_2.1.1.zip >/dev/null
+
+      - name: Publish workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: documents-1.2.0-installable
+          path: dist/documents_1.2.0_2.1.1.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Update dist archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f dist/documents_1.2.0_2.1.1.zip
+
+          if git diff --cached --quiet; then
+            echo 'Archive is already up to date.'
+            exit 0
+          fi
+
+          git commit -m 'Build Documents 1.2.0 archive [skip ci]'
+          git push origin HEAD:documents-1.2.0
