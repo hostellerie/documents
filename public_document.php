@@ -266,6 +266,14 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     $category = $data['category'];
     $document = $data['document'];
     $fields = $data['fields'];
+
+    $safeDocumentSlug = DB_escapeString((string) $documentSlug);
+    DB_query(
+        "UPDATE {$_TABLES['documents_docs']} SET hits=hits+1 "
+        . "WHERE doc_url='{$safeDocumentSlug}'"
+    );
+    $document['hits'] = isset($document['hits']) ? (int) $document['hits'] + 1 : 1;
+
     $title = DOCUMENTS_publicDocumentTitle($fields, $documentSlug);
 
     $templateName = isset($category['template'])
