@@ -93,7 +93,7 @@ MSSQL support has been removed. PHP 5.6 compatibility remains a hard requirement
 #### Interoperability with Hello, Hub, IndexNow and XML Sitemap
 
 - Added `plugin_getiteminfo_documents()` for single documents and `id='*'` collections.
-- Added collection options including `since`, `limit`, ordering and `filter[date-created]`.
+- Added collection options including `since`, `limit`, ordering and `filter[date-created]`, including `hits-desc` for popular-content consumers.
 - Added `plugin_idtourl_documents()` and `plugin_urltoid_documents()`.
 - Added `plugin_collectSitemapItems_documents()`.
 - Exposed normalized fields including ID, type, subtype, title, canonical URL, description, excerpt, dates, author, primary image, category and hit count.
@@ -101,6 +101,13 @@ MSSQL support has been removed. PHP 5.6 compatibility remains a hard requirement
 - Anonymous-public indexability requires active state plus anonymous read access to both document and category.
 - Lifecycle events describe public-indexing transitions with `PLG_itemSaved` and `PLG_itemDeleted`.
 - Hello and Hub can consume Documents through Item Info rather than Documents-specific SQL.
+- Added `plugin_getcapabilities_documents()` following the shared capability contract used by Agent, Eclipse and Hub.
+- Added read-only `dashboard_summary`, `fields_describe` and `source_fields_get` services through `PLG_invokeService()`.
+- Eclipse can retrieve Documents operational metrics without querying Documents tables.
+- Agent and Hub can discover the provider's content/search/popular/URL/lifecycle/syndication capabilities explicitly.
+- Structured configurable field metadata can be consumed without depending on `documents_fields`.
+- Exact source fields are exposed read-only for one accessible document; source-field mutation remains deferred and separately permissioned.
+- Added root-level `plugin.json` metadata for static plugin discovery.
 
 #### Autotags, blocks, feeds and statistics
 
@@ -128,9 +135,9 @@ The release workflow is intentionally blocking: a regression test failure preven
 
 #### Automated release gate
 
-- Bring every currently maintained autonomous regression test to green under PHP 5.6 and PHP 8.1 now that the workflow actually executes the complete suite.
+- Keep every currently maintained autonomous regression test green under PHP 5.6 and PHP 8.1; the workflow now executes the complete suite before packaging.
 - Keep the Maps ownership-boundary test green.
-- Confirm the final workflow produces a clean `dist/documents_1.2.0-2.1.1.zip` after the complete suite passes.
+- Confirm the final workflow produces a clean `dist/documents_1.2.0_2.1.1.zip` after the complete suite passes and contains no hidden files.
 
 #### Manual Geeklog validation
 
@@ -172,6 +179,8 @@ Categories containing an `album` field remain an optional compatibility path. Ke
 - Prepare final release notes after the manual matrix is green.
 
 ### Deferred after 1.2.0
+
+- add bounded source-field collection/pagination and a separately authorized `content.source_fields.update` contract;
 
 The following work should not block the compatible 1.2.0 release:
 
