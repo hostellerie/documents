@@ -298,7 +298,9 @@ function DOCUMENTS_interopItems($what, $uid, $options)
         $sql .= " AND UNIX_TIMESTAMP(d.created) >= " . (int) $createdSince;
     }
 
-    if ($order === 'created-desc') {
+    if ($order === 'hits-desc') {
+        $sql .= " ORDER BY d.hits DESC, COALESCE(d.modified,d.created) DESC, d.did DESC";
+    } elseif ($order === 'created-desc') {
         $sql .= " ORDER BY d.created DESC, d.did DESC";
     } elseif ($order === 'created-asc') {
         $sql .= " ORDER BY d.created ASC, d.did ASC";
@@ -425,11 +427,33 @@ function plugin_collectSitemapItems_documents($uid, $limit)
     return $result;
 }
 
+
+function plugin_getcapabilities_documents()
+{
+    return array(
+        'schema' => 1,
+        'roles' => array('content', 'service'),
+        'capabilities' => array(
+            'content.read',
+            'content.collection',
+            'content.search',
+            'content.popular',
+            'content.url.resolve',
+            'content.lifecycle',
+            'content.syndication',
+            'content.fields.read',
+            'content.source_fields.read',
+            'dashboard.summary'
+        )
+    );
+}
+
 function DOCUMENTS_interopCapabilities()
 {
     return array(
         'content_info' => true,
         'collections' => true,
+        'content_popular' => true,
         'item_saved' => true,
         'item_deleted' => true,
         'id_to_url' => true,
@@ -437,6 +461,9 @@ function DOCUMENTS_interopCapabilities()
         'sitemap_collection' => true,
         'autotags' => true,
         'php_blocks' => true,
+        'content_fields' => true,
+        'source_fields' => true,
+        'dashboard_summary' => true,
         'audience_metrics' => false,
         'search_metrics' => false,
         'query_metrics' => false,
