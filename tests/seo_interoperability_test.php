@@ -11,6 +11,7 @@ $files = array(
     'embeds' => file_get_contents($root . '/embeds.php'),
     'distribution' => file_get_contents($root . '/distribution.php'),
     'seo' => file_get_contents($root . '/seo.php'),
+    'presentation' => file_get_contents($root . '/presentation.php'),
     'runtime' => file_get_contents($root . '/runtime.php'),
     'security' => file_get_contents($root . '/security.php'),
     'public' => file_get_contents($root . '/public_html/index.php'),
@@ -100,6 +101,11 @@ documents_test_require($files['seo'], "return 'CreativeWork';", 'Schema type all
 documents_test_require($files['seo'], "'schema_type' => 'CollectionPage'", 'CollectionPage schema is missing.', $failures);
 documents_test_require($files['seo'], 'metadescription', 'Dedicated meta description support is missing.', $failures);
 documents_test_require($files['seo'], 'BreadcrumbList', 'Document breadcrumb structured data is missing.', $failures);
+documents_test_require($files['seo'], 'function DOCUMENTS_seoDelegateSocialMetadata(', 'Optional OGP delegation helper is missing.', $failures);
+documents_test_require($files['seo'], 'OGP_registerSocialMetadata', 'Documents does not use the OGP registration API.', $failures);
+documents_test_require($files['seo'], '_DOCUMENTS_OGP_SOCIAL_DELEGATED', 'Documents OGP delegation state is missing.', $failures);
+documents_test_require($files['presentation'], 'DOCUMENTS_seoDelegateSocialMetadata', 'Documents does not register social metadata before page rendering.', $failures);
+documents_test_require($files['presentation'], 'COM_createHTMLDocument', 'Geeklog document rendering is missing.', $failures);
 
 documents_test_require($files['category_template'], 'name="metadescription"', 'Category metadescription editor is missing.', $failures);
 documents_test_require($files['category_template'], 'name="cat_help"', 'cat_help must remain a separate category field.', $failures);
