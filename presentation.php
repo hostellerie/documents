@@ -160,17 +160,32 @@ function DOCUMENTS_createPublicPage($content, $title)
         $content = DOCUMENTS_wrapBlock($content, 'public');
     }
 
-    $page = COM_createHTMLDocument(
-        $content,
-        array('pagetitle' => (string) $title)
-    );
-
+    /*
+     * Load and register SEO/social metadata before Geeklog builds the document.
+     * This gives OGP a chance to render Open Graph / Twitter tags through its
+     * normal header hook. If OGP is unavailable, Documents keeps its fallback.
+     */
     if (isset($_CONF['path'])) {
         $seoFile = $_CONF['path'] . 'plugins/documents/seo.php';
         if (is_file($seoFile)) {
             require_once $seoFile;
         }
     }
+
+    $GLOBALS['_DOCUMENTS_OGP_SOCIAL_DELEGATED'] = false;
+    if (function_exists('DOCUMENTS_seoContext')
+        && function_exists('DOCUMENTS_seoApplyContextOverride')
+        && function_exists('DOCUMENTS_seoDelegateSocialMetadata')
+    ) {
+        $documentsSeoContext = DOCUMENTS_seoApplyContextOverride(DOCUMENTS_seoContext());
+        $GLOBALS['_DOCUMENTS_OGP_SOCIAL_DELEGATED'] =
+            DOCUMENTS_seoDelegateSocialMetadata($documentsSeoContext);
+    }
+
+    $page = COM_createHTMLDocument(
+        $content,
+        array('pagetitle' => (string) $title)
+    );
 
     if (function_exists('DOCUMENTS_seoOutputFilter')) {
         $filtered = DOCUMENTS_seoOutputFilter($page);
