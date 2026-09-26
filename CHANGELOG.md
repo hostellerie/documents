@@ -1,3 +1,11 @@
+## 1.3.0 - development
+
+- Delegate Open Graph and Twitter/X metadata to the OGP plugin when a compatible `OGP_registerSocialMetadata()` API is available.
+- Preserve Documents' standalone social metadata output when OGP is absent or an older OGP release is installed.
+- Register social metadata before `COM_createHTMLDocument()` so OGP can render through its normal Geeklog header hook.
+- Keep Documents authoritative for canonical URL, meta description, robots directives and Schema.org JSON-LD.
+- Preserve Documents JSON-LD `CreativeWork` / configured document types and `BreadcrumbList` independently of OGP.
+
 # Changelog
 
 ## 1.2.0 — SEO, security, workflow and interoperability modernization
