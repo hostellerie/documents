@@ -315,6 +315,72 @@ function DOCUMENTS_seoContext()
     );
 }
 
+/**
+ * Apply the optional page-level metadata override used by public controllers.
+ */
+function DOCUMENTS_seoApplyContextOverride($context)
+{
+    global $DOCUMENTS_PAGE_META_OVERRIDE;
+
+    if (!is_array($context)) {
+        $context = array();
+    }
+    if (!isset($DOCUMENTS_PAGE_META_OVERRIDE) || !is_array($DOCUMENTS_PAGE_META_OVERRIDE)) {
+        return $context;
+    }
+
+    foreach (array(
+        'title', 'description', 'canonical', 'image', 'type', 'schema_type',
+        'created', 'modified', 'author', 'category', 'category_slug', 'robots', 'page'
+    ) as $key) {
+        if (array_key_exists($key, $DOCUMENTS_PAGE_META_OVERRIDE)) {
+            $context[$key] = $DOCUMENTS_PAGE_META_OVERRIDE[$key];
+        }
+    }
+
+    return $context;
+}
+
+/**
+ * Delegate Documents social metadata to a compatible OGP plugin.
+ *
+ * Returns false when OGP is absent or too old, preserving standalone output.
+ */
+function DOCUMENTS_seoDelegateSocialMetadata($context)
+{
+    global $_PLUGINS;
+
+    if (!is_array($context) || empty($context['canonical']) || empty($context['title'])) {
+        return false;
+    }
+    if (!isset($_PLUGINS) || !is_array($_PLUGINS) || !in_array('ogp', $_PLUGINS, true)) {
+        return false;
+    }
+    if (!function_exists('OGP_registerSocialMetadata')) {
+        return false;
+    }
+
+    $image = isset($context['image']) ? trim((string) $context['image']) : '';
+    $metadata = array(
+        'title' => (string) $context['title'],
+        'description' => isset($context['description']) ? (string) $context['description'] : '',
+        'url' => (string) $context['canonical'],
+        'type' => isset($context['type']) ? (string) $context['type'] : 'website',
+        'twitter_card' => $image !== '' ? 'summary_large_image' : 'summary',
+        'plugin' => 'documents',
+        'item_id' => isset($_REQUEST['doc']) ? trim((string) $_REQUEST['doc']) : '',
+        'subtype' => isset($_REQUEST['doc']) && trim((string) $_REQUEST['doc']) !== ''
+            ? 'document'
+            : (isset($_REQUEST['cat']) && trim((string) $_REQUEST['cat']) !== '' ? 'category' : 'index')
+    );
+    if ($image !== '') {
+        $metadata['image'] = $image;
+        $metadata['image_alt'] = (string) $context['title'];
+    }
+
+    return OGP_registerSocialMetadata($metadata) === true;
+}
+
 function DOCUMENTS_seoCreativeWorkJsonLd($context)
 {
     global $_CONF;
@@ -405,7 +471,7 @@ function DOCUMENTS_seoHeaderCode()
 {
     global $_CONF;
 
-    $context = DOCUMENTS_seoContext();
+    $context = DOCUMENTS_seoApplyContextOverride(DOCUMENTS_seoContext());
     if (empty($context) || empty($context['canonical'])) {
         return '';
     }
@@ -420,22 +486,25 @@ function DOCUMENTS_seoHeaderCode()
     $header = '<link rel="canonical" href="' . DOCUMENTS_seoEscape($canonical) . '"' . XHTML . '>' . LB;
     $header .= '<meta name="robots" content="' . DOCUMENTS_seoEscape($robots) . '"' . XHTML . '>' . LB;
     $header .= '<meta name="description" content="' . DOCUMENTS_seoEscape($description) . '"' . XHTML . '>' . LB;
-    $header .= '<meta property="og:title" content="' . DOCUMENTS_seoEscape($title) . '"' . XHTML . '>' . LB;
-    $header .= '<meta property="og:description" content="' . DOCUMENTS_seoEscape($description) . '"' . XHTML . '>' . LB;
-    $header .= '<meta property="og:type" content="' . DOCUMENTS_seoEscape($context['type']) . '"' . XHTML . '>' . LB;
-    $header .= '<meta property="og:url" content="' . DOCUMENTS_seoEscape($canonical) . '"' . XHTML . '>' . LB;
-    if ($siteName !== '') {
-        $header .= '<meta property="og:site_name" content="' . DOCUMENTS_seoEscape($siteName) . '"' . XHTML . '>' . LB;
+    $socialDelegated = !empty($GLOBALS['_DOCUMENTS_OGP_SOCIAL_DELEGATED']);
+    if (!$socialDelegated) {
+        $header .= '<meta property="og:title" content="' . DOCUMENTS_seoEscape($title) . '"' . XHTML . '>' . LB;
+        $header .= '<meta property="og:description" content="' . DOCUMENTS_seoEscape($description) . '"' . XHTML . '>' . LB;
+        $header .= '<meta property="og:type" content="' . DOCUMENTS_seoEscape($context['type']) . '"' . XHTML . '>' . LB;
+        $header .= '<meta property="og:url" content="' . DOCUMENTS_seoEscape($canonical) . '"' . XHTML . '>' . LB;
+        if ($siteName !== '') {
+            $header .= '<meta property="og:site_name" content="' . DOCUMENTS_seoEscape($siteName) . '"' . XHTML . '>' . LB;
+        }
+        if ($image !== '') {
+            $header .= '<meta property="og:image" content="' . DOCUMENTS_seoEscape($image) . '"' . XHTML . '>' . LB;
+            $header .= '<meta name="twitter:card" content="summary_large_image"' . XHTML . '>' . LB;
+            $header .= '<meta name="twitter:image" content="' . DOCUMENTS_seoEscape($image) . '"' . XHTML . '>' . LB;
+        } else {
+            $header .= '<meta name="twitter:card" content="summary"' . XHTML . '>' . LB;
+        }
+        $header .= '<meta name="twitter:title" content="' . DOCUMENTS_seoEscape($title) . '"' . XHTML . '>' . LB;
+        $header .= '<meta name="twitter:description" content="' . DOCUMENTS_seoEscape($description) . '"' . XHTML . '>' . LB;
     }
-    if ($image !== '') {
-        $header .= '<meta property="og:image" content="' . DOCUMENTS_seoEscape($image) . '"' . XHTML . '>' . LB;
-        $header .= '<meta name="twitter:card" content="summary_large_image"' . XHTML . '>' . LB;
-        $header .= '<meta name="twitter:image" content="' . DOCUMENTS_seoEscape($image) . '"' . XHTML . '>' . LB;
-    } else {
-        $header .= '<meta name="twitter:card" content="summary"' . XHTML . '>' . LB;
-    }
-    $header .= '<meta name="twitter:title" content="' . DOCUMENTS_seoEscape($title) . '"' . XHTML . '>' . LB;
-    $header .= '<meta name="twitter:description" content="' . DOCUMENTS_seoEscape($description) . '"' . XHTML . '>' . LB;
 
     $json = DOCUMENTS_seoJsonLd($context);
     if ($json !== false && $json !== '') {
@@ -448,14 +517,17 @@ function DOCUMENTS_seoHeaderCode()
 function DOCUMENTS_seoRemoveManagedTags($html)
 {
     $patterns = array(
-        '/<link\b[^>]*\brel=["\']canonical["\'][^>]*>\s*/i',
-        '/<link\b[^>]*\bhref=["\'][^"\']+["\'][^>]*\brel=["\']canonical["\'][^>]*>\s*/i',
-        '/<meta\s+name=["\']description["\'][^>]*>\s*/i',
-        '/<meta\s+name=["\']robots["\'][^>]*>\s*/i',
-        '/<meta\s+name=["\']twitter:[^"\']+["\'][^>]*>\s*/i',
-        '/<meta\s+property=["\'](?:og:[^"\']+|fb:app_id)["\'][^>]*>\s*/i',
-        '/<script\s+type=["\']application\/ld\+json["\'][^>]*>.*?<\/script>\s*/is'
+        '/<link\\b[^>]*\\brel=["\\']canonical["\\'][^>]*>\\s*/i',
+        '/<link\\b[^>]*\\bhref=["\\'][^"\\']+["\\'][^>]*\\brel=["\\']canonical["\\'][^>]*>\\s*/i',
+        '/<meta\\s+name=["\\']description["\\'][^>]*>\\s*/i',
+        '/<meta\\s+name=["\\']robots["\\'][^>]*>\\s*/i',
+        '/<script\\s+type=["\\']application\\/ld\\+json["\\'][^>]*>.*?<\\/script>\\s*/is'
     );
+
+    if (empty($GLOBALS['_DOCUMENTS_OGP_SOCIAL_DELEGATED'])) {
+        $patterns[] = '/<meta\\s+name=["\\']twitter:[^"\\']+["\\'][^>]*>\\s*/i';
+        $patterns[] = '/<meta\\s+property=["\\'](?:og:[^"\\']+|fb:app_id)["\\'][^>]*>\\s*/i';
+    }
 
     return preg_replace($patterns, '', $html);
 }
