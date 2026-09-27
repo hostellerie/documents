@@ -517,16 +517,16 @@ function DOCUMENTS_seoHeaderCode()
 function DOCUMENTS_seoRemoveManagedTags($html)
 {
     $patterns = array(
-        '/<link\\b[^>]*\\brel=["\\']canonical["\\'][^>]*>\\s*/i',
-        '/<link\\b[^>]*\\bhref=["\\'][^"\\']+["\\'][^>]*\\brel=["\\']canonical["\\'][^>]*>\\s*/i',
-        '/<meta\\s+name=["\\']description["\\'][^>]*>\\s*/i',
-        '/<meta\\s+name=["\\']robots["\\'][^>]*>\\s*/i',
-        '/<script\\s+type=["\\']application\\/ld\\+json["\\'][^>]*>.*?<\\/script>\\s*/is'
+        "/<link\\\\b[^>]*\\\\brel=[\\\"']canonical[\\\"'][^>]*>\\\\s*/i",
+        "/<link\\\\b[^>]*\\\\bhref=[\\\"'][^\\\"']+[\\\"'][^>]*\\\\brel=[\\\"']canonical[\\\"'][^>]*>\\\\s*/i",
+        "/<meta\\\\s+name=[\\\"']description[\\\"'][^>]*>\\\\s*/i",
+        "/<meta\\\\s+name=[\\\"']robots[\\\"'][^>]*>\\\\s*/i",
+        "/<script\\\\s+type=[\\\"']application\\\\/ld\\\\+json[\\\"'][^>]*>.*?<\\\\/script>\\\\s*/is"
     );
 
     if (empty($GLOBALS['_DOCUMENTS_OGP_SOCIAL_DELEGATED'])) {
-        $patterns[] = '/<meta\\s+name=["\\']twitter:[^"\\']+["\\'][^>]*>\\s*/i';
-        $patterns[] = '/<meta\\s+property=["\\'](?:og:[^"\\']+|fb:app_id)["\\'][^>]*>\\s*/i';
+        $patterns[] = "/<meta\\\\s+name=[\\\"']twitter:[^\\\"']+[\\\"'][^>]*>\\\\s*/i";
+        $patterns[] = "/<meta\\\\s+property=[\\\"'](?:og:[^\\\"']+|fb:app_id)[\\\"'][^>]*>\\\\s*/i";
     }
 
     return preg_replace($patterns, '', $html);
