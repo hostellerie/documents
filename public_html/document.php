@@ -92,10 +92,28 @@ if (!$templateHasH1) {
         . '</h1></header>';
 }
 
+/*
+ * Generic Geeklog public item extension point.
+ *
+ * Documents only announces that the full public document identified by
+ * documents:<doc_url> is being displayed. Consumers such as Hub may return
+ * server-rendered contextual fragments without Documents depending on them.
+ */
+$itemDisplayHtml = '';
+$itemDisplayFragments = PLG_itemDisplay((string) $documentSlug, 'documents');
+if (is_array($itemDisplayFragments)) {
+    foreach ($itemDisplayFragments as $itemDisplayFragment) {
+        if (is_string($itemDisplayFragment) && $itemDisplayFragment !== '') {
+            $itemDisplayHtml .= $itemDisplayFragment;
+        }
+    }
+}
+
 $content = '<main class="documents-document-page">'
     . $breadcrumb
     . $pageHeader
     . $body
+    . $itemDisplayHtml
     . '</main>';
 
 COM_output(DOCUMENTS_createPublicPage($content, $page['title']));
