@@ -3,7 +3,7 @@ name: Test and build Documents archive
 on:
   push:
     branches:
-      - documents-1.2.0
+      - documents_1.3.0
     paths-ignore:
       - 'dist/**'
       - 'README.md'
@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: documents-1.2.0-${{ github.ref }}
+  group: documents_1.3.0-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -83,6 +83,7 @@ jobs:
           rsync -a ./ build/documents/ \
             --exclude '.git/' \
             --exclude '.github/' \
+            --exclude '.gitignore' \
             --exclude '.htaccess' \
             --exclude 'build/' \
             --exclude 'dist/' \
@@ -123,4 +124,4 @@ jobs:
           fi
 
           git commit -m 'Build Documents 1.2.0 archive [skip ci]'
-          git push origin HEAD:documents-1.2.0
+          git push origin HEAD:${GITHUB_REF_NAME}
