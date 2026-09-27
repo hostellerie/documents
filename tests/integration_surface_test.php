@@ -43,7 +43,7 @@ integration_require($publicDocument, 'DOCUMENTS_formatTextDisplay(', 'Text displ
 
 integration_require(
     $documentController,
-    "PLG_itemDisplay((string) $documentSlug, 'documents')",
+    "PLG_itemDisplay((string) \$documentSlug, 'documents')",
     'Public document pages do not expose the generic PLG_itemDisplay() provider hook.',
     $failures
 );
@@ -61,7 +61,7 @@ integration_require(
 );
 integration_require(
     $interop,
-    "'id' => (string) $row['doc_url']",
+    "'id' => (string) \$row['doc_url']",
     'Document Item Info identity no longer uses doc_url as the canonical ID.',
     $failures
 );
