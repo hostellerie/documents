@@ -66,6 +66,36 @@ integration_require(
     $failures
 );
 
+$seoSource = file_get_contents($root . '/seo.php');
+if (!is_string($seoSource)) {
+    $failures[] = 'Unable to inspect seo.php.';
+} else {
+    $sampleHead = '<head>'
+        . '<link rel="canonical" href="https://example.test/doc">'
+        . '<meta name="description" content="Description">'
+        . '<meta name="robots" content="index,follow">'
+        . '<script type="application/ld+json">{"@type":"Article"}</script>'
+        . '</head>';
+    $patternsStart = strpos($seoSource, 'function DOCUMENTS_seoRemoveManagedTags');
+    if ($patternsStart === false) {
+        $failures[] = 'DOCUMENTS_seoRemoveManagedTags() is missing.';
+    } else {
+        require_once $root . '/seo.php';
+        set_error_handler(function ($severity, $message) use (&$failures) {
+            $failures[] = 'SEO regex runtime warning: ' . $message;
+            return true;
+        });
+        $filteredHead = DOCUMENTS_seoRemoveManagedTags($sampleHead);
+        restore_error_handler();
+        if (!is_string($filteredHead)) {
+            $failures[] = 'DOCUMENTS_seoRemoveManagedTags() did not return a string.';
+        } elseif (strpos($filteredHead, 'canonical') !== false
+            || strpos($filteredHead, 'application/ld+json') !== false) {
+            $failures[] = 'SEO managed tags were not removed from the sample head.';
+        }
+    }
+}
+
 if (!empty($failures)) {
     fwrite(STDERR, "Documents integration surface checks failed:\n");
     foreach ($failures as $failure) {
