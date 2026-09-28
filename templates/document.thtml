@@ -20,7 +20,6 @@
     </div>
 </article>
 
-<section id="comments" class="documents-document__comments" aria-label="{comments_title}">
-    {comments_heading}
-    <div id="commentbar">{commentbar}</div>
-</section>
+{item_display}
+
+{comments_block}
