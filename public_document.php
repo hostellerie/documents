@@ -422,6 +422,25 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
     $template->set_var('category_name', htmlspecialchars(stripslashes((string) $category['cat_name']), ENT_QUOTES, 'UTF-8'));
     $template->set_var('category_url', htmlspecialchars(DOCUMENTS_interopCanonicalUrl($category['cat_url']), ENT_QUOTES, 'UTF-8'));
 
+    /*
+     * Generic Geeklog public item extension point.
+     *
+     * Contextual consumers such as Hub or FAQ are rendered as part of the
+     * document content flow, before the secondary comments area.
+     */
+    $itemDisplayHtml = '';
+    if (function_exists('PLG_itemDisplay')) {
+        $itemDisplayFragments = PLG_itemDisplay((string) $documentSlug, 'documents');
+        if (is_array($itemDisplayFragments)) {
+            foreach ($itemDisplayFragments as $itemDisplayFragment) {
+                if (is_string($itemDisplayFragment) && $itemDisplayFragment !== '') {
+                    $itemDisplayHtml .= $itemDisplayFragment;
+                }
+            }
+        }
+    }
+    $template->set_var('item_display', $itemDisplayHtml);
+
     $commentsTitle = isset($LANG03[1]) && trim((string) $LANG03[1]) !== ''
         ? (string) $LANG03[1] : 'Comments';
     $commentsHeading = '';
@@ -460,9 +479,20 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
         );
     }
 
+    $commentsBlock = '';
+    if (trim((string) $commentbar) !== '') {
+        $commentsBlock = '<section id="comments" class="documents-document__comments" aria-label="'
+            . htmlspecialchars($commentsTitle, ENT_QUOTES, 'UTF-8') . '">'
+            . $commentsHeading
+            . '<div id="commentbar">' . $commentbar . '</div>'
+            . '</section>';
+    }
+
+    // Keep legacy variables available for custom templates.
     $template->set_var('comments_title', htmlspecialchars($commentsTitle, ENT_QUOTES, 'UTF-8'));
-    $template->set_var('comments_heading', $commentsHeading);
-    $template->set_var('commentbar', $commentbar);
+    $template->set_var('comments_heading', $commentsBlock === '' ? '' : $commentsHeading);
+    $template->set_var('commentbar', $commentsBlock === '' ? '' : $commentbar);
+    $template->set_var('comments_block', $commentsBlock);
 
     $template->parse('output', 'doc');
     $body = $template->finish($template->get_var('output'));
