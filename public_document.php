@@ -479,20 +479,15 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
         );
     }
 
-    $commentsBlock = '';
-    if (trim((string) $commentbar) !== '') {
-        $commentsBlock = '<section id="comments" class="documents-document__comments" aria-label="'
-            . htmlspecialchars($commentsTitle, ENT_QUOTES, 'UTF-8') . '">'
-            . $commentsHeading
-            . '<div id="commentbar">' . $commentbar . '</div>'
-            . '</section>';
+    // Do not render an isolated "Post a Comment" heading when Geeklog
+    // returns no comment UI/content for this document.
+    if (trim((string) $commentbar) === '') {
+        $commentsHeading = '';
     }
 
-    // Keep legacy variables available for custom templates.
     $template->set_var('comments_title', htmlspecialchars($commentsTitle, ENT_QUOTES, 'UTF-8'));
-    $template->set_var('comments_heading', $commentsBlock === '' ? '' : $commentsHeading);
-    $template->set_var('commentbar', $commentsBlock === '' ? '' : $commentbar);
-    $template->set_var('comments_block', $commentsBlock);
+    $template->set_var('comments_heading', $commentsHeading);
+    $template->set_var('commentbar', $commentbar);
 
     $template->parse('output', 'doc');
     $body = $template->finish($template->get_var('output'));
