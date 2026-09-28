@@ -22,4 +22,7 @@
 
 {item_display}
 
-{comments_block}
+<section id="comments" class="documents-document__comments" aria-label="{comments_title}">
+    {comments_heading}
+    <div id="commentbar">{commentbar}</div>
+</section>
