@@ -426,7 +426,7 @@ function DOCUMENTS_renderPublicDocument($categorySlug, $documentSlug)
      * Generic Geeklog public item extension point.
      *
      * Contextual consumers such as Hub or FAQ are rendered as part of the
-     * document content flow, before the secondary comments area.
+     * document content flow, before the secondary comments area and after the primary item content.
      */
     $itemDisplayHtml = '';
     if (function_exists('PLG_itemDisplay')) {
