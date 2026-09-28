@@ -92,23 +92,10 @@ if (!$templateHasH1) {
         . '</h1></header>';
 }
 
-$itemDisplay = '';
-if (function_exists('PLG_itemDisplay')) {
-    $itemDisplayParts = PLG_itemDisplay((string) $documentSlug, 'documents');
-    if (is_array($itemDisplayParts) && !empty($itemDisplayParts)) {
-        foreach ($itemDisplayParts as $itemDisplayPart) {
-            if (is_string($itemDisplayPart) && $itemDisplayPart !== '') {
-                $itemDisplay .= $itemDisplayPart;
-            }
-        }
-    }
-}
-
 $content = '<main class="documents-document-page">'
     . $breadcrumb
     . $pageHeader
     . $body
-    . $itemDisplay
     . '</main>';
 
 COM_output(DOCUMENTS_createPublicPage($content, $page['title']));
