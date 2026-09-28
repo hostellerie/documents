@@ -42,17 +42,35 @@ integration_require($fieldEditor, "1004 => \$text['title_case']", 'Text title-ca
 integration_require($publicDocument, 'DOCUMENTS_formatTextDisplay(', 'Text display formatting is not applied to rendered documents.', $failures);
 
 integration_require(
-    $documentController,
+    $publicDocument,
     "PLG_itemDisplay((string) \$documentSlug, 'documents')",
-    'Public document pages do not expose the generic PLG_itemDisplay() provider hook.',
+    'Public document renderer does not expose the generic PLG_itemDisplay() provider hook.',
     $failures
 );
 integration_require(
-    $documentController,
-    '. $itemDisplayHtml',
-    'Generic item-display fragments are not rendered on the full document page.',
+    $publicDocument,
+    "set_var('item_display', \$itemDisplayHtml)",
+    'Generic item-display fragments are not assigned to the public document template.',
     $failures
 );
+
+$documentTemplate = file_get_contents($root . '/templates/document.thtml');
+if (!is_string($documentTemplate)) {
+    $failures[] = 'Unable to inspect templates/document.thtml.';
+} else {
+    integration_require(
+        $documentTemplate,
+        '{item_display}',
+        'Default document template does not expose the generic item-display slot.',
+        $failures
+    );
+
+    $itemDisplayPos = strpos($documentTemplate, '{item_display}');
+    $commentsHeadingPos = strpos($documentTemplate, '{comments_heading}');
+    if ($itemDisplayPos === false || $commentsHeadingPos === false || $itemDisplayPos > $commentsHeadingPos) {
+        $failures[] = 'Generic item-display slot must render before the comments area.';
+    }
+}
 integration_require(
     $interop,
     "'type' => 'documents'",
