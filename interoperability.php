@@ -265,7 +265,7 @@ function DOCUMENTS_interopResolveStoredUrl($documentId)
     return $url;
 }
 
-function DOCUMENTS_interopItems($what, $uid, $options)
+function DOCUMENTS_interopDocumentItems($what, $uid, $options)
 {
     global $_TABLES;
 
@@ -329,13 +329,212 @@ function DOCUMENTS_interopItems($what, $uid, $options)
     return $items;
 }
 
+
+function DOCUMENTS_interopCategoryItemId($categoryId)
+{
+    return 'category:' . (int) $categoryId;
+}
+
+function DOCUMENTS_interopParseItemId($id)
+{
+    $id = (string) $id;
+    if (strpos($id, 'category:') === 0) {
+        return array(
+            'type' => 'category',
+            'id' => (int) substr($id, 9)
+        );
+    }
+
+    return array(
+        'type' => 'document',
+        'id' => $id
+    );
+}
+
+function DOCUMENTS_interopCategoryItem($categoryId, $uid = 0)
+{
+    global $_TABLES;
+
+    $categoryId = (int) $categoryId;
+    $uid = (int) $uid;
+    if ($categoryId <= 0) {
+        return array();
+    }
+
+    $sql = "SELECT c.cid, c.cat_name, c.cat_url, c.cat_help, c.metadescription, "
+        . "c.owner_id, "
+        . "(SELECT MAX(UNIX_TIMESTAMP(COALESCE(d.modified,d.created))) "
+        . "FROM {$_TABLES['documents_docs']} AS d "
+        . "WHERE d.active=1 "
+        . COM_getPermSQL('AND', $uid, 2, 'd')
+        . " AND EXISTS (SELECT 1 FROM {$_TABLES['documents_values']} AS v "
+        . "INNER JOIN {$_TABLES['documents_fields']} AS f ON f.fid=v.field_id "
+        . "WHERE v.doc_url=d.doc_url AND f.cat_id=c.cid)) AS activity_ts "
+        . "FROM {$_TABLES['documents_cat']} AS c "
+        . "WHERE c.cid=" . $categoryId
+        . COM_getPermSQL('AND', $uid, 2, 'c')
+        . " LIMIT 1";
+
+    $row = DB_fetchArray(DB_query($sql));
+    if (!is_array($row) || empty($row['cid']) || empty($row['cat_url'])) {
+        return array();
+    }
+
+    $description = trim(stripslashes((string) $row['metadescription']));
+    if ($description === '') {
+        $description = trim(stripslashes((string) $row['cat_help']));
+    }
+
+    $activity = isset($row['activity_ts']) ? (int) $row['activity_ts'] : 0;
+
+    return array(
+        'id' => DOCUMENTS_interopCategoryItemId($categoryId),
+        'type' => 'documents',
+        'subtype' => 'category',
+        'title' => stripslashes((string) $row['cat_name']),
+        'url' => DOCUMENTS_interopCanonicalUrl((string) $row['cat_url']),
+        'description' => $description,
+        'excerpt' => DOCUMENTS_interopExcerpt($description),
+        'date-created' => $activity,
+        'date-modified' => $activity,
+        'uid' => isset($row['owner_id']) ? (int) $row['owner_id'] : 0,
+        'category-id' => $categoryId,
+        'category-slug' => (string) $row['cat_url']
+    );
+}
+
+function DOCUMENTS_interopCategoryItems($what, $uid, $options)
+{
+    global $_TABLES;
+
+    $uid = (int) $uid;
+    $options = is_array($options) ? $options : array();
+    $limit = array_key_exists('limit', $options) ? (int) $options['limit'] : 20;
+    if ($limit < 1) {
+        $limit = 20;
+    } elseif ($limit > 1000) {
+        $limit = 1000;
+    }
+
+    $since = isset($options['since']) ? DOCUMENTS_interopTimestamp($options['since']) : 0;
+
+    $sql = "SELECT c.cid FROM {$_TABLES['documents_cat']} AS c WHERE c.cid > 0"
+        . COM_getPermSQL('AND', $uid, 2, 'c')
+        . " ORDER BY c.cat_order ASC, c.cid ASC";
+
+    $result = DB_query($sql);
+    $items = array();
+    while ($row = DB_fetchArray($result)) {
+        $item = DOCUMENTS_interopCategoryItem((int) $row['cid'], $uid);
+        if (empty($item)) {
+            continue;
+        }
+
+        $activity = isset($item['date-modified']) ? (int) $item['date-modified'] : 0;
+        if ($since > 0 && $activity > 0 && $activity < $since) {
+            continue;
+        }
+
+        $items[] = DOCUMENTS_interopSelectFields($item, $what);
+    }
+
+    usort($items, function ($a, $b) {
+        $aDate = isset($a['date-modified']) ? (int) $a['date-modified'] : 0;
+        $bDate = isset($b['date-modified']) ? (int) $b['date-modified'] : 0;
+        if ($aDate === $bDate) {
+            return 0;
+        }
+        return ($aDate < $bDate) ? 1 : -1;
+    });
+
+    if (count($items) > $limit) {
+        $items = array_slice($items, 0, $limit);
+    }
+
+    return $items;
+}
+
+function DOCUMENTS_interopItems($what, $uid, $options)
+{
+    $options = is_array($options) ? $options : array();
+    $subtypes = array('document');
+
+    if (isset($options['subtypes'])) {
+        $subtypes = is_array($options['subtypes'])
+            ? $options['subtypes']
+            : explode(',', (string) $options['subtypes']);
+
+        $subtypes = array_values(array_unique(array_filter(array_map(
+            function ($value) {
+                $value = strtolower(trim((string) $value));
+                return in_array($value, array('document', 'category'), true) ? $value : '';
+            },
+            $subtypes
+        ))));
+
+        if (empty($subtypes)) {
+            $subtypes = array('document');
+        }
+    }
+
+    $items = array();
+
+    if (in_array('document', $subtypes, true)) {
+        $items = array_merge($items, DOCUMENTS_interopDocumentItems($what, $uid, $options));
+    }
+
+    if (in_array('category', $subtypes, true)) {
+        $items = array_merge($items, DOCUMENTS_interopCategoryItems($what, $uid, $options));
+    }
+
+    $fields = DOCUMENTS_interopRequestedFields($what);
+    $dateField = in_array('date-modified', $fields, true)
+        ? 'date-modified'
+        : (in_array('date-created', $fields, true) ? 'date-created' : '');
+
+    if ($dateField !== '') {
+        $descending = !isset($options['order'])
+            || substr(strtolower((string) $options['order']), -3) !== 'asc';
+
+        usort($items, function ($a, $b) use ($dateField, $descending) {
+            $aDate = isset($a[$dateField]) ? (int) $a[$dateField] : 0;
+            $bDate = isset($b[$dateField]) ? (int) $b[$dateField] : 0;
+            if ($aDate === $bDate) {
+                return 0;
+            }
+            if ($descending) {
+                return ($aDate < $bDate) ? 1 : -1;
+            }
+            return ($aDate > $bDate) ? 1 : -1;
+        });
+    }
+
+    $limit = array_key_exists('limit', $options) ? (int) $options['limit'] : 20;
+    if ($limit < 1) {
+        $limit = 20;
+    } elseif ($limit > 1000) {
+        $limit = 1000;
+    }
+    if (count($items) > $limit) {
+        $items = array_slice($items, 0, $limit);
+    }
+
+    return $items;
+}
+
 function plugin_getiteminfo_documents($id, $what = '', $uid = 0, $options = array())
 {
     if ((string) $id === '*') {
         return DOCUMENTS_interopItems($what, $uid, $options);
     }
 
-    $item = DOCUMENTS_interopItem($id, $uid);
+    $parsed = DOCUMENTS_interopParseItemId($id);
+    if ($parsed['type'] === 'category') {
+        $item = DOCUMENTS_interopCategoryItem($parsed['id'], $uid);
+    } else {
+        $item = DOCUMENTS_interopItem($parsed['id'], $uid);
+    }
+
     if (empty($item)) {
         return false;
     }
