@@ -81,7 +81,8 @@ $items = plugin_getiteminfo_documents(
     array(
         'since' => time() - 86400,
         'limit' => 20,
-        'order' => 'modified-desc'
+        'order' => 'modified-desc',
+        'subtypes' => array('category', 'document')
     )
 );
 ```
@@ -93,7 +94,10 @@ Supported modernization options include:
 - `since`;
 - `limit`;
 - `order` with `modified-desc`, `modified-asc`, `created-desc`, `created-asc`;
+- `subtypes` with `document`, `category`, or both;
 - Geeklog-style `filter[date-created]`.
+
+The historical default remains document-only when `subtypes` is omitted. Categories use stable `category:<id>` identifiers. Their excerpt prefers the category `metadescription` and falls back to `cat_help`. Their collection date reflects the latest accessible active document activity in that category, so a category naturally becomes a recent digest candidate when it is enriched.
 
 ### Canonical URL resolution
 
