@@ -93,6 +93,8 @@ MSSQL support has been removed. PHP 5.6 compatibility remains a hard requirement
 #### Interoperability with Hello, Hub, IndexNow and XML Sitemap
 
 - Added `plugin_getiteminfo_documents()` for single documents and `id='*'` collections.
+- Added namespaced category items using `category:<id>` and collection subtype selection for `document`, `category` or both.
+- Category collection items expose title, canonical URL, description/excerpt and the latest accessible document activity timestamp; `metadescription` is preferred with `cat_help` as fallback.
 - Added collection options including `since`, `limit`, ordering and `filter[date-created]`, including `hits-desc` for popular-content consumers.
 - Added `plugin_idtourl_documents()` and `plugin_urltoid_documents()`.
 - Added `plugin_collectSitemapItems_documents()`.
